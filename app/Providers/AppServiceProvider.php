@@ -3,22 +3,25 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\Blade;
+use App\Models\Minusan;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
-    public function register(): void
-    {
-        //
-    }
-
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
-        //
+        // Blade directive for accounting currency format: @acct($value) - no rounding
+        Blade::directive('acct', function ($expression) {
+            return "<?php echo ($expression) < 0 ? '('.'Rp '.number_format((int)$expression, 0, ',', '.').')' : 'Rp '.number_format((int)$expression, 0, ',', '.'); ?>";
+        });
+
+        View::composer('layouts.sidebar', function ($view) {
+            $jumlahReportKhusus = Minusan::whereNotNull('note')
+                ->where('note', '!=', '')
+                ->count();
+
+            $view->with('jumlahReportKhusus', $jumlahReportKhusus);
+        });
     }
 }

@@ -12,7 +12,7 @@
         </div>
         <div class="navbar-content">
             <ul class="pc-navbar">
-                
+
                 <!-- Dashboard -->
                 <li class="pc-item {{ $menuDashboard ?? '' }}">
                     <a href="{{ route('dashboard') }}" class="pc-link">
@@ -22,7 +22,7 @@
                 </li>
 
                 @if (auth()->user()->jabatan=='Admin')
-                
+
                 <li class="pc-item pc-caption">
                     <label>Data Management</label>
                 </li>
@@ -38,7 +38,7 @@
                 @endif
 
                 @if (auth()->user()->jabatan=='Admin' || auth()->user()->jabatan=='HRD')
-                
+
                 <li class="pc-item pc-caption">
                     <label>Reports</label>
                 </li>
@@ -59,10 +59,33 @@
                     </a>
                 </li>
 
+                <!-- ⭐ Report Khusus -->
+                <li class="pc-item {{ $menuAdminReportKhusus ?? '' }}">
+                    <a href="{{ route('admin.report.khusus.index') }}" class="pc-link">
+                        <span class="pc-micon">
+                            <i class="ti ti-alert-circle"></i>
+                        </span>
+                        <span class="pc-mtext">Report Khusus</span>
+                    </a>
+                </li>
+
                 @endif
 
                 @if (auth()->user()->jabatan=='Admin')
-                
+
+                <!-- Analisis Transaksi -->
+                <li class="pc-item {{ $menuTransaksi ?? '' }}">
+                    <a href="{{ route('transaksi.analisis') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-chart-bar"></i></span>
+                        <span class="pc-mtext">Analisis Transaksi</span>
+                    </a>
+                </li>
+
+                @endif
+
+
+                @if (auth()->user()->jabatan=='Admin')
+
                 <li class="pc-item pc-caption">
                     <label>System</label>
                 </li>
@@ -78,7 +101,7 @@
                 @endif
 
                 @if (auth()->user()->jabatan=='Staff')
-                
+
                 <li class="pc-item pc-caption">
                     <label>Data</label>
                 </li>
@@ -90,11 +113,11 @@
                         <span class="pc-mtext">Data Minusan</span>
                     </a>
                 </li>
-                
+
                 @endif
 
             </ul>
-            
+
             <!-- Company Info Card -->
             <div class="card pc-user-card">
                 <div class="card-body text-center">

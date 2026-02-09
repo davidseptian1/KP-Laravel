@@ -76,31 +76,31 @@
 
                 <!-- Filter Section -->
                 <div class="card-body border-bottom">
-                    <div class="row g-3 align-items-end">
-                        <div class="col-md-3">
-                            <label class="form-label fw-semibold">
-                                <i class="ti ti-calendar me-1"></i>Tanggal Mulai
-                            </label>
-                            <input type="date" class="form-control" id="filterTanggalMulai">
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label fw-semibold">
-                                <i class="ti ti-calendar me-1"></i>Tanggal Akhir
-                            </label>
-                            <input type="date" class="form-control" id="filterTanggalAkhir">
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold">
-                                <i class="ti ti-search me-1"></i>Cari Nama
-                            </label>
-                            <input type="text" class="form-control" id="filterNama" placeholder="Ketik nama untuk mencari...">
-                        </div>
-                        <div class="col-md-2">
-                            <button class="btn btn-secondary w-100" id="btnResetFilter">
-                                <i class="ti ti-refresh me-1"></i>Reset
-                            </button>
-                        </div>
-                    </div>
+                        <!-- <div class="row g-3 align-items-end">
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="ti ti-calendar me-1"></i>Tanggal Mulai
+                                </label>
+                                <input type="date" class="form-control" id="filterTanggalMulai">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="ti ti-calendar me-1"></i>Tanggal Akhir
+                                </label>
+                                <input type="date" class="form-control" id="filterTanggalAkhir">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">
+                                    <i class="ti ti-search me-1"></i>Cari Nama
+                                </label>
+                                <input type="text" class="form-control" id="filterNama" placeholder="Ketik nama untuk mencari...">
+                            </div>
+                            <div class="col-md-2">
+                                <button class="btn btn-secondary w-100" id="btnResetFilter">
+                                    <i class="ti ti-refresh me-1"></i>Reset
+                                </button>
+                            </div>
+                        </div> -->
                     
                     <div class="alert alert-info mt-3 mb-0 d-flex align-items-center">
                         <i class="ti ti-info-circle me-2" style="font-size: 20px;"></i>

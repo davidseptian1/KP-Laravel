@@ -42,6 +42,49 @@ h2,
   font-weight: 700;
 }
 
+/* ================================
+   ENTERPRISE SWEETALERT TOAST
+================================ */
+.enterprise-toast {
+    border-radius: 14px !important;
+    padding: 14px 18px !important;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.35) !important;
+}
+
+.enterprise-toast-content {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.enterprise-icon {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    padding: 8px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.enterprise-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1.4px;
+    color: #F9FAFB;
+}
+
+.enterprise-text {
+    font-size: 13px;
+    color: #D1D5DB;
+    margin-top: 2px;
+}
+
+.enterprise-progress {
+    background: linear-gradient(to right, #22c55e, #16a34a) !important;
+}
+
+
+
 :root,
 [data-bs-theme=light] {
   --bs-blue: #1890ff;
@@ -22204,6 +22247,7 @@ select.form-control[data-multiselectsplitter-firstselect-selector], select.form-
   right: 0;
 }
 
+  
 /**  =====================
   23. Icon layouts css end
 ==========================  **/

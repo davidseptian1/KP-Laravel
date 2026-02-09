@@ -147,7 +147,7 @@
     </div>
 
     <div class="doc-info">
-        Dicetak: <b>{{ now()->format('d/m/Y H:i') }}</b>
+        Dicetak : <b>{{ now()->setTimezone('Asia/Jakarta')->format('d/m/Y H:i') }}</b>
     </div>
 
     <hr>

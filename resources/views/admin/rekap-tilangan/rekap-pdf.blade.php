@@ -161,7 +161,7 @@
                 Selatan Banten</div>
 
             <div class="subtitle">
-                Periode: {{ $start->format('d F') }} - {{ $end->format('d F Y') }}
+                Periode : <b>{{ now()->setTimezone('Asia/Jakarta')->format('d/m/Y H:i') }}</b>
             </div>
         </div>
 

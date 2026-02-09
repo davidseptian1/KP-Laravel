@@ -5,19 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Minusan extends Model
+class Import extends Model
 {
     use HasFactory;
 
-    protected $table = 'minusans';
-
     protected $fillable = [
-        'tanggal',
-        'nama',
-        'nomor',
-        'produk',
-        'total',
-        'server',
-        'note',
+        'file_path', 'file_name', 'status', 'rows_inserted', 'message'
     ];
 }

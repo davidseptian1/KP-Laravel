@@ -5,6 +5,12 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\MinusanController;
+use App\Http\Controllers\ReportKhususController;
+use App\Http\Controllers\RekapController;
+use App\Http\Controllers\TransaksiController;
+use App\Http\Controllers\ImportStatusController;
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -61,6 +67,22 @@ Route::middleware('checkLogin')->group(function () {
 
     // Rekap Tilangan Excel
     Route::get('rekap-tilangan/excel/{bulan}/{tahun}', [MinusanController::class, 'rekapTilanganExcel'])->name('admin.rekap.tilangan.excel');
+
+    // Report Khusus
+    Route::get('report-khusus', [ReportKhususController::class, 'index'])->name('admin.report.khusus.index');
+    Route::post('report-khusus', [ReportKhususController::class, 'store'])->name('admin.report.khusus.store');
+    Route::put('report-khusus/{id}', [ReportKhususController::class, 'update'])->name('admin.report.khusus.update');
+    Route::delete('report-khusus/{id}', [ReportKhususController::class, 'destroy'])->name('admin.report.khusus.destroy');
+
+    // Transaksi
+    Route::get('transaksi/upload', [TransaksiController::class, 'uploadForm'])->name('transaksi.upload');
+    Route::post('transaksi/import', [TransaksiController::class, 'importCsv'])->name('transaksi.import');
+    Route::get('transaksi/analisis', [TransaksiController::class, 'analisis'])->name('transaksi.analisis');
+    Route::get('transaksi/export', [TransaksiController::class, 'exportAnalisis'])->name('transaksi.export');
+    Route::delete('transaksi/clear', [TransaksiController::class, 'clearData'])->name('transaksi.clear');
+    
+    // Import status polling
+    Route::get('imports/status', [ImportStatusController::class, 'status'])->name('imports.status');
 
     // Middleware isAdmin
     Route::middleware('isAdmin')->group(function () {

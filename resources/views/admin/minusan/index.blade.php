@@ -45,7 +45,7 @@
                 </div>
                 
                 <!-- Filter Section -->
-                <div class="card-body border-bottom">
+                <!-- <div class="card-body border-bottom">
                     <div class="row g-3">
                         <div class="col-md-3">
                             <label class="form-label fw-semibold">
@@ -72,7 +72,7 @@
                             </button>
                         </div>
                     </div>
-                </div>
+                </div> -->
 
                 <div class="card-body">
                     <div class="table-responsive">
