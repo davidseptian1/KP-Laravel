@@ -42,29 +42,31 @@
 
             <div class="ms-auto">
                 <ul class="list-unstyled">
-                    <li class="dropdown pc-h-item header-user-profile">
-                        <a class="pc-head-link dropdown-toggle arrow-none me-0" href="#" id="dropdownProfile"
-                            role="button" aria-haspopup="true" aria-expanded="false">
-                            <img src="{{ asset('sbadmin2/img/undraw_profile.svg') }}" alt="user-image" class="user-avtar">
-                            <span>
-                                <span class="user-name">{{ auth()->user()->nama }}</span>
-                                <span class="user-desc">{{ auth()->user()->jabatan }}</span>
-                            </span>
-                        </a>
-                        <div class="dropdown-menu dropdown-user-profile dropdown-menu-end" id="dropdownProfileMenu">
-                            <div class="dropdown-header d-flex align-items-center justify-content-between">
-                                <h5 class="m-0">Profile</h5>
-                            </div>
-                            <div class="dropdown-divider"></div>
-                            <a href="#" class="dropdown-item" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                                <i class="ti ti-power"></i>
-                                <span>Logout</span>
+                    @auth
+                        <li class="dropdown pc-h-item header-user-profile">
+                            <a class="pc-head-link dropdown-toggle arrow-none me-0" href="#" id="dropdownProfile"
+                                role="button" aria-haspopup="true" aria-expanded="false">
+                                <img src="{{ asset('sbadmin2/img/undraw_profile.svg') }}" alt="user-image" class="user-avtar">
+                                <span>
+                                    <span class="user-name">{{ auth()->user()->nama }}</span>
+                                    <span class="user-desc">{{ auth()->user()->jabatan }}</span>
+                                </span>
                             </a>
-                        </div>
-                        <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
-                            @csrf
-                        </form>
-                    </li>
+                            <div class="dropdown-menu dropdown-user-profile dropdown-menu-end" id="dropdownProfileMenu">
+                                <div class="dropdown-header d-flex align-items-center justify-content-between">
+                                    <h5 class="m-0">Profile</h5>
+                                </div>
+                                <div class="dropdown-divider"></div>
+                                <a href="#" class="dropdown-item" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                    <i class="ti ti-power"></i>
+                                    <span>Logout</span>
+                                </a>
+                            </div>
+                            <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+                                @csrf
+                            </form>
+                        </li>
+                    @endauth
                 </ul>
             </div>
         </div>

@@ -21,7 +21,7 @@
                     </a>
                 </li>
 
-                @if (auth()->user()->jabatan=='Admin')
+                @if (auth()->check() && auth()->user()->jabatan=='Admin')
 
                 <li class="pc-item pc-caption">
                     <label>Data Management</label>
@@ -35,9 +35,25 @@
                     </a>
                 </li>
 
+                <!-- Reimburse (Admin) -->
+                <li class="pc-item {{ $menuAdminReimburse ?? '' }}">
+                    <a href="{{ route('admin.reimburse.index') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-receipt"></i></span>
+                        <span class="pc-mtext">Reimburse Monitoring</span>
+                    </a>
+                </li>
+
+                <!-- Reimburse Form (Admin) -->
+                <li class="pc-item {{ $menuAdminReimburseForm ?? '' }}">
+                    <a href="{{ route('admin.reimburse.forms') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-link"></i></span>
+                        <span class="pc-mtext">Reimburse Form</span>
+                    </a>
+                </li>
+
                 @endif
 
-                @if (auth()->user()->jabatan=='Admin' || auth()->user()->jabatan=='HRD')
+                @if (auth()->check() && (auth()->user()->jabatan=='Admin' || auth()->user()->jabatan=='HRD'))
 
                 <li class="pc-item pc-caption">
                     <label>Reports</label>
@@ -71,7 +87,7 @@
 
                 @endif
 
-                @if (auth()->user()->jabatan=='Admin')
+                @if (auth()->check() && auth()->user()->jabatan=='Admin')
 
                 <!-- Analisis Transaksi -->
                 <li class="pc-item {{ $menuTransaksi ?? '' }}">
@@ -84,7 +100,7 @@
                 @endif
 
 
-                @if (auth()->user()->jabatan=='Admin')
+                @if (auth()->check() && auth()->user()->jabatan=='Admin')
 
                 <li class="pc-item pc-caption">
                     <label>System</label>
@@ -100,7 +116,7 @@
 
                 @endif
 
-                @if (auth()->user()->jabatan=='Staff')
+                @if (auth()->check() && auth()->user()->jabatan=='Staff')
 
                 <li class="pc-item pc-caption">
                     <label>Data</label>
@@ -111,6 +127,14 @@
                     <a href="{{ route('minusan') }}" class="pc-link">
                         <span class="pc-micon"><i class="ti ti-database"></i></span>
                         <span class="pc-mtext">Data Minusan</span>
+                    </a>
+                </li>
+
+                <!-- Reimburse (Staff) -->
+                <li class="pc-item {{ $menuReimburse ?? '' }}">
+                    <a href="{{ route('reimburse.index') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-receipt"></i></span>
+                        <span class="pc-mtext">Reimburse</span>
                     </a>
                 </li>
 

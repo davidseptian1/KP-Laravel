@@ -12,7 +12,8 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+        $cron = env('REKAP_REIMBURSE_CRON', '0 8 24 * *');
+        $schedule->command('reports:send-wa')->cron($cron);
     }
 
     /**

@@ -9,6 +9,11 @@ use App\Http\Controllers\ReportKhususController;
 use App\Http\Controllers\RekapController;
 use App\Http\Controllers\TransaksiController;
 use App\Http\Controllers\ImportStatusController;
+use App\Http\Controllers\ReimburseWebController;
+use App\Http\Controllers\AdminReimburseWebController;
+use App\Http\Controllers\ReimburseFormController;
+use App\Http\Controllers\AdminReimburseFormController;
+use App\Http\Controllers\RecapDownloadController;
 
 
 
@@ -39,6 +44,15 @@ Route::middleware('isLogin')->group(function () {
 
 // Logout
 Route::post('logout', [AuthController::class, 'logout'])->name('logout');
+
+// Public Reimburse Form (no login required)
+Route::get('reimburse/form/{token}', [ReimburseFormController::class, 'show'])->name('reimburse.form.show');
+Route::post('reimburse/form/{token}', [ReimburseFormController::class, 'submit'])->name('reimburse.form.submit');
+
+// Public signed download for recap PDFs
+Route::get('recap/download/{file}', [RecapDownloadController::class, 'download'])
+    ->middleware('signed')
+    ->name('recap.download');
 
 // Route Area Chart
 Route::get('/chart/minusan', [MinusanController::class, 'chartMinusan']);
@@ -80,6 +94,10 @@ Route::middleware('checkLogin')->group(function () {
     Route::get('transaksi/analisis', [TransaksiController::class, 'analisis'])->name('transaksi.analisis');
     Route::get('transaksi/export', [TransaksiController::class, 'exportAnalisis'])->name('transaksi.export');
     Route::delete('transaksi/clear', [TransaksiController::class, 'clearData'])->name('transaksi.clear');
+
+    // Reimburse (User)
+    Route::get('reimburse', [ReimburseWebController::class, 'index'])->name('reimburse.index');
+    Route::post('reimburse', [ReimburseWebController::class, 'store'])->name('reimburse.store');
     
     // Import status polling
     Route::get('imports/status', [ImportStatusController::class, 'status'])->name('imports.status');
@@ -109,6 +127,18 @@ Route::middleware('checkLogin')->group(function () {
 
         // User PDF
         Route::get('user/pdf', [UserController::class, 'pdf'])->name('userPdf');
+
+        // Reimburse (Admin)
+        Route::get('admin/reimburse', [AdminReimburseWebController::class, 'index'])->name('admin.reimburse.index');
+        Route::put('admin/reimburse/{id}', [AdminReimburseWebController::class, 'update'])->name('admin.reimburse.update');
+        Route::get('admin/reimburse/{id}/download', [AdminReimburseWebController::class, 'download'])->name('admin.reimburse.download');
+        Route::get('admin/reimburse/{id}/bukti/{index?}', [AdminReimburseWebController::class, 'view'])->name('admin.reimburse.view');
+        Route::post('admin/reimburse/{id}/send-wa', [AdminReimburseWebController::class, 'sendWa'])->name('admin.reimburse.sendWa');
+
+        // Reimburse Form (Admin)
+        Route::get('admin/reimburse/forms', [AdminReimburseFormController::class, 'index'])->name('admin.reimburse.forms');
+        Route::post('admin/reimburse/forms', [AdminReimburseFormController::class, 'store'])->name('admin.reimburse.forms.store');
+        Route::put('admin/reimburse/forms/{id}/toggle', [AdminReimburseFormController::class, 'toggle'])->name('admin.reimburse.forms.toggle');
 
         // Create Minusan
         Route::get('minusan/create', [MinusanController::class, 'create'])->name('minusanCreate');
