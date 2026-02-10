@@ -51,6 +51,38 @@
                     </a>
                 </li>
 
+                <!-- Pengajuan Data Monitoring (Admin) -->
+                <li class="pc-item {{ $menuAdminDataRequest ?? '' }}">
+                    <a href="{{ route('admin.data-request.index') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-file-text"></i></span>
+                        <span class="pc-mtext">Monitoring<br>Pengajuan Data</span>
+                    </a>
+                </li>
+
+                <!-- Pengajuan Data Form (Admin) -->
+                <li class="pc-item {{ $menuAdminDataRequestForm ?? '' }}">
+                    <a href="{{ route('admin.data-request.forms') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-link"></i></span>
+                        <span class="pc-mtext">Form Pengajuan Data</span>
+                    </a>
+                </li>
+
+                <!-- Peminjaman Barang Monitoring (Admin) -->
+                <li class="pc-item {{ $menuAdminLoanRequest ?? '' }}">
+                    <a href="{{ route('admin.loan-request.index') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-file-text"></i></span>
+                        <span class="pc-mtext">Monitoring<br>Peminjaman Barang</span>
+                    </a>
+                </li>
+
+                <!-- Peminjaman Barang Form (Admin) -->
+                <li class="pc-item {{ $menuAdminLoanRequestForm ?? '' }}">
+                    <a href="{{ route('admin.loan-request.forms') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-link"></i></span>
+                        <span class="pc-mtext">Form Peminjaman<br>Barang</span>
+                    </a>
+                </li>
+
                 @endif
 
                 @if (auth()->check() && (auth()->user()->jabatan=='Admin' || auth()->user()->jabatan=='HRD'))

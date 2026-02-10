@@ -14,6 +14,12 @@ use App\Http\Controllers\AdminReimburseWebController;
 use App\Http\Controllers\ReimburseFormController;
 use App\Http\Controllers\AdminReimburseFormController;
 use App\Http\Controllers\RecapDownloadController;
+use App\Http\Controllers\DataRequest\AdminDataRequestController;
+use App\Http\Controllers\DataRequest\AdminDataRequestFormController;
+use App\Http\Controllers\DataRequest\DataRequestFormController;
+use App\Http\Controllers\LoanRequest\AdminLoanRequestController;
+use App\Http\Controllers\LoanRequest\AdminLoanRequestFormController;
+use App\Http\Controllers\LoanRequest\LoanRequestFormController;
 
 
 
@@ -48,6 +54,14 @@ Route::post('logout', [AuthController::class, 'logout'])->name('logout');
 // Public Reimburse Form (no login required)
 Route::get('reimburse/form/{token}', [ReimburseFormController::class, 'show'])->name('reimburse.form.show');
 Route::post('reimburse/form/{token}', [ReimburseFormController::class, 'submit'])->name('reimburse.form.submit');
+
+// Public Pengajuan Data Form (no login required)
+Route::get('pengajuan-data/form/{token}', [DataRequestFormController::class, 'show'])->name('data-request.form.show');
+Route::post('pengajuan-data/form/{token}', [DataRequestFormController::class, 'submit'])->name('data-request.form.submit');
+
+// Public Peminjaman Barang Form (no login required)
+Route::get('peminjaman-barang/form/{token}', [LoanRequestFormController::class, 'show'])->name('loan-request.form.show');
+Route::post('peminjaman-barang/form/{token}', [LoanRequestFormController::class, 'submit'])->name('loan-request.form.submit');
 
 // Public signed download for recap PDFs
 Route::get('recap/download/{file}', [RecapDownloadController::class, 'download'])
@@ -139,6 +153,28 @@ Route::middleware('checkLogin')->group(function () {
         Route::get('admin/reimburse/forms', [AdminReimburseFormController::class, 'index'])->name('admin.reimburse.forms');
         Route::post('admin/reimburse/forms', [AdminReimburseFormController::class, 'store'])->name('admin.reimburse.forms.store');
         Route::put('admin/reimburse/forms/{id}/toggle', [AdminReimburseFormController::class, 'toggle'])->name('admin.reimburse.forms.toggle');
+
+        // Pengajuan Data (Admin)
+        Route::get('admin/pengajuan-data', [AdminDataRequestController::class, 'index'])->name('admin.data-request.index');
+        Route::put('admin/pengajuan-data/{id}', [AdminDataRequestController::class, 'update'])->name('admin.data-request.update');
+        Route::get('admin/pengajuan-data/{id}/view/{type}', [AdminDataRequestController::class, 'viewFile'])->name('admin.data-request.view');
+        Route::get('admin/pengajuan-data/{id}/download/{type}', [AdminDataRequestController::class, 'downloadFile'])->name('admin.data-request.download');
+        Route::post('admin/pengajuan-data/{id}/send-wa', [AdminDataRequestController::class, 'sendWa'])->name('admin.data-request.sendWa');
+
+        // Pengajuan Data Form (Admin)
+        Route::get('admin/pengajuan-data/forms', [AdminDataRequestFormController::class, 'index'])->name('admin.data-request.forms');
+        Route::post('admin/pengajuan-data/forms', [AdminDataRequestFormController::class, 'store'])->name('admin.data-request.forms.store');
+        Route::put('admin/pengajuan-data/forms/{id}/toggle', [AdminDataRequestFormController::class, 'toggle'])->name('admin.data-request.forms.toggle');
+
+        // Peminjaman Barang (Admin)
+        Route::get('admin/peminjaman-barang', [AdminLoanRequestController::class, 'index'])->name('admin.loan-request.index');
+        Route::put('admin/peminjaman-barang/{id}', [AdminLoanRequestController::class, 'update'])->name('admin.loan-request.update');
+        Route::post('admin/peminjaman-barang/{id}/send-wa', [AdminLoanRequestController::class, 'sendWa'])->name('admin.loan-request.sendWa');
+
+        // Peminjaman Barang Form (Admin)
+        Route::get('admin/peminjaman-barang/forms', [AdminLoanRequestFormController::class, 'index'])->name('admin.loan-request.forms');
+        Route::post('admin/peminjaman-barang/forms', [AdminLoanRequestFormController::class, 'store'])->name('admin.loan-request.forms.store');
+        Route::put('admin/peminjaman-barang/forms/{id}/toggle', [AdminLoanRequestFormController::class, 'toggle'])->name('admin.loan-request.forms.toggle');
 
         // Create Minusan
         Route::get('minusan/create', [MinusanController::class, 'create'])->name('minusanCreate');
