@@ -91,15 +91,20 @@ class AdminReimburseWebController extends Controller
             'is_read' => false,
         ]);
 
-        $user = $reimburse->user;
-        if ($user && $user->no_hp) {
+        $targetNumber = $reimburse->wa_pengisi;
+        if ($targetNumber) {
             $message = "📢 UPDATE REIMBURSE\n\n" .
                 "Kode        : {$reimburse->kode_reimburse}\n" .
+                "Nama        : {$reimburse->nama}\n" .
+                "Barang      : {$reimburse->nama_barang}\n" .
+                "Nominal     : Rp " . number_format($reimburse->nominal, 0, ',', '.') . "\n" .
+                "Approved At : " . ($reimburse->approved_at ? Carbon::parse($reimburse->approved_at)->format('d/m/Y H:i') : '-') . "\n" .
                 "Status      : {$reimburse->status}\n" .
-                "Catatan     : " . ($reimburse->catatan_admin ?? '-') . "\n\n" .
+                "Catatan     : " . ($reimburse->catatan_admin ?? '-') . "\n" .
+                "Bukti Bayar : " . $this->formatPaymentProof($reimburse) . "\n\n" .
                 "Terima kasih.";
 
-            $whatsApp->sendText($user->no_hp, $message);
+            $whatsApp->sendText($targetNumber, $message);
         }
 
         return redirect()->route('admin.reimburse.index')->with('success', 'Status reimburse berhasil diperbarui');
@@ -129,6 +134,10 @@ class AdminReimburseWebController extends Controller
 
         $message = "📢 UPDATE REIMBURSE\n\n" .
             "Kode        : {$reimburse->kode_reimburse}\n" .
+            "Nama        : {$reimburse->nama}\n" .
+            "Barang      : {$reimburse->nama_barang}\n" .
+            "Nominal     : Rp " . number_format($reimburse->nominal, 0, ',', '.') . "\n" .
+            "Approved At : " . ($reimburse->approved_at ? Carbon::parse($reimburse->approved_at)->format('d/m/Y H:i') : '-') . "\n" .
             "Status      : {$reimburse->status}\n" .
             "Catatan     : " . ($reimburse->catatan_admin ?? '-') . "\n\n" .
             "Bukti Bayar : " . $this->formatPaymentProof($reimburse) . "\n\n" .

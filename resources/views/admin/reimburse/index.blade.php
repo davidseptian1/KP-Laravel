@@ -112,14 +112,16 @@
                                                         <option value="{{ $key }}" {{ $item->status === $key ? 'selected' : '' }}>{{ $label }}</option>
                                                     @endforeach
                                                 </select>
-                                                <input type="text" name="catatan_admin" value="{{ $item->catatan_admin }}" class="form-control form-control-sm" placeholder="Catatan admin" />
+                                                <label class="form-label text-start mb-0">Bukti Pembayaran</label>
                                                 <select name="payment_proof_type" class="form-select form-select-sm">
                                                     <option value="">Bukti Pembayaran (opsional)</option>
                                                     <option value="text" {{ $item->payment_proof_type === 'text' ? 'selected' : '' }}>Teks</option>
                                                     <option value="image" {{ $item->payment_proof_type === 'image' ? 'selected' : '' }}>Gambar</option>
                                                 </select>
                                                 <input type="text" name="payment_proof_text" value="{{ $item->payment_proof_text }}" class="form-control form-control-sm" placeholder="Isi bukti pembayaran (teks)" />
-                                                <input type="file" name="payment_proof_image" class="form-control form-control-sm" />
+                                                <input type="file" name="payment_proof_image" class="form-control form-control-sm" accept="image/*" />
+                                                <label class="form-label text-start mb-0">Catatan Admin</label>
+                                                <input type="text" name="catatan_admin" value="{{ $item->catatan_admin }}" class="form-control form-control-sm" placeholder="Catatan admin" />
                                                 <button class="btn btn-success btn-sm">Update</button>
                                             </form>
                                         </div>
