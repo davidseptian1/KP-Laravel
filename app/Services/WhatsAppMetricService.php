@@ -14,6 +14,8 @@ class WhatsAppMetricService
         $token = config('whatsapp.token');
         $apiKey = config('whatsapp.api_key');
         $sender = config('whatsapp.sender');
+        $to = $this->normalizeNumber($to);
+        $sender = $this->normalizeNumber($sender);
 
         if (!$baseUrl || !$to || !$message) {
             Log::warning('WhatsApp Metric API skipped', [
@@ -25,9 +27,15 @@ class WhatsAppMetricService
         }
 
         try {
-            $request = Http::timeout(10);
+            $request = Http::timeout(10)->asForm();
             if ($token) {
                 $request = $request->withToken($token);
+            }
+            if ($apiKey) {
+                $request = $request->withHeaders([
+                    'X-API-KEY' => $apiKey,
+                    'api_key' => $apiKey,
+                ]);
             }
 
             $payload = [
@@ -44,6 +52,8 @@ class WhatsAppMetricService
                     'to' => $to,
                     'status' => $response->status(),
                     'body' => $response->body(),
+                    'sender' => $sender,
+                    'endpoint' => rtrim($baseUrl, '/') . $endpoint,
                 ]);
             }
         } catch (\Throwable $e) {
@@ -60,5 +70,19 @@ class WhatsAppMetricService
         foreach ($numbers as $number) {
             $this->sendText($number, $message);
         }
+    }
+
+    private function normalizeNumber(?string $number): string
+    {
+        $digits = preg_replace('/\D+/', '', (string) $number);
+        if ($digits === '') {
+            return '';
+        }
+
+        if (str_starts_with($digits, '0')) {
+            return '62' . substr($digits, 1);
+        }
+
+        return $digits;
     }
 }

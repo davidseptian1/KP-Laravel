@@ -8,6 +8,7 @@ use App\Services\WhatsAppMetricService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Carbon\Carbon;
 
 class AdminReimburseWebController extends Controller
@@ -180,7 +181,7 @@ class AdminReimburseWebController extends Controller
         }
 
         if ($reimburse->payment_proof_type === 'image' && $reimburse->payment_proof_image) {
-            return route('admin.reimburse.payment-proof', $reimburse->id);
+            return URL::signedRoute('public.reimburse.payment-proof', ['id' => $reimburse->id]);
         }
 
         return '-';

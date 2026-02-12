@@ -70,6 +70,12 @@ body.pc-sidebar-hide .pc-footer {
     transform: translateY(-2px);
 }
 
+body.modal-open .card,
+body.modal-open .card:hover {
+    transform: none !important;
+    transition: none !important;
+}
+
 .card .card-header {
     background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
     border-bottom: 2px solid #f0f0f0;
@@ -831,6 +837,45 @@ body.pc-sidebar-hide .pc-container {
 .modal-header.bg-danger .modal-title,
 .modal-header.bg-danger .btn-close-white {
     color: white !important;
+}
+
+/* Modal Responsive + Anti Flicker */
+.modal-dialog {
+    max-width: 900px;
+    width: calc(100% - 2rem);
+    margin: 1rem auto;
+}
+
+.modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.modal.fade .modal-dialog {
+    transition: none !important;
+    transform: none !important;
+}
+
+.modal-backdrop {
+    transition: none !important;
+}
+
+.modal,
+.modal.show {
+    pointer-events: auto;
+    z-index: 1055;
+}
+
+.modal-backdrop {
+    z-index: 1050;
+}
+
+@media (max-width: 576px) {
+    .modal-dialog {
+        max-width: 100%;
+        width: calc(100% - 1rem);
+        margin: 0.5rem auto;
+    }
 }
 
 /* Company Info Card in Sidebar */

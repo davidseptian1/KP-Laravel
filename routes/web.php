@@ -68,6 +68,10 @@ Route::get('recap/download/{file}', [RecapDownloadController::class, 'download']
     ->middleware('signed')
     ->name('recap.download');
 
+Route::get('reimburse/{id}/payment-proof', [AdminReimburseWebController::class, 'viewPaymentProof'])
+    ->middleware('signed')
+    ->name('public.reimburse.payment-proof');
+
 // Route Area Chart
 Route::get('/chart/minusan', [MinusanController::class, 'chartMinusan']);
 
@@ -205,4 +209,5 @@ Route::middleware('checkLogin')->group(function () {
         Route::get('rekap-bulanan/pdf', [MinusanController::class, 'rekapPdf'])->name('rekap.pdf');
         
     });
+
 });

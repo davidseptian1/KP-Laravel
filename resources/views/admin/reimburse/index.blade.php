@@ -84,46 +84,60 @@
                                     </td>
                                     <td>{{ $item->catatan_admin ?? '-' }}</td>
                                     <td class="text-center">
-                                        <div class="d-flex flex-column gap-2">
-                                            <div class="d-flex gap-2">
-                                                <a class="btn btn-outline-secondary btn-sm" target="_blank" href="{{ route('admin.reimburse.view', [$item->id, 0]) }}">Lihat Bukti</a>
-                                                <a class="btn btn-outline-primary btn-sm" href="{{ route('admin.reimburse.download', $item->id) }}">Download Bukti</a>
-                                            </div>
+                                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#aksiModal-{{ $item->id }}">Lihat</button>
 
-                                            <form method="POST" action="{{ route('admin.reimburse.sendWa', $item->id) }}">
-                                                @csrf
-                                                <button class="btn btn-outline-success btn-sm">Kirim WA</button>
-                                            </form>
+                                        <div class="modal fade" id="aksiModal-{{ $item->id }}" tabindex="-1" aria-labelledby="aksiModalLabel-{{ $item->id }}" aria-hidden="true">
+                                            <div class="modal-dialog modal-lg modal-dialog-centered">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title" id="aksiModalLabel-{{ $item->id }}">Aksi Reimburse - {{ $item->kode_reimburse }}</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <div class="d-flex flex-column gap-3">
+                                                            <div class="d-flex flex-wrap gap-2">
+                                                                <a class="btn btn-outline-secondary" target="_blank" href="{{ route('admin.reimburse.view', [$item->id, 0]) }}">Lihat Bukti</a>
+                                                                <a class="btn btn-outline-primary" href="{{ route('admin.reimburse.download', $item->id) }}">Download Bukti</a>
+                                                            </div>
 
-                                            @if (!empty($item->bukti_files) && count($item->bukti_files) > 1)
-                                                <div class="small text-muted">
-                                                    Bukti lain:
-                                                    @foreach ($item->bukti_files as $idx => $file)
-                                                        <a target="_blank" href="{{ route('admin.reimburse.view', [$item->id, $idx]) }}">#{{ $idx + 1 }}</a>
-                                                    @endforeach
+                                                            <form method="POST" action="{{ route('admin.reimburse.sendWa', $item->id) }}">
+                                                                @csrf
+                                                                <button class="btn btn-outline-success">Kirim WA</button>
+                                                            </form>
+
+                                                            @if (!empty($item->bukti_files) && count($item->bukti_files) > 1)
+                                                                <div class="small text-muted">
+                                                                    Bukti lain:
+                                                                    @foreach ($item->bukti_files as $idx => $file)
+                                                                        <a target="_blank" href="{{ route('admin.reimburse.view', [$item->id, $idx]) }}">#{{ $idx + 1 }}</a>
+                                                                    @endforeach
+                                                                </div>
+                                                            @endif
+
+                                                            <form method="POST" action="{{ route('admin.reimburse.update', $item->id) }}" class="d-flex flex-column gap-3" enctype="multipart/form-data">
+                                                                @csrf
+                                                                @method('PUT')
+                                                                <select name="status" class="form-select" required>
+                                                                    @foreach (['pending' => 'Pending', 'approved' => 'Approved', 'rejected' => 'Rejected', 'revision' => 'Revision'] as $key => $label)
+                                                                        <option value="{{ $key }}" {{ $item->status === $key ? 'selected' : '' }}>{{ $label }}</option>
+                                                                    @endforeach
+                                                                </select>
+                                                                <label class="form-label text-start mb-0">Bukti Pembayaran</label>
+                                                                <select name="payment_proof_type" class="form-select">
+                                                                    <option value="">Bukti Pembayaran (opsional)</option>
+                                                                    <option value="text" {{ $item->payment_proof_type === 'text' ? 'selected' : '' }}>Teks</option>
+                                                                    <option value="image" {{ $item->payment_proof_type === 'image' ? 'selected' : '' }}>Gambar</option>
+                                                                </select>
+                                                                <input type="text" name="payment_proof_text" value="{{ $item->payment_proof_text }}" class="form-control" placeholder="Isi bukti pembayaran (teks)" />
+                                                                <input type="file" name="payment_proof_image" class="form-control" accept="image/*" />
+                                                                <label class="form-label text-start mb-0">Catatan Admin</label>
+                                                                <input type="text" name="catatan_admin" value="{{ $item->catatan_admin }}" class="form-control" placeholder="Catatan admin" />
+                                                                <button class="btn btn-success">Update</button>
+                                                            </form>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                            @endif
-
-                                            <form method="POST" action="{{ route('admin.reimburse.update', $item->id) }}" class="d-flex flex-column gap-2" enctype="multipart/form-data">
-                                                @csrf
-                                                @method('PUT')
-                                                <select name="status" class="form-select form-select-sm" required>
-                                                    @foreach (['pending' => 'Pending', 'approved' => 'Approved', 'rejected' => 'Rejected', 'revision' => 'Revision'] as $key => $label)
-                                                        <option value="{{ $key }}" {{ $item->status === $key ? 'selected' : '' }}>{{ $label }}</option>
-                                                    @endforeach
-                                                </select>
-                                                <label class="form-label text-start mb-0">Bukti Pembayaran</label>
-                                                <select name="payment_proof_type" class="form-select form-select-sm">
-                                                    <option value="">Bukti Pembayaran (opsional)</option>
-                                                    <option value="text" {{ $item->payment_proof_type === 'text' ? 'selected' : '' }}>Teks</option>
-                                                    <option value="image" {{ $item->payment_proof_type === 'image' ? 'selected' : '' }}>Gambar</option>
-                                                </select>
-                                                <input type="text" name="payment_proof_text" value="{{ $item->payment_proof_text }}" class="form-control form-control-sm" placeholder="Isi bukti pembayaran (teks)" />
-                                                <input type="file" name="payment_proof_image" class="form-control form-control-sm" accept="image/*" />
-                                                <label class="form-label text-start mb-0">Catatan Admin</label>
-                                                <input type="text" name="catatan_admin" value="{{ $item->catatan_admin }}" class="form-control form-control-sm" placeholder="Catatan admin" />
-                                                <button class="btn btn-success btn-sm">Update</button>
-                                            </form>
+                                            </div>
                                         </div>
                                     </td>
                                 </tr>
