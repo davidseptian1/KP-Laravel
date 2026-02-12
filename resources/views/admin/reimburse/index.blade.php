@@ -49,6 +49,7 @@
                                 <th class="text-end">Nominal</th>
                                 <th>WA Penerima</th>
                                 <th>WA Pengisi</th>
+                                <th>Bukti Pembayaran</th>
                                 <th>Tanggal</th>
                                 <th>Status</th>
                                 <th>Catatan</th>
@@ -66,6 +67,15 @@
                                     <td class="text-end">Rp {{ number_format($item->nominal, 0, ',', '.') }}</td>
                                     <td>{{ $item->wa_penerima ?? '-' }}</td>
                                     <td>{{ $item->wa_pengisi ?? '-' }}</td>
+                                    <td>
+                                        @if ($item->payment_proof_type === 'text')
+                                            {{ $item->payment_proof_text ?? '-' }}
+                                        @elseif ($item->payment_proof_type === 'image' && $item->payment_proof_image)
+                                            <a target="_blank" href="{{ route('admin.reimburse.payment-proof', $item->id) }}">Lihat</a>
+                                        @else
+                                            -
+                                        @endif
+                                    </td>
                                     <td>{{ optional($item->tanggal_pengajuan)->format('d M Y H:i') }}</td>
                                     <td>
                                         <span class="badge bg-{{ $item->status === 'approved' ? 'success' : ($item->status === 'rejected' ? 'danger' : ($item->status === 'revision' ? 'warning' : 'secondary')) }}">
@@ -94,7 +104,7 @@
                                                 </div>
                                             @endif
 
-                                            <form method="POST" action="{{ route('admin.reimburse.update', $item->id) }}" class="d-flex flex-column gap-2">
+                                            <form method="POST" action="{{ route('admin.reimburse.update', $item->id) }}" class="d-flex flex-column gap-2" enctype="multipart/form-data">
                                                 @csrf
                                                 @method('PUT')
                                                 <select name="status" class="form-select form-select-sm" required>
@@ -103,6 +113,13 @@
                                                     @endforeach
                                                 </select>
                                                 <input type="text" name="catatan_admin" value="{{ $item->catatan_admin }}" class="form-control form-control-sm" placeholder="Catatan admin" />
+                                                <select name="payment_proof_type" class="form-select form-select-sm">
+                                                    <option value="">Bukti Pembayaran (opsional)</option>
+                                                    <option value="text" {{ $item->payment_proof_type === 'text' ? 'selected' : '' }}>Teks</option>
+                                                    <option value="image" {{ $item->payment_proof_type === 'image' ? 'selected' : '' }}>Gambar</option>
+                                                </select>
+                                                <input type="text" name="payment_proof_text" value="{{ $item->payment_proof_text }}" class="form-control form-control-sm" placeholder="Isi bukti pembayaran (teks)" />
+                                                <input type="file" name="payment_proof_image" class="form-control form-control-sm" />
                                                 <button class="btn btn-success btn-sm">Update</button>
                                             </form>
                                         </div>

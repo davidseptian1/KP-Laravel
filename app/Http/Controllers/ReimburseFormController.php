@@ -46,6 +46,7 @@ class ReimburseFormController extends Controller
 
         $validated = $request->validate([
             'nama' => 'required|string|max:255',
+            'no_rekening' => 'required|string|max:50',
             'divisi' => 'required|in:accounting,act,server,hrd,direksi,gudang,sosmed,host live,it',
             'nominal' => 'required|numeric|min:0',
             'nama_barang' => 'required|string|max:255',
@@ -70,6 +71,7 @@ class ReimburseFormController extends Controller
                 'user_id' => null,
                 'form_id' => $form->id,
                 'nama' => $validated['nama'],
+                'no_rekening' => $validated['no_rekening'],
                 'divisi' => $validated['divisi'],
                 'kode_reimburse' => $kode,
                 'tanggal_pengajuan' => now(),
@@ -98,6 +100,7 @@ class ReimburseFormController extends Controller
         $message = "📌 REIMBURSE BARU MASUK\n\n" .
             "Kode        : {$reimburse->kode_reimburse}\n" .
             "Nama        : {$reimburse->nama}\n" .
+            "No Rekening : {$reimburse->no_rekening}\n" .
             "Divisi      : {$reimburse->divisi}\n" .
             "Nominal     : Rp " . number_format($reimburse->nominal, 0, ',', '.') . "\n" .
             "WA Pengisi  : " . ($reimburse->wa_pengisi ?? '-') . "\n" .

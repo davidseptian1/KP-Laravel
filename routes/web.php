@@ -148,6 +148,7 @@ Route::middleware('checkLogin')->group(function () {
         Route::get('admin/reimburse/{id}/download', [AdminReimburseWebController::class, 'download'])->name('admin.reimburse.download');
         Route::get('admin/reimburse/{id}/bukti/{index?}', [AdminReimburseWebController::class, 'view'])->name('admin.reimburse.view');
         Route::post('admin/reimburse/{id}/send-wa', [AdminReimburseWebController::class, 'sendWa'])->name('admin.reimburse.sendWa');
+        Route::get('admin/reimburse/{id}/payment-proof', [AdminReimburseWebController::class, 'viewPaymentProof'])->name('admin.reimburse.payment-proof');
 
         // Reimburse Form (Admin)
         Route::get('admin/reimburse/forms', [AdminReimburseFormController::class, 'index'])->name('admin.reimburse.forms');

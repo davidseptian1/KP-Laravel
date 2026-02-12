@@ -34,6 +34,10 @@
                         <input type="text" name="nama" class="form-control" required />
                     </div>
                     <div class="mb-3">
+                        <label class="form-label">No Rekening</label>
+                        <input type="text" name="no_rekening" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label">Divisi</label>
                         <select name="divisi" class="form-select" required>
                             <option value="">Pilih Divisi</option>

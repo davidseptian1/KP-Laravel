@@ -48,6 +48,9 @@ class AdminReimburseWebController extends Controller
         $validated = $request->validate([
             'status' => 'required|in:pending,approved,rejected,revision',
             'catatan_admin' => 'nullable|string',
+            'payment_proof_type' => 'nullable|in:text,image',
+            'payment_proof_text' => 'nullable|string',
+            'payment_proof_image' => 'nullable|file|mimes:jpg,jpeg,png|max:5120',
         ]);
 
         $reimburse = Reimburse::with('user')->findOrFail($id);
@@ -55,6 +58,21 @@ class AdminReimburseWebController extends Controller
 
         $reimburse->status = $validated['status'];
         $reimburse->catatan_admin = $validated['catatan_admin'] ?? null;
+
+        if (!empty($validated['payment_proof_type'])) {
+            $reimburse->payment_proof_type = $validated['payment_proof_type'];
+
+            if ($validated['payment_proof_type'] === 'text') {
+                $reimburse->payment_proof_text = $validated['payment_proof_text'] ?? null;
+                $reimburse->payment_proof_image = null;
+            }
+
+            if ($validated['payment_proof_type'] === 'image' && $request->hasFile('payment_proof_image')) {
+                $path = $request->file('payment_proof_image')->store('reimburse/payment-proof', 'local');
+                $reimburse->payment_proof_image = $path;
+                $reimburse->payment_proof_text = null;
+            }
+        }
 
         if (in_array($validated['status'], ['approved', 'rejected'], true)) {
             $reimburse->approved_by = $admin->id;
@@ -103,17 +121,20 @@ class AdminReimburseWebController extends Controller
     {
         $reimburse = Reimburse::findOrFail($id);
 
-        if (!$reimburse->wa_penerima) {
-            return redirect()->route('admin.reimburse.index')->with('error', 'Nomor WA penerima belum tersedia');
+        $targetNumber = $reimburse->wa_pengisi ?: $reimburse->wa_penerima;
+
+        if (!$targetNumber) {
+            return redirect()->route('admin.reimburse.index')->with('error', 'Nomor WA pengisi belum tersedia');
         }
 
         $message = "📢 UPDATE REIMBURSE\n\n" .
             "Kode        : {$reimburse->kode_reimburse}\n" .
             "Status      : {$reimburse->status}\n" .
             "Catatan     : " . ($reimburse->catatan_admin ?? '-') . "\n\n" .
+            "Bukti Bayar : " . $this->formatPaymentProof($reimburse) . "\n\n" .
             "Terima kasih.";
 
-        $whatsApp->sendText($reimburse->wa_penerima, $message);
+        $whatsApp->sendText($targetNumber, $message);
 
         return redirect()->route('admin.reimburse.index')->with('success', 'Pesan WA terkirim');
     }
@@ -129,5 +150,30 @@ class AdminReimburseWebController extends Controller
         }
 
         return Storage::disk('local')->response($path);
+    }
+
+    public function viewPaymentProof(int $id)
+    {
+        $reimburse = Reimburse::findOrFail($id);
+        $path = $reimburse->payment_proof_image;
+
+        if (!$path || !Storage::disk('local')->exists($path)) {
+            return redirect()->route('admin.reimburse.index')->with('error', 'Bukti pembayaran tidak ditemukan');
+        }
+
+        return Storage::disk('local')->response($path);
+    }
+
+    private function formatPaymentProof(Reimburse $reimburse): string
+    {
+        if ($reimburse->payment_proof_type === 'text' && $reimburse->payment_proof_text) {
+            return $reimburse->payment_proof_text;
+        }
+
+        if ($reimburse->payment_proof_type === 'image' && $reimburse->payment_proof_image) {
+            return route('admin.reimburse.payment-proof', $reimburse->id);
+        }
+
+        return '-';
     }
 }
