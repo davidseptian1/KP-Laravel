@@ -146,6 +146,76 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="row mt-4">
+                    <div class="col-lg-6">
+                        <h5>Ringkasan per No Rek & Nama Rekening</h5>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>No Rek</th>
+                                        <th>Nama Rekening</th>
+                                        <th class="text-end">Jumlah</th>
+                                        <th class="text-end">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse ($byAccount as $row)
+                                        <tr>
+                                            <td>{{ $row->no_rek }}</td>
+                                            <td>{{ $row->nama_rekening }}</td>
+                                            <td class="text-end">{{ $row->jumlah }}</td>
+                                            <td class="text-end">Rp {{ number_format($row->total, 0, ',', '.') }}</td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted">Belum ada data</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <h5>Ringkasan per Jam</h5>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Jam</th>
+                                        <th class="text-end">Jumlah</th>
+                                        <th class="text-end">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse ($byHour as $row)
+                                        <tr>
+                                            <td>{{ str_pad($row->jam, 2, '0', STR_PAD_LEFT) }}:00</td>
+                                            <td class="text-end">{{ $row->jumlah }}</td>
+                                            <td class="text-end">Rp {{ number_format($row->total, 0, ',', '.') }}</td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="3" class="text-center text-muted">Belum ada data</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card border-0 bg-light">
+                            <div class="card-body">
+                                <div class="text-muted">Total Reply Penambahan Terisi</div>
+                                <div class="fs-4 fw-semibold">{{ $replyCount ?? 0 }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

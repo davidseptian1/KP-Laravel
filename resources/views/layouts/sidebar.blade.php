@@ -85,7 +85,7 @@
 
                 <!-- Deposit Form (Admin) -->
                 <li class="pc-item {{ $menuAdminDepositForm ?? '' }}">
-                    <a href="{{ route('admin.deposit.form') }}" class="pc-link">
+                    <a href="{{ route('admin.deposit.forms') }}" class="pc-link">
                         <span class="pc-micon"><i class="ti ti-clipboard"></i></span>
                         <span class="pc-mtext">Form Deposit</span>
                     </a>

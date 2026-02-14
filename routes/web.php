@@ -21,6 +21,8 @@ use App\Http\Controllers\LoanRequest\AdminLoanRequestController;
 use App\Http\Controllers\LoanRequest\AdminLoanRequestFormController;
 use App\Http\Controllers\LoanRequest\LoanRequestFormController;
 use App\Http\Controllers\AdminDepositController;
+use App\Http\Controllers\AdminDepositFormController;
+use App\Http\Controllers\DepositFormController;
 
 
 
@@ -63,6 +65,10 @@ Route::post('pengajuan-data/form/{token}', [DataRequestFormController::class, 's
 // Public Peminjaman Barang Form (no login required)
 Route::get('peminjaman-barang/form/{token}', [LoanRequestFormController::class, 'show'])->name('loan-request.form.show');
 Route::post('peminjaman-barang/form/{token}', [LoanRequestFormController::class, 'submit'])->name('loan-request.form.submit');
+
+// Public Deposit Form (no login required)
+Route::get('deposit/form/{token}', [DepositFormController::class, 'show'])->name('deposit.form.show');
+Route::post('deposit/form/{token}', [DepositFormController::class, 'submit'])->name('deposit.form.submit');
 
 // Public signed download for recap PDFs
 Route::get('recap/download/{file}', [RecapDownloadController::class, 'download'])
@@ -183,8 +189,9 @@ Route::middleware('checkLogin')->group(function () {
         Route::put('admin/peminjaman-barang/forms/{id}/toggle', [AdminLoanRequestFormController::class, 'toggle'])->name('admin.loan-request.forms.toggle');
 
         // Deposit (Admin)
-        Route::get('admin/deposit/form', [AdminDepositController::class, 'form'])->name('admin.deposit.form');
-        Route::post('admin/deposit/form', [AdminDepositController::class, 'store'])->name('admin.deposit.store');
+        Route::get('admin/deposit/forms', [AdminDepositFormController::class, 'index'])->name('admin.deposit.forms');
+        Route::post('admin/deposit/forms', [AdminDepositFormController::class, 'store'])->name('admin.deposit.forms.store');
+        Route::put('admin/deposit/forms/{id}/toggle', [AdminDepositFormController::class, 'toggle'])->name('admin.deposit.forms.toggle');
         Route::get('admin/deposit/monitoring', [AdminDepositController::class, 'monitoring'])->name('admin.deposit.monitoring');
 
         // Create Minusan

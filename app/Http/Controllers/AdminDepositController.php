@@ -9,42 +9,6 @@ use Illuminate\Support\Facades\DB;
 
 class AdminDepositController extends Controller
 {
-    public function form()
-    {
-        return view('admin.deposit.form', [
-            'title' => 'Form Deposit',
-            'menuAdminDepositForm' => 'active',
-        ]);
-    }
-
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'nama_supplier' => 'required|string|max:255',
-            'nominal' => 'required|numeric|min:0',
-            'bank' => 'required|string|max:100',
-            'server' => 'required|string|max:100',
-            'no_rek' => 'required|string|max:100',
-            'nama_rekening' => 'required|string|max:255',
-            'reply_penambahan' => 'nullable|string',
-            'jam' => 'required|date_format:H:i',
-        ]);
-
-        Deposit::create([
-            'user_id' => Auth::id(),
-            'nama_supplier' => $validated['nama_supplier'],
-            'nominal' => $validated['nominal'],
-            'bank' => $validated['bank'],
-            'server' => $validated['server'],
-            'no_rek' => $validated['no_rek'],
-            'nama_rekening' => $validated['nama_rekening'],
-            'reply_penambahan' => $validated['reply_penambahan'] ?? null,
-            'jam' => $validated['jam'],
-        ]);
-
-        return redirect()->route('admin.deposit.form')->with('success', 'Deposit berhasil disimpan');
-    }
-
     public function monitoring(Request $request)
     {
         $items = Deposit::orderByDesc('created_at')->paginate(15);
@@ -81,6 +45,20 @@ class AdminDepositController extends Controller
             ->orderByDesc('total')
             ->get();
 
+        $byAccount = Deposit::selectRaw('no_rek, nama_rekening, COUNT(*) as jumlah, SUM(nominal) as total')
+            ->groupBy('no_rek', 'nama_rekening')
+            ->orderByDesc('total')
+            ->get();
+
+        $byHour = Deposit::selectRaw('HOUR(jam) as jam, COUNT(*) as jumlah, SUM(nominal) as total')
+            ->groupBy('jam')
+            ->orderBy('jam')
+            ->get();
+
+        $replyCount = Deposit::whereNotNull('reply_penambahan')
+            ->where('reply_penambahan', '!=', '')
+            ->count();
+
         return view('admin.deposit.analysis', [
             'title' => 'Analisis Deposit',
             'menuDepositAnalysis' => 'active',
@@ -88,6 +66,9 @@ class AdminDepositController extends Controller
             'byBank' => $byBank,
             'byServer' => $byServer,
             'bySupplier' => $bySupplier,
+            'byAccount' => $byAccount,
+            'byHour' => $byHour,
+            'replyCount' => $replyCount,
         ]);
     }
 }
