@@ -83,6 +83,22 @@
                     </a>
                 </li>
 
+                <!-- Deposit Form (Admin) -->
+                <li class="pc-item {{ $menuAdminDepositForm ?? '' }}">
+                    <a href="{{ route('admin.deposit.form') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-clipboard"></i></span>
+                        <span class="pc-mtext">Form Deposit</span>
+                    </a>
+                </li>
+
+                <!-- Deposit Monitoring (Admin) -->
+                <li class="pc-item {{ $menuAdminDepositMonitoring ?? '' }}">
+                    <a href="{{ route('admin.deposit.monitoring') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-list-check"></i></span>
+                        <span class="pc-mtext">Monitoring Deposit</span>
+                    </a>
+                </li>
+
                 @endif
 
                 @if (auth()->check() && (auth()->user()->jabatan=='Admin' || auth()->user()->jabatan=='HRD'))
@@ -114,6 +130,14 @@
                             <i class="ti ti-alert-circle"></i>
                         </span>
                         <span class="pc-mtext">Report Khusus</span>
+                    </a>
+                </li>
+
+                <!-- Analisis Deposit -->
+                <li class="pc-item {{ $menuDepositAnalysis ?? '' }}">
+                    <a href="{{ route('admin.deposit.analysis') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-chart-bar"></i></span>
+                        <span class="pc-mtext">Analisis Deposit</span>
                     </a>
                 </li>
 

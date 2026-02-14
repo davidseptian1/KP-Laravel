@@ -20,6 +20,7 @@ use App\Http\Controllers\DataRequest\DataRequestFormController;
 use App\Http\Controllers\LoanRequest\AdminLoanRequestController;
 use App\Http\Controllers\LoanRequest\AdminLoanRequestFormController;
 use App\Http\Controllers\LoanRequest\LoanRequestFormController;
+use App\Http\Controllers\AdminDepositController;
 
 
 
@@ -181,6 +182,11 @@ Route::middleware('checkLogin')->group(function () {
         Route::post('admin/peminjaman-barang/forms', [AdminLoanRequestFormController::class, 'store'])->name('admin.loan-request.forms.store');
         Route::put('admin/peminjaman-barang/forms/{id}/toggle', [AdminLoanRequestFormController::class, 'toggle'])->name('admin.loan-request.forms.toggle');
 
+        // Deposit (Admin)
+        Route::get('admin/deposit/form', [AdminDepositController::class, 'form'])->name('admin.deposit.form');
+        Route::post('admin/deposit/form', [AdminDepositController::class, 'store'])->name('admin.deposit.store');
+        Route::get('admin/deposit/monitoring', [AdminDepositController::class, 'monitoring'])->name('admin.deposit.monitoring');
+
         // Create Minusan
         Route::get('minusan/create', [MinusanController::class, 'create'])->name('minusanCreate');
 
@@ -209,5 +215,7 @@ Route::middleware('checkLogin')->group(function () {
         Route::get('rekap-bulanan/pdf', [MinusanController::class, 'rekapPdf'])->name('rekap.pdf');
         
     });
+
+    Route::get('admin/deposit/analysis', [AdminDepositController::class, 'analysis'])->name('admin.deposit.analysis');
 
 });
