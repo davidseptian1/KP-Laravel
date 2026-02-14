@@ -45,6 +45,10 @@
                                 <th>Form</th>
                                 <th>Nama</th>
                                 <th>Divisi</th>
+                                <th>No Rekening</th>
+                                <th>Metode</th>
+                                <th>No/ID</th>
+                                <th>Atas Nama</th>
                                 <th>Barang</th>
                                 <th class="text-end">Nominal</th>
                                 <th>WA Penerima</th>
@@ -63,6 +67,19 @@
                                     <td>{{ $item->form?->kode_form ?? '-' }}</td>
                                     <td>{{ $item->nama ?? '-' }}</td>
                                     <td>{{ $item->divisi ?? '-' }}</td>
+                                    <td>{{ $item->no_rekening ?? '-' }}</td>
+                                    <td>
+                                        @if ($item->payment_method)
+                                            {{ $item->payment_method === 'ewallet' ? 'E-Wallet' : 'Bank' }}
+                                            @if ($item->payment_provider)
+                                                ({{ strtoupper($item->payment_provider) }})
+                                            @endif
+                                        @else
+                                            -
+                                        @endif
+                                    </td>
+                                    <td>{{ $item->payment_account_number ?? '-' }}</td>
+                                    <td>{{ $item->payment_account_name ?? '-' }}</td>
                                     <td>{{ $item->nama_barang ?? '-' }}</td>
                                     <td class="text-end">Rp {{ number_format($item->nominal, 0, ',', '.') }}</td>
                                     <td>{{ $item->wa_penerima ?? '-' }}</td>
@@ -95,15 +112,20 @@
                                                     </div>
                                                     <div class="modal-body">
                                                         <div class="d-flex flex-column gap-3">
+                                                            <div class="border rounded p-3 bg-light">
+                                                                <div class="fw-semibold">No Rekening</div>
+                                                                <div>{{ $item->no_rekening ?? '-' }}</div>
+                                                                <div class="mt-2">
+                                                                    <div><span class="fw-semibold">Metode:</span> {{ $item->payment_method ? ($item->payment_method === 'ewallet' ? 'E-Wallet' : 'Bank') : '-' }}</div>
+                                                                    <div><span class="fw-semibold">Provider:</span> {{ $item->payment_provider ? strtoupper($item->payment_provider) : '-' }}</div>
+                                                                    <div><span class="fw-semibold">No/ID:</span> {{ $item->payment_account_number ?? '-' }}</div>
+                                                                    <div><span class="fw-semibold">Atas Nama:</span> {{ $item->payment_account_name ?? '-' }}</div>
+                                                                </div>
+                                                            </div>
                                                             <div class="d-flex flex-wrap gap-2">
                                                                 <a class="btn btn-outline-secondary" target="_blank" href="{{ route('admin.reimburse.view', [$item->id, 0]) }}">Lihat Bukti</a>
                                                                 <a class="btn btn-outline-primary" href="{{ route('admin.reimburse.download', $item->id) }}">Download Bukti</a>
                                                             </div>
-
-                                                            <form method="POST" action="{{ route('admin.reimburse.sendWa', $item->id) }}">
-                                                                @csrf
-                                                                <button class="btn btn-outline-success">Kirim WA</button>
-                                                            </form>
 
                                                             @if (!empty($item->bukti_files) && count($item->bukti_files) > 1)
                                                                 <div class="small text-muted">
@@ -132,7 +154,7 @@
                                                                 <input type="file" name="payment_proof_image" class="form-control" accept="image/*" />
                                                                 <label class="form-label text-start mb-0">Catatan Admin</label>
                                                                 <input type="text" name="catatan_admin" value="{{ $item->catatan_admin }}" class="form-control" placeholder="Catatan admin" />
-                                                                <button class="btn btn-success">Update</button>
+                                                                <button class="btn btn-success">Update + Kirim WA</button>
                                                             </form>
                                                         </div>
                                                     </div>

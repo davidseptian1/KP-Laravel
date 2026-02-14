@@ -61,6 +61,9 @@ class DataRequestFormController extends Controller
             'wa_pengisi' => 'required|string|max:20',
         ]);
 
+        $validated['nomor_hp'] = $this->normalizePhone($validated['nomor_hp']);
+        $validated['wa_pengisi'] = $this->normalizePhone($validated['wa_pengisi']);
+
         $dataRequest = DB::transaction(function () use ($validated, $request, $form) {
             $fotoKtp = $request->file('foto_ktp')->store('data-request', 'local');
             $fotoSelfie = $request->file('foto_selfie')->store('data-request', 'local');
@@ -148,10 +151,16 @@ class DataRequestFormController extends Controller
         if (!$number) {
             return route('admin.data-request.index');
         }
+        $digits = $this->normalizePhone($number);
+        return 'https://wa.me/' . $digits . '?text=' . urlencode($message);
+    }
+
+    private function normalizePhone(string $number): string
+    {
         $digits = preg_replace('/\D+/', '', $number);
         if (str_starts_with($digits, '0')) {
             $digits = '62' . substr($digits, 1);
         }
-        return 'https://wa.me/' . $digits . '?text=' . urlencode($message);
+        return $digits;
     }
 }

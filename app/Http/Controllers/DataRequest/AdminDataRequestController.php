@@ -71,14 +71,19 @@ class AdminDataRequestController extends Controller
             'is_read' => false,
         ]);
 
-        if ($dataRequest->wa_pengisi) {
+        $targetNumber = $this->normalizePhone($dataRequest->wa_pengisi);
+        if ($targetNumber) {
             $message = "📢 UPDATE PENGAJUAN DATA\n\n" .
                 "Kode        : {$dataRequest->kode_pengajuan}\n" .
+                "Email Lama  : {$dataRequest->email_lama}\n" .
+                "Email Baru  : " . ($dataRequest->email_baru ?? '-') . "\n" .
+                "Jenis       : {$dataRequest->jenis_perubahan}\n" .
+                "Approved At : " . ($dataRequest->approved_at ? Carbon::parse($dataRequest->approved_at)->format('d/m/Y H:i') : '-') . "\n" .
                 "Status      : {$dataRequest->status}\n" .
                 "Catatan     : " . ($dataRequest->catatan_admin ?? '-') . "\n\n" .
                 "Terima kasih.";
 
-            $whatsApp->sendText($dataRequest->wa_pengisi, $message);
+            $whatsApp->sendText($targetNumber, $message);
         }
 
         return redirect()->route('admin.data-request.index')->with('success', 'Status pengajuan data berhasil diperbarui');
@@ -112,18 +117,33 @@ class AdminDataRequestController extends Controller
     {
         $dataRequest = DataRequest::findOrFail($id);
 
-        if (!$dataRequest->wa_pengisi) {
+        $targetNumber = $this->normalizePhone($dataRequest->wa_pengisi);
+        if (!$targetNumber) {
             return redirect()->route('admin.data-request.index')->with('error', 'Nomor WA pengisi belum tersedia');
         }
 
         $message = "📢 UPDATE PENGAJUAN DATA\n\n" .
             "Kode        : {$dataRequest->kode_pengajuan}\n" .
+            "Email Lama  : {$dataRequest->email_lama}\n" .
+            "Email Baru  : " . ($dataRequest->email_baru ?? '-') . "\n" .
+            "Jenis       : {$dataRequest->jenis_perubahan}\n" .
+            "Approved At : " . ($dataRequest->approved_at ? Carbon::parse($dataRequest->approved_at)->format('d/m/Y H:i') : '-') . "\n" .
             "Status      : {$dataRequest->status}\n" .
             "Catatan     : " . ($dataRequest->catatan_admin ?? '-') . "\n\n" .
             "Terima kasih.";
 
-        $whatsApp->sendText($dataRequest->wa_pengisi, $message);
+        $whatsApp->sendText($targetNumber, $message);
 
         return redirect()->route('admin.data-request.index')->with('success', 'Pesan WA terkirim');
     }
+
+    private function normalizePhone(?string $number): string
+    {
+        $digits = preg_replace('/\D+/', '', (string) $number);
+        if (str_starts_with($digits, '0')) {
+            $digits = '62' . substr($digits, 1);
+        }
+        return $digits;
+    }
+
 }

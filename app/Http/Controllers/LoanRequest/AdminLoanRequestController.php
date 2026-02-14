@@ -69,14 +69,15 @@ class AdminLoanRequestController extends Controller
             'is_read' => false,
         ]);
 
-        if ($loanRequest->wa_pengisi) {
+        $targetNumber = $this->normalizePhone($loanRequest->wa_pengisi);
+        if ($targetNumber) {
             $message = "📢 UPDATE PEMINJAMAN BARANG\n\n" .
                 "Kode        : {$loanRequest->kode_pengajuan}\n" .
                 "Status      : {$loanRequest->status}\n" .
                 "Catatan     : " . ($loanRequest->catatan_admin ?? '-') . "\n\n" .
                 "Terima kasih.";
 
-            $whatsApp->sendText($loanRequest->wa_pengisi, $message);
+            $whatsApp->sendText($targetNumber, $message);
         }
 
         return redirect()->route('admin.loan-request.index')->with('success', 'Status peminjaman barang berhasil diperbarui');
@@ -86,7 +87,8 @@ class AdminLoanRequestController extends Controller
     {
         $loanRequest = LoanRequest::findOrFail($id);
 
-        if (!$loanRequest->wa_pengisi) {
+        $targetNumber = $this->normalizePhone($loanRequest->wa_pengisi);
+        if (!$targetNumber) {
             return redirect()->route('admin.loan-request.index')->with('error', 'Nomor WA pengisi belum tersedia');
         }
 
@@ -96,8 +98,18 @@ class AdminLoanRequestController extends Controller
             "Catatan     : " . ($loanRequest->catatan_admin ?? '-') . "\n\n" .
             "Terima kasih.";
 
-        $whatsApp->sendText($loanRequest->wa_pengisi, $message);
+        $whatsApp->sendText($targetNumber, $message);
 
         return redirect()->route('admin.loan-request.index')->with('success', 'Pesan WA terkirim');
     }
+
+    private function normalizePhone(?string $number): string
+    {
+        $digits = preg_replace('/\D+/', '', (string) $number);
+        if (str_starts_with($digits, '0')) {
+            $digits = '62' . substr($digits, 1);
+        }
+        return $digits;
+    }
+
 }

@@ -31,7 +31,13 @@ class ReimburseWebController extends Controller
     {
         $validated = $request->validate([
             'nama' => 'required|string|max:255',
-            'no_rekening' => 'required|string|max:50',
+            'payment_method' => 'required|in:ewallet,bank',
+            'ewallet_provider' => 'required_if:payment_method,ewallet|nullable|string|max:50',
+            'ewallet_number' => 'required_if:payment_method,ewallet|nullable|string|max:50',
+            'ewallet_name' => 'required_if:payment_method,ewallet|nullable|string|max:100',
+            'bank_provider' => 'required_if:payment_method,bank|nullable|string|max:50',
+            'bank_account_number' => 'required_if:payment_method,bank|nullable|string|max:50',
+            'bank_account_name' => 'required_if:payment_method,bank|nullable|string|max:100',
             'divisi' => 'required|in:accounting,act,server,hrd,direksi,gudang,sosmed,host live,it',
             'nominal' => 'required|numeric|min:0',
             'nama_barang' => 'required|string|max:255',
@@ -44,7 +50,11 @@ class ReimburseWebController extends Controller
 
         $user = Auth::user();
 
-        $reimburse = DB::transaction(function () use ($validated, $request, $user) {
+        $noRekening = $validated['payment_method'] === 'ewallet'
+            ? 'E-Wallet - ' . ($validated['ewallet_provider'] ?? '-') . ' - ' . ($validated['ewallet_number'] ?? '-') . ' - ' . ($validated['ewallet_name'] ?? '-')
+            : 'Bank - ' . ($validated['bank_provider'] ?? '-') . ' - ' . ($validated['bank_account_number'] ?? '-') . ' - ' . ($validated['bank_account_name'] ?? '-');
+
+        $reimburse = DB::transaction(function () use ($validated, $request, $user, $noRekening) {
             $buktiFiles = [];
             foreach ($request->file('bukti', []) as $file) {
                 $buktiFiles[] = $file->store('reimburse', 'local');
@@ -59,7 +69,17 @@ class ReimburseWebController extends Controller
                 'user_id' => $user->id,
                 'form_id' => $validated['form_id'] ?? null,
                 'nama' => $validated['nama'],
-                'no_rekening' => $validated['no_rekening'],
+                'no_rekening' => $noRekening,
+                'payment_method' => $validated['payment_method'],
+                'payment_provider' => $validated['payment_method'] === 'ewallet'
+                    ? ($validated['ewallet_provider'] ?? null)
+                    : ($validated['bank_provider'] ?? null),
+                'payment_account_number' => $validated['payment_method'] === 'ewallet'
+                    ? ($validated['ewallet_number'] ?? null)
+                    : ($validated['bank_account_number'] ?? null),
+                'payment_account_name' => $validated['payment_method'] === 'ewallet'
+                    ? ($validated['ewallet_name'] ?? null)
+                    : ($validated['bank_account_name'] ?? null),
                 'divisi' => $validated['divisi'],
                 'kode_reimburse' => $kode,
                 'tanggal_pengajuan' => now(),

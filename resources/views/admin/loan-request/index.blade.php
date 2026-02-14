@@ -69,11 +69,6 @@
                                     </td>
                                     <td class="text-center">
                                         <div class="d-flex flex-column gap-2">
-                                            <form method="POST" action="{{ route('admin.loan-request.sendWa', $item->id) }}">
-                                                @csrf
-                                                <button class="btn btn-outline-success btn-sm">Kirim WA</button>
-                                            </form>
-
                                             <form method="POST" action="{{ route('admin.loan-request.update', $item->id) }}" class="d-flex flex-column gap-2">
                                                 @csrf
                                                 @method('PUT')
@@ -83,7 +78,7 @@
                                                     @endforeach
                                                 </select>
                                                 <input type="text" name="catatan_admin" value="{{ $item->catatan_admin }}" class="form-control form-control-sm" placeholder="Catatan admin" />
-                                                <button class="btn btn-success btn-sm">Update</button>
+                                                <button class="btn btn-success btn-sm">Update + Kirim WA</button>
                                             </form>
                                         </div>
                                     </td>
