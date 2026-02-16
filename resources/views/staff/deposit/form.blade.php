@@ -66,9 +66,39 @@
                     </div>
                     <button class="btn btn-primary w-100">Kirim Deposit</button>
                 </form>
+
+                @if (session('deposit_reply_text'))
+                    <hr class="my-4">
+                    <h6 class="mb-2">Reply Jawaban (siap copy)</h6>
+                    <textarea id="depositReplyText" class="form-control" rows="9" readonly>{{ session('deposit_reply_text') }}</textarea>
+                    <button type="button" class="btn btn-success w-100 mt-2" id="copyDepositReplyBtn">Copy Semua</button>
+                @endif
             </div>
         </div>
     </div>
 </div>
 
 @endsection
+
+@push('scripts')
+<script>
+    (function () {
+        const btn = document.getElementById('copyDepositReplyBtn');
+        const text = document.getElementById('depositReplyText');
+        if (!btn || !text) return;
+
+        btn.addEventListener('click', async function () {
+            try {
+                await navigator.clipboard.writeText(text.value);
+                btn.textContent = 'Berhasil di-copy';
+                setTimeout(() => btn.textContent = 'Copy Semua', 1500);
+            } catch (e) {
+                text.select();
+                document.execCommand('copy');
+                btn.textContent = 'Berhasil di-copy';
+                setTimeout(() => btn.textContent = 'Copy Semua', 1500);
+            }
+        });
+    })();
+</script>
+@endpush

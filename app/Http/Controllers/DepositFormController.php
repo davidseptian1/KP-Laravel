@@ -51,7 +51,7 @@ class DepositFormController extends Controller
             'jam' => 'required|date_format:H:i',
         ]);
 
-        Deposit::create([
+        $deposit = Deposit::create([
             'user_id' => Auth::id(),
             'form_id' => $form->id,
             'nama_supplier' => $validated['nama_supplier'],
@@ -64,6 +64,18 @@ class DepositFormController extends Controller
             'jam' => $validated['jam'],
         ]);
 
-        return redirect()->back()->with('success', 'Deposit berhasil dikirim');
+        $replyText = "FORM ORDER H2H\n" .
+            "Nama Suplier : {$deposit->nama_supplier}\n" .
+            "Nominal      : " . number_format((float) $deposit->nominal, 0, ',', '.') . "\n" .
+            "BANK         : {$deposit->bank}\n" .
+            "SERVER       : {$deposit->server}\n" .
+            "No. Rek      : {$deposit->no_rek}\n" .
+            "Nama Rek     : {$deposit->nama_rekening}\n" .
+            "Reply        : " . ($deposit->reply_penambahan ?: '-') . "\n" .
+            "Jam          : {$deposit->jam}";
+
+        return redirect()->back()
+            ->with('success', 'Deposit berhasil dikirim')
+            ->with('deposit_reply_text', $replyText);
     }
 }
