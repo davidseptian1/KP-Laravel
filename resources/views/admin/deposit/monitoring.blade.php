@@ -29,6 +29,7 @@
                         <thead class="table-light">
                             <tr>
                                 <th>Nama Supplier</th>
+                                <th>Jenis</th>
                                 <th class="text-end">Nominal</th>
                                 <th>BANK</th>
                                 <th>Server</th>
@@ -46,6 +47,7 @@
                             @forelse ($items as $item)
                                 <tr>
                                     <td>{{ $item->nama_supplier }}</td>
+                                    <td>{{ strtoupper($item->jenis_transaksi ?? 'deposit') }}</td>
                                     <td class="text-end">Rp {{ number_format($item->nominal, 0, ',', '.') }}</td>
                                     <td>{{ $item->bank }}</td>
                                     <td>{{ $item->server }}</td>
@@ -85,6 +87,13 @@
                                                                 <div class="col-md-6">
                                                                     <label class="form-label">Nominal</label>
                                                                     <input type="number" name="nominal" class="form-control" value="{{ (int)$item->nominal }}" required>
+                                                                </div>
+                                                                <div class="col-md-6">
+                                                                    <label class="form-label">Deposit / Hutang</label>
+                                                                    <select name="jenis_transaksi" class="form-select" required>
+                                                                        <option value="deposit" {{ ($item->jenis_transaksi ?? 'deposit') === 'deposit' ? 'selected' : '' }}>Deposit</option>
+                                                                        <option value="hutang" {{ ($item->jenis_transaksi ?? 'deposit') === 'hutang' ? 'selected' : '' }}>Hutang</option>
+                                                                    </select>
                                                                 </div>
                                                                 <div class="col-md-6">
                                                                     <label class="form-label">BANK</label>
@@ -155,7 +164,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="12" class="text-center text-muted py-4">Belum ada deposit</td>
+                                    <td colspan="13" class="text-center text-muted py-4">Belum ada deposit</td>
                                 </tr>
                             @endforelse
                         </tbody>

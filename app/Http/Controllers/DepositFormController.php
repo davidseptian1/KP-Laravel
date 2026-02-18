@@ -37,6 +37,7 @@ class DepositFormController extends Controller
         $validated = $request->validate([
             'form_id' => 'nullable|exists:deposit_forms,id',
             'nama_supplier' => 'required|string|max:255',
+            'jenis_transaksi' => 'required|in:deposit,hutang',
             'nominal' => 'required|numeric|min:1',
             'bank' => 'required|string|max:100',
             'server' => 'required|string|max:100',
@@ -57,6 +58,7 @@ class DepositFormController extends Controller
             'user_id' => Auth::id(),
             'form_id' => $formId,
             'nama_supplier' => $validated['nama_supplier'],
+            'jenis_transaksi' => $validated['jenis_transaksi'],
             'nominal' => $validated['nominal'],
             'bank' => $validated['bank'],
             'server' => $validated['server'],
@@ -111,6 +113,7 @@ class DepositFormController extends Controller
 
         $validated = $request->validate([
             'nama_supplier' => 'required|string|max:255',
+            'jenis_transaksi' => 'required|in:deposit,hutang',
             'nominal' => 'required|numeric|min:0',
             'bank' => 'required|string|max:100',
             'server' => 'required|string|max:100',
@@ -124,6 +127,7 @@ class DepositFormController extends Controller
             'user_id' => Auth::id(),
             'form_id' => $form->id,
             'nama_supplier' => $validated['nama_supplier'],
+            'jenis_transaksi' => $validated['jenis_transaksi'],
             'nominal' => $validated['nominal'],
             'bank' => $validated['bank'],
             'server' => $validated['server'],
@@ -137,6 +141,7 @@ class DepositFormController extends Controller
 
         $replyText = "FORM ORDER H2H\n" .
             "Nama Suplier : {$deposit->nama_supplier}\n" .
+            "Jenis        : " . strtoupper($deposit->jenis_transaksi) . "\n" .
             "Nominal      : " . number_format((float) $deposit->nominal, 0, ',', '.') . "\n" .
             "BANK         : {$deposit->bank}\n" .
             "SERVER       : {$deposit->server}\n" .

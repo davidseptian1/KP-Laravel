@@ -16,6 +16,7 @@ class Deposit extends Model
         'user_id',
         'form_id',
         'nama_supplier',
+        'jenis_transaksi',
         'nominal',
         'bank',
         'server',

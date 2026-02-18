@@ -41,6 +41,13 @@
                         <input type="number" name="nominal" class="form-control" required />
                     </div>
                     <div class="mb-3">
+                        <label class="form-label">Deposit / Hutang</label>
+                        <select name="jenis_transaksi" class="form-select" required>
+                            <option value="deposit">Deposit</option>
+                            <option value="hutang">Hutang</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label">BANK</label>
                         <input type="text" name="bank" class="form-control" required />
                     </div>

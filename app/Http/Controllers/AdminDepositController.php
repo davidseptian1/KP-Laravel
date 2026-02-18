@@ -47,6 +47,7 @@ class AdminDepositController extends Controller
     {
         $validated = $request->validate([
             'nama_supplier' => 'required|string|max:255',
+            'jenis_transaksi' => 'required|in:deposit,hutang',
             'nominal' => 'required|numeric|min:1',
             'bank' => 'required|string|max:100',
             'server' => 'required|string|max:100',
@@ -59,6 +60,7 @@ class AdminDepositController extends Controller
 
         $item = Deposit::findOrFail($id);
         $item->nama_supplier = $validated['nama_supplier'];
+        $item->jenis_transaksi = $validated['jenis_transaksi'];
         $item->nominal = $validated['nominal'];
         $item->bank = $validated['bank'];
         $item->server = $validated['server'];

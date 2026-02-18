@@ -34,6 +34,7 @@
                         <thead class="table-light">
                             <tr>
                                 <th>NAMA SUPPLIER</th>
+                                <th>JENIS</th>
                                 <th class="text-end">NOMINAL</th>
                                 <th>BANK</th>
                                 <th>SERVER</th>
@@ -49,6 +50,7 @@
                             @forelse ($items as $item)
                                 <tr>
                                     <td>{{ $item->nama_supplier }}</td>
+                                    <td>{{ strtoupper($item->jenis_transaksi ?? 'deposit') }}</td>
                                     <td class="text-end">{{ number_format($item->nominal, 0, ',', '.') }}</td>
                                     <td>{{ $item->bank }}</td>
                                     <td>{{ $item->server }}</td>
@@ -94,7 +96,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="10" class="text-center text-muted py-4">Belum ada request deposit</td>
+                                    <td colspan="11" class="text-center text-muted py-4">Belum ada request deposit</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -128,6 +130,13 @@
                         <div class="col-md-6">
                             <label class="form-label">Nominal</label>
                             <input type="number" name="nominal" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Deposit / Hutang</label>
+                            <select name="jenis_transaksi" class="form-select" required>
+                                <option value="deposit">Deposit</option>
+                                <option value="hutang">Hutang</option>
+                            </select>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Bank</label>
