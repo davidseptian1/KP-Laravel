@@ -54,7 +54,7 @@
                                     <td>{{ $item->reply_tiket ?? '-' }}</td>
                                     <td>{{ $item->reply_penambahan ?? '-' }}</td>
                                     <td>
-                                        <span class="badge bg-{{ $item->status === 'approved' ? 'success' : ($item->status === 'rejected' ? 'danger' : 'warning') }}">
+                                        <span class="badge bg-{{ $item->status === 'approved' ? 'success' : ($item->status === 'rejected' ? 'danger' : ($item->status === 'selesai' ? 'primary' : 'warning')) }}">
                                             {{ ucfirst($item->status ?? 'pending') }}
                                         </span>
                                     </td>
@@ -140,6 +140,7 @@
                                                             <select name="status" class="form-select" required>
                                                                 <option value="approved" {{ ($item->status ?? 'pending') === 'approved' ? 'selected' : '' }}>ACC</option>
                                                                 <option value="rejected" {{ ($item->status ?? 'pending') === 'rejected' ? 'selected' : '' }}>Rejected</option>
+                                                                <option value="selesai" {{ ($item->status ?? 'pending') === 'selesai' ? 'selected' : '' }}>Selesai</option>
                                                             </select>
                                                         </div>
                                                         <div class="modal-footer">

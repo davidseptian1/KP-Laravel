@@ -25,7 +25,7 @@ class AdminDepositController extends Controller
     {
         $validated = $request->validate([
             'reply_penambahan' => 'required|string',
-            'status' => 'required|in:pending,approved,rejected',
+            'status' => 'required|in:pending,approved,rejected,selesai',
         ]);
 
         $item = Deposit::findOrFail($id);
@@ -75,7 +75,7 @@ class AdminDepositController extends Controller
     public function updateStatus(Request $request, int $id)
     {
         $validated = $request->validate([
-            'status' => 'required|in:approved,rejected',
+            'status' => 'required|in:approved,rejected,selesai',
         ]);
 
         $item = Deposit::findOrFail($id);

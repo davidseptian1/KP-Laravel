@@ -57,7 +57,7 @@
                                     <td>{{ $item->reply_tiket ?? '-' }}</td>
                                     <td>{{ $item->reply_penambahan ?? 'Menunggu Konfirmasi Admin' }}</td>
                                     <td>
-                                        <span class="badge bg-{{ $item->status === 'approved' ? 'success' : ($item->status === 'rejected' ? 'danger' : 'warning') }}">
+                                        <span class="badge bg-{{ $item->status === 'approved' ? 'success' : ($item->status === 'rejected' ? 'danger' : ($item->status === 'selesai' ? 'primary' : 'warning')) }}">
                                             {{ ucfirst($item->status ?? 'pending') }}
                                         </span>
                                     </td>

@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::table('deposits', function (Blueprint $table) {
             $table->text('reply_tiket')->nullable()->after('nama_rekening');
-            $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending')->after('reply_penambahan');
+            $table->enum('status', ['pending', 'approved', 'rejected', 'selesai'])->default('pending')->after('reply_penambahan');
         });
     }
 
