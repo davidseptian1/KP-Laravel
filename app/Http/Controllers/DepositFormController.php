@@ -150,4 +150,24 @@ class DepositFormController extends Controller
             ->with('success', 'Deposit berhasil dikirim')
             ->with('deposit_reply_text', $replyText);
     }
+
+    public function updateReplyPenambahan(Request $request, int $id)
+    {
+        $validated = $request->validate([
+            'reply_penambahan' => 'required|string',
+        ]);
+
+        $item = Deposit::where('id', $id)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
+
+        if (($item->status ?? 'pending') !== 'approved') {
+            return redirect()->route('deposit.request.index')->with('error', 'Request belum approved oleh admin');
+        }
+
+        $item->reply_penambahan = $validated['reply_penambahan'];
+        $item->save();
+
+        return redirect()->route('deposit.request.index')->with('success', 'Reply Penambahan berhasil diupdate');
+    }
 }

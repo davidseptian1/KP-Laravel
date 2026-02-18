@@ -63,8 +63,30 @@
                                     </td>
                                     <td>
                                         @if (($item->status ?? 'pending') === 'approved')
-                                            <button type="button" class="btn btn-sm btn-primary" onclick="copyReply({{ $item->id }})">Input</button>
-                                            <textarea id="reply-copy-{{ $item->id }}" class="d-none">{{ $item->reply_penambahan }}</textarea>
+                                            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalInputReply-{{ $item->id }}">Input</button>
+
+                                            <div class="modal fade" id="modalInputReply-{{ $item->id }}" tabindex="-1" aria-hidden="true">
+                                                <div class="modal-dialog modal-dialog-centered">
+                                                    <div class="modal-content">
+                                                        <form method="POST" action="{{ route('deposit.request.reply.update', $item->id) }}">
+                                                            @csrf
+                                                            @method('PUT')
+                                                            <div class="modal-header">
+                                                                <h5 class="modal-title">Input Reply Penambahan</h5>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <label class="form-label">Reply Penambahan</label>
+                                                                <textarea name="reply_penambahan" class="form-control" rows="4" required>{{ $item->reply_penambahan }}</textarea>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                                                <button type="submit" class="btn btn-primary">Simpan</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         @else
                                             -
                                         @endif
@@ -144,16 +166,3 @@
 
 @endsection
 
-@push('scripts')
-<script>
-    function copyReply(id) {
-        const el = document.getElementById('reply-copy-' + id);
-        if (!el) return;
-        navigator.clipboard.writeText(el.value || '').then(() => {
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Reply berhasil di-copy', showConfirmButton: false, timer: 1500 });
-            }
-        });
-    }
-</script>
-@endpush
