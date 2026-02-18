@@ -43,6 +43,48 @@ class AdminDepositController extends Controller
         return redirect()->route('admin.deposit.monitoring')->with('success', 'Request deposit berhasil diperbarui');
     }
 
+    public function updateDetails(Request $request, int $id)
+    {
+        $validated = $request->validate([
+            'nama_supplier' => 'required|string|max:255',
+            'nominal' => 'required|numeric|min:1',
+            'bank' => 'required|string|max:100',
+            'server' => 'required|string|max:100',
+            'no_rek' => 'required|regex:/^[0-9]+$/|max:100',
+            'nama_rekening' => 'required|string|max:255',
+            'reply_tiket' => 'nullable|string',
+            'reply_penambahan' => 'required|string',
+            'jam' => 'required|date_format:H:i',
+        ]);
+
+        $item = Deposit::findOrFail($id);
+        $item->nama_supplier = $validated['nama_supplier'];
+        $item->nominal = $validated['nominal'];
+        $item->bank = $validated['bank'];
+        $item->server = $validated['server'];
+        $item->no_rek = $validated['no_rek'];
+        $item->nama_rekening = $validated['nama_rekening'];
+        $item->reply_tiket = $validated['reply_tiket'] ?? null;
+        $item->reply_penambahan = $validated['reply_penambahan'];
+        $item->jam = $validated['jam'];
+        $item->save();
+
+        return redirect()->route('admin.deposit.monitoring')->with('success', 'Data request deposit berhasil diedit');
+    }
+
+    public function updateStatus(Request $request, int $id)
+    {
+        $validated = $request->validate([
+            'status' => 'required|in:approved,rejected',
+        ]);
+
+        $item = Deposit::findOrFail($id);
+        $item->status = $validated['status'];
+        $item->save();
+
+        return redirect()->route('admin.deposit.monitoring')->with('success', 'Status request deposit berhasil diperbarui');
+    }
+
     public function analysis(Request $request)
     {
         $user = Auth::user();
