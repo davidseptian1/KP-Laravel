@@ -9,6 +9,23 @@ use Illuminate\Support\Facades\Auth;
 
 class DepositFormController extends Controller
 {
+    public function index()
+    {
+        $items = DepositForm::where('is_active', true)
+            ->where(function ($q) {
+                $q->whereNull('expires_at')
+                    ->orWhere('expires_at', '>=', now());
+            })
+            ->orderByDesc('created_at')
+            ->paginate(10);
+
+        return view('staff.deposit.index', [
+            'title' => 'Request Deposit',
+            'menuDepositRequest' => 'active',
+            'items' => $items,
+        ]);
+    }
+
     public function show(string $token)
     {
         $form = DepositForm::where('token', $token)->firstOrFail();

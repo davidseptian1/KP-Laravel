@@ -194,6 +194,14 @@
                     </a>
                 </li>
 
+                <!-- Request Deposit (Staff) -->
+                <li class="pc-item {{ $menuDepositRequest ?? '' }}">
+                    <a href="{{ route('deposit.request.index') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-wallet"></i></span>
+                        <span class="pc-mtext">Request Deposit</span>
+                    </a>
+                </li>
+
                 @endif
 
             </ul>

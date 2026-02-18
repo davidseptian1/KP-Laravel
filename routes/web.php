@@ -123,6 +123,9 @@ Route::middleware('checkLogin')->group(function () {
     // Reimburse (User)
     Route::get('reimburse', [ReimburseWebController::class, 'index'])->name('reimburse.index');
     Route::post('reimburse', [ReimburseWebController::class, 'store'])->name('reimburse.store');
+
+    // Deposit Request (User)
+    Route::get('deposit/request', [DepositFormController::class, 'index'])->name('deposit.request.index');
     
     // Import status polling
     Route::get('imports/status', [ImportStatusController::class, 'status'])->name('imports.status');
