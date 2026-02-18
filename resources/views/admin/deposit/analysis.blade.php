@@ -149,6 +149,33 @@
 
                 <div class="row mt-4">
                     <div class="col-lg-6">
+                        <h5>Ringkasan per Status</h5>
+                        <div class="table-responsive mb-4">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Status</th>
+                                        <th class="text-end">Jumlah</th>
+                                        <th class="text-end">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse ($byStatus as $row)
+                                        <tr>
+                                            <td>{{ ucfirst($row->status) }}</td>
+                                            <td class="text-end">{{ $row->jumlah }}</td>
+                                            <td class="text-end">Rp {{ number_format($row->total, 0, ',', '.') }}</td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="3" class="text-center text-muted">Belum ada data</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
                         <h5>Ringkasan per No Rek & Nama Rekening</h5>
                         <div class="table-responsive">
                             <table class="table table-hover align-middle">

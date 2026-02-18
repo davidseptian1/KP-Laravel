@@ -34,9 +34,12 @@
                                 <th>Server</th>
                                 <th>No-Rek</th>
                                 <th>Nama Rekening</th>
+                                <th>Reply Tiket</th>
                                 <th>Reply Penambahan</th>
+                                <th>Status</th>
                                 <th>Jam</th>
                                 <th>Tanggal</th>
+                                <th class="text-center">Aksi Admin</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -48,13 +51,32 @@
                                     <td>{{ $item->server }}</td>
                                     <td>{{ $item->no_rek }}</td>
                                     <td>{{ $item->nama_rekening }}</td>
+                                    <td>{{ $item->reply_tiket ?? '-' }}</td>
                                     <td>{{ $item->reply_penambahan ?? '-' }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ $item->status === 'approved' ? 'success' : ($item->status === 'rejected' ? 'danger' : 'warning') }}">
+                                            {{ ucfirst($item->status ?? 'pending') }}
+                                        </span>
+                                    </td>
                                     <td>{{ $item->jam ? \Carbon\Carbon::parse($item->jam)->format('H:i') : '-' }}</td>
                                     <td>{{ $item->created_at?->format('d/m/Y H:i') }}</td>
+                                    <td class="text-center" style="min-width:280px;">
+                                        <form method="POST" action="{{ route('admin.deposit.update', $item->id) }}" class="d-flex flex-column gap-2">
+                                            @csrf
+                                            @method('PUT')
+                                            <input type="text" name="reply_penambahan" class="form-control form-control-sm" value="{{ $item->reply_penambahan ?? 'Menunggu Konfirmasi Admin' }}" required>
+                                            <select name="status" class="form-select form-select-sm" required>
+                                                <option value="pending" {{ ($item->status ?? 'pending') === 'pending' ? 'selected' : '' }}>Pending</option>
+                                                <option value="approved" {{ ($item->status ?? 'pending') === 'approved' ? 'selected' : '' }}>ACC</option>
+                                                <option value="rejected" {{ ($item->status ?? 'pending') === 'rejected' ? 'selected' : '' }}>Rejected</option>
+                                            </select>
+                                            <button class="btn btn-sm btn-success">Simpan</button>
+                                        </form>
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="9" class="text-center text-muted py-4">Belum ada deposit</td>
+                                    <td colspan="12" class="text-center text-muted py-4">Belum ada deposit</td>
                                 </tr>
                             @endforelse
                         </tbody>

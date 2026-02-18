@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Deposit;
 use App\Models\DepositForm;
+use App\Models\NotificationItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -11,19 +12,70 @@ class DepositFormController extends Controller
 {
     public function index()
     {
-        $items = DepositForm::where('is_active', true)
+        $activeForms = DepositForm::where('is_active', true)
             ->where(function ($q) {
                 $q->whereNull('expires_at')
                     ->orWhere('expires_at', '>=', now());
             })
+            ->orderByDesc('created_at')
+            ->get();
+
+        $items = Deposit::where('user_id', Auth::id())
             ->orderByDesc('created_at')
             ->paginate(10);
 
         return view('staff.deposit.index', [
             'title' => 'Request Deposit',
             'menuDepositRequest' => 'active',
+            'activeForms' => $activeForms,
             'items' => $items,
         ]);
+    }
+
+    public function storeFromRequestPage(Request $request)
+    {
+        $validated = $request->validate([
+            'form_id' => 'nullable|exists:deposit_forms,id',
+            'nama_supplier' => 'required|string|max:255',
+            'nominal' => 'required|numeric|min:1',
+            'bank' => 'required|string|max:100',
+            'server' => 'required|string|max:100',
+            'no_rek' => 'required|regex:/^[0-9]+$/|max:100',
+            'nama_rekening' => 'required|string|max:255',
+            'reply_tiket' => 'nullable|string',
+            'jam' => 'required|date_format:H:i',
+        ]);
+
+        $formId = $validated['form_id'] ?? DepositForm::where('is_active', true)
+            ->where(function ($q) {
+                $q->whereNull('expires_at')
+                    ->orWhere('expires_at', '>=', now());
+            })
+            ->value('id');
+
+        $deposit = Deposit::create([
+            'user_id' => Auth::id(),
+            'form_id' => $formId,
+            'nama_supplier' => $validated['nama_supplier'],
+            'nominal' => $validated['nominal'],
+            'bank' => $validated['bank'],
+            'server' => $validated['server'],
+            'no_rek' => $validated['no_rek'],
+            'nama_rekening' => $validated['nama_rekening'],
+            'reply_tiket' => $validated['reply_tiket'] ?? null,
+            'reply_penambahan' => 'Menunggu Konfirmasi Admin',
+            'status' => 'pending',
+            'jam' => $validated['jam'],
+        ]);
+
+        NotificationItem::create([
+            'type' => 'deposit_request_submitted',
+            'reference_id' => $deposit->id,
+            'message' => 'Request deposit baru: ' . $deposit->nama_supplier,
+            'is_read' => false,
+        ]);
+
+        return redirect()->route('deposit.request.index')->with('success', 'Request deposit berhasil dikirim');
     }
 
     public function show(string $token)
@@ -62,9 +114,9 @@ class DepositFormController extends Controller
             'nominal' => 'required|numeric|min:0',
             'bank' => 'required|string|max:100',
             'server' => 'required|string|max:100',
-            'no_rek' => 'required|string|max:100',
+            'no_rek' => 'required|regex:/^[0-9]+$/|max:100',
             'nama_rekening' => 'required|string|max:255',
-            'reply_penambahan' => 'nullable|string',
+            'reply_tiket' => 'nullable|string',
             'jam' => 'required|date_format:H:i',
         ]);
 
@@ -77,7 +129,9 @@ class DepositFormController extends Controller
             'server' => $validated['server'],
             'no_rek' => $validated['no_rek'],
             'nama_rekening' => $validated['nama_rekening'],
-            'reply_penambahan' => $validated['reply_penambahan'] ?? null,
+            'reply_tiket' => $validated['reply_tiket'] ?? null,
+            'reply_penambahan' => 'Menunggu Konfirmasi Admin',
+            'status' => 'pending',
             'jam' => $validated['jam'],
         ]);
 
@@ -88,7 +142,8 @@ class DepositFormController extends Controller
             "SERVER       : {$deposit->server}\n" .
             "No. Rek      : {$deposit->no_rek}\n" .
             "Nama Rek     : {$deposit->nama_rekening}\n" .
-            "Reply        : " . ($deposit->reply_penambahan ?: '-') . "\n" .
+            "Reply Tiket  : " . ($deposit->reply_tiket ?: '-') . "\n" .
+            "Reply Admin  : " . ($deposit->reply_penambahan ?: '-') . "\n" .
             "Jam          : {$deposit->jam}";
 
         return redirect()->back()

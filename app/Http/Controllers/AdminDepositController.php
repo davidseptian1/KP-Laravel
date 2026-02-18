@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Deposit;
+use App\Models\NotificationItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -18,6 +19,28 @@ class AdminDepositController extends Controller
             'menuAdminDepositMonitoring' => 'active',
             'items' => $items,
         ]);
+    }
+
+    public function update(Request $request, int $id)
+    {
+        $validated = $request->validate([
+            'reply_penambahan' => 'required|string',
+            'status' => 'required|in:pending,approved,rejected',
+        ]);
+
+        $item = Deposit::findOrFail($id);
+        $item->reply_penambahan = $validated['reply_penambahan'];
+        $item->status = $validated['status'];
+        $item->save();
+
+        NotificationItem::create([
+            'type' => 'deposit_request_updated',
+            'reference_id' => $item->id,
+            'message' => 'Status request deposit diperbarui: ' . $item->nama_supplier,
+            'is_read' => false,
+        ]);
+
+        return redirect()->route('admin.deposit.monitoring')->with('success', 'Request deposit berhasil diperbarui');
     }
 
     public function analysis(Request $request)
@@ -59,6 +82,11 @@ class AdminDepositController extends Controller
             ->where('reply_penambahan', '!=', '')
             ->count();
 
+        $byStatus = Deposit::selectRaw('status, COUNT(*) as jumlah, SUM(nominal) as total')
+            ->groupBy('status')
+            ->orderByDesc('jumlah')
+            ->get();
+
         return view('admin.deposit.analysis', [
             'title' => 'Analisis Deposit',
             'menuDepositAnalysis' => 'active',
@@ -69,6 +97,7 @@ class AdminDepositController extends Controller
             'byAccount' => $byAccount,
             'byHour' => $byHour,
             'replyCount' => $replyCount,
+            'byStatus' => $byStatus,
         ]);
     }
 }

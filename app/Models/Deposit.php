@@ -14,13 +14,16 @@ class Deposit extends Model
 
     protected $fillable = [
         'user_id',
+        'form_id',
         'nama_supplier',
         'nominal',
         'bank',
         'server',
         'no_rek',
         'nama_rekening',
+        'reply_tiket',
         'reply_penambahan',
+        'status',
         'jam',
     ];
 

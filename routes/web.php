@@ -126,6 +126,7 @@ Route::middleware('checkLogin')->group(function () {
 
     // Deposit Request (User)
     Route::get('deposit/request', [DepositFormController::class, 'index'])->name('deposit.request.index');
+    Route::post('deposit/request', [DepositFormController::class, 'storeFromRequestPage'])->name('deposit.request.store');
     
     // Import status polling
     Route::get('imports/status', [ImportStatusController::class, 'status'])->name('imports.status');
@@ -196,6 +197,7 @@ Route::middleware('checkLogin')->group(function () {
         Route::post('admin/deposit/forms', [AdminDepositFormController::class, 'store'])->name('admin.deposit.forms.store');
         Route::put('admin/deposit/forms/{id}/toggle', [AdminDepositFormController::class, 'toggle'])->name('admin.deposit.forms.toggle');
         Route::get('admin/deposit/monitoring', [AdminDepositController::class, 'monitoring'])->name('admin.deposit.monitoring');
+        Route::put('admin/deposit/{id}', [AdminDepositController::class, 'update'])->name('admin.deposit.update');
 
         // Create Minusan
         Route::get('minusan/create', [MinusanController::class, 'create'])->name('minusanCreate');
