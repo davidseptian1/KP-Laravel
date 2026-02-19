@@ -24,6 +24,7 @@ use App\Http\Controllers\AdminDepositController;
 use App\Http\Controllers\AdminDepositFormController;
 use App\Http\Controllers\DepositFormController;
 use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\ServerController;
 
 
 
@@ -164,6 +165,12 @@ Route::middleware('checkLogin')->group(function () {
         Route::post('admin/supplier', [SupplierController::class, 'store'])->name('admin.supplier.store');
         Route::put('admin/supplier/{id}', [SupplierController::class, 'update'])->name('admin.supplier.update');
         Route::delete('admin/supplier/{id}', [SupplierController::class, 'destroy'])->name('admin.supplier.destroy');
+
+        // Server Management
+        Route::get('admin/server', [ServerController::class, 'index'])->name('admin.server.index');
+        Route::post('admin/server', [ServerController::class, 'store'])->name('admin.server.store');
+        Route::put('admin/server/{id}', [ServerController::class, 'update'])->name('admin.server.update');
+        Route::delete('admin/server/{id}', [ServerController::class, 'destroy'])->name('admin.server.destroy');
 
         // Reimburse (Admin)
         Route::get('admin/reimburse', [AdminReimburseWebController::class, 'index'])->name('admin.reimburse.index');

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\LoanRequest;
 use App\Models\LoanRequestForm;
 use App\Models\NotificationItem;
+use App\Models\Server;
 use App\Services\WhatsAppMetricService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -30,6 +31,7 @@ class LoanRequestFormController extends Controller
             'title' => 'Form Peminjaman Barang',
             'menuLoanRequest' => 'active',
             'form' => $form,
+            'servers' => Server::orderBy('nama_server')->pluck('nama_server'),
         ]);
     }
 
@@ -46,7 +48,7 @@ class LoanRequestFormController extends Controller
         }
 
         $validated = $request->validate([
-            'nama_server' => 'required|string|max:255',
+            'nama_server' => 'required|string|max:255|exists:servers,nama_server',
             'keperluan' => 'required|string',
             'nomor_hp' => 'required|string|max:20',
             'barang_dipinjam' => 'required|string|max:255',

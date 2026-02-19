@@ -74,7 +74,15 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Server</label>
-                        <input type="text" name="server" class="form-control" required />
+                        <select name="server" class="form-select" required>
+                            <option value="">Pilih Server</option>
+                            @foreach (($servers ?? collect()) as $server)
+                                <option value="{{ $server }}" {{ old('server') === $server ? 'selected' : '' }}>{{ $server }}</option>
+                            @endforeach
+                        </select>
+                        @if (($servers ?? collect())->isEmpty())
+                            <small class="text-danger">Belum ada server. Minta admin tambah server di menu Server Manajemen.</small>
+                        @endif
                     </div>
                     <div class="mb-3">
                         <label class="form-label">No-Rek</label>

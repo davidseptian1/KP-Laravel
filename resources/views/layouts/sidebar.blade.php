@@ -178,6 +178,14 @@
                     </a>
                 </li>
 
+                <!-- Server Management -->
+                <li class="pc-item {{ $menuAdminServer ?? '' }}">
+                    <a href="{{ route('admin.server.index') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-server"></i></span>
+                        <span class="pc-mtext">Server Manajemen</span>
+                    </a>
+                </li>
+
                 @endif
 
                 @if (auth()->check() && auth()->user()->jabatan=='Staff')

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Deposit;
 use App\Models\DepositForm;
 use App\Models\NotificationItem;
+use App\Models\Server;
 use App\Models\Supplier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -26,6 +27,7 @@ class DepositFormController extends Controller
             ->paginate(10);
 
         $suppliers = Supplier::orderBy('nama_supplier')->pluck('nama_supplier');
+        $servers = Server::orderBy('nama_server')->pluck('nama_server');
 
         return view('staff.deposit.index', [
             'title' => 'Request Deposit',
@@ -33,6 +35,7 @@ class DepositFormController extends Controller
             'activeForms' => $activeForms,
             'items' => $items,
             'suppliers' => $suppliers,
+            'servers' => $servers,
         ]);
     }
 
@@ -44,7 +47,7 @@ class DepositFormController extends Controller
             'jenis_transaksi' => 'required|in:deposit,hutang',
             'nominal' => 'required|numeric|min:1',
             'bank' => 'required|string|max:100',
-            'server' => 'required|string|max:100',
+            'server' => 'required|string|max:100|exists:servers,nama_server',
             'no_rek' => 'required|regex:/^[0-9]+$/|max:100',
             'nama_rekening' => 'required|string|max:255',
             'reply_tiket' => 'nullable|string',
@@ -101,6 +104,7 @@ class DepositFormController extends Controller
             'menuDeposit' => 'active',
             'form' => $form,
             'suppliers' => Supplier::orderBy('nama_supplier')->pluck('nama_supplier'),
+            'servers' => Server::orderBy('nama_server')->pluck('nama_server'),
         ]);
     }
 
@@ -121,7 +125,7 @@ class DepositFormController extends Controller
             'jenis_transaksi' => 'required|in:deposit,hutang',
             'nominal' => 'required|numeric|min:0',
             'bank' => 'required|string|max:100',
-            'server' => 'required|string|max:100',
+            'server' => 'required|string|max:100|exists:servers,nama_server',
             'no_rek' => 'required|regex:/^[0-9]+$/|max:100',
             'nama_rekening' => 'required|string|max:255',
             'reply_tiket' => 'nullable|string',

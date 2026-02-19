@@ -51,7 +51,15 @@
                     @csrf
                     <div class="mb-3">
                         <label class="form-label">Nama Server</label>
-                        <input type="text" name="nama_server" class="form-control" required />
+                        <select name="nama_server" class="form-select" required>
+                            <option value="">Pilih Server</option>
+                            @foreach (($servers ?? collect()) as $server)
+                                <option value="{{ $server }}" {{ old('nama_server') === $server ? 'selected' : '' }}>{{ $server }}</option>
+                            @endforeach
+                        </select>
+                        @if (($servers ?? collect())->isEmpty())
+                            <small class="text-danger">Belum ada server. Minta admin tambah server di menu Server Manajemen.</small>
+                        @endif
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Keperluan</label>
