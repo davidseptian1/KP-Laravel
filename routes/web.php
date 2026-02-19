@@ -23,6 +23,7 @@ use App\Http\Controllers\LoanRequest\LoanRequestFormController;
 use App\Http\Controllers\AdminDepositController;
 use App\Http\Controllers\AdminDepositFormController;
 use App\Http\Controllers\DepositFormController;
+use App\Http\Controllers\SupplierController;
 
 
 
@@ -157,6 +158,12 @@ Route::middleware('checkLogin')->group(function () {
 
         // User PDF
         Route::get('user/pdf', [UserController::class, 'pdf'])->name('userPdf');
+
+        // Supplier Management
+        Route::get('admin/supplier', [SupplierController::class, 'index'])->name('admin.supplier.index');
+        Route::post('admin/supplier', [SupplierController::class, 'store'])->name('admin.supplier.store');
+        Route::put('admin/supplier/{id}', [SupplierController::class, 'update'])->name('admin.supplier.update');
+        Route::delete('admin/supplier/{id}', [SupplierController::class, 'destroy'])->name('admin.supplier.destroy');
 
         // Reimburse (Admin)
         Route::get('admin/reimburse', [AdminReimburseWebController::class, 'index'])->name('admin.reimburse.index');

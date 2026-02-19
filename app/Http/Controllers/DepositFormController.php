@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Deposit;
 use App\Models\DepositForm;
 use App\Models\NotificationItem;
+use App\Models\Supplier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -24,11 +25,14 @@ class DepositFormController extends Controller
             ->orderByDesc('created_at')
             ->paginate(10);
 
+        $suppliers = Supplier::orderBy('nama_supplier')->pluck('nama_supplier');
+
         return view('staff.deposit.index', [
             'title' => 'Request Deposit',
             'menuDepositRequest' => 'active',
             'activeForms' => $activeForms,
             'items' => $items,
+            'suppliers' => $suppliers,
         ]);
     }
 
@@ -36,7 +40,7 @@ class DepositFormController extends Controller
     {
         $validated = $request->validate([
             'form_id' => 'nullable|exists:deposit_forms,id',
-            'nama_supplier' => 'required|string|max:255',
+            'nama_supplier' => 'required|string|max:255|exists:suppliers,nama_supplier',
             'jenis_transaksi' => 'required|in:deposit,hutang',
             'nominal' => 'required|numeric|min:1',
             'bank' => 'required|string|max:100',
@@ -96,6 +100,7 @@ class DepositFormController extends Controller
             'title' => 'Form Deposit',
             'menuDeposit' => 'active',
             'form' => $form,
+            'suppliers' => Supplier::orderBy('nama_supplier')->pluck('nama_supplier'),
         ]);
     }
 
@@ -112,7 +117,7 @@ class DepositFormController extends Controller
         }
 
         $validated = $request->validate([
-            'nama_supplier' => 'required|string|max:255',
+            'nama_supplier' => 'required|string|max:255|exists:suppliers,nama_supplier',
             'jenis_transaksi' => 'required|in:deposit,hutang',
             'nominal' => 'required|numeric|min:0',
             'bank' => 'required|string|max:100',

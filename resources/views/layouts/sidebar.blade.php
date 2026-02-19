@@ -170,6 +170,14 @@
                     </a>
                 </li>
 
+                <!-- Supplier Management -->
+                <li class="pc-item {{ $menuAdminSupplier ?? '' }}">
+                    <a href="{{ route('admin.supplier.index') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-building-store"></i></span>
+                        <span class="pc-mtext">Supplier Manajemen</span>
+                    </a>
+                </li>
+
                 @endif
 
                 @if (auth()->check() && auth()->user()->jabatan=='Staff')

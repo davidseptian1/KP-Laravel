@@ -125,7 +125,15 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label">Nama Supplier</label>
-                            <input type="text" name="nama_supplier" class="form-control" required>
+                            <select name="nama_supplier" class="form-select" required>
+                                <option value="">Pilih Supplier</option>
+                                @foreach (($suppliers ?? collect()) as $supplier)
+                                    <option value="{{ $supplier }}">{{ $supplier }}</option>
+                                @endforeach
+                            </select>
+                            @if (($suppliers ?? collect())->isEmpty())
+                                <small class="text-danger">Belum ada supplier. Minta admin tambah supplier di menu Supplier Manajemen.</small>
+                            @endif
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Nominal</label>
