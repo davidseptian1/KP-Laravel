@@ -133,12 +133,10 @@ class ReimburseFormController extends Controller
             $whatsApp->sendText($reimburse->wa_penerima, $message);
         }
 
-        if ($reimburse->wa_penerima) {
-            $waLink = $this->buildWaLink($reimburse->wa_penerima, $message);
-            return redirect()->away($waLink);
-        }
-
-        return redirect()->back()->with('success', 'Pengajuan reimburse berhasil dikirim');
+        return redirect()->back()->with([
+            'success' => 'Pengajuan reimburse berhasil dikirim',
+            'reimburse_submitted' => true,
+        ]);
     }
 
     private function generateKodeReimburse(): string

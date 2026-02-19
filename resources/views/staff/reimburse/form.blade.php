@@ -30,7 +30,15 @@
                 <h5 class="mb-0">Isi Form Reimburse</h5>
             </div>
             <div class="card-body">
-                <form method="POST" action="{{ route('reimburse.form.submit', $form->token) }}" enctype="multipart/form-data">
+                @if (session('success'))
+                    <div class="alert alert-success">{{ session('success') }}</div>
+                @endif
+
+                <div id="reimburseNotedAlert" class="alert alert-info d-none">
+                    <strong>Noted:</strong> Pengajuan Anda sudah tercatat. Jika ada revisi, klik <strong>Pengajuan Ulang</strong>.
+                </div>
+
+                <form id="reimburseForm" method="POST" action="{{ route('reimburse.form.submit', $form->token) }}" enctype="multipart/form-data">
                     @csrf
                     <div class="mb-3">
                         <label class="form-label">Nama</label>
@@ -103,7 +111,8 @@
                         <label class="form-label">WhatsApp Pengisi</label>
                         <input type="text" name="wa_pengisi" class="form-control" placeholder="628xxxxxxxxxx" required />
                     </div>
-                    <button class="btn btn-primary w-100">Kirim Pengajuan</button>
+                    <button type="submit" id="reimburseSubmitBtn" class="btn btn-primary w-100">Kirim Pengajuan</button>
+                    <button type="button" id="reimburseResubmitBtn" class="btn btn-warning w-100 d-none mt-2">Pengajuan Ulang</button>
                 </form>
             </div>
         </div>
@@ -115,6 +124,12 @@
 @push('scripts')
 <script>
     (function () {
+        const form = document.getElementById('reimburseForm');
+        const submitBtn = document.getElementById('reimburseSubmitBtn');
+        const resubmitBtn = document.getElementById('reimburseResubmitBtn');
+        const notedAlert = document.getElementById('reimburseNotedAlert');
+        const wasSubmitted = @json((bool) session('reimburse_submitted'));
+
         const paymentMethod = document.getElementById('payment_method');
         const ewalletFields = document.getElementById('ewallet_fields');
         const bankFields = document.getElementById('bank_fields');
@@ -157,8 +172,46 @@
             }
         }
 
+        function setFormEnabled(enabled) {
+            form.querySelectorAll('input, select, textarea, button').forEach((el) => {
+                if (el === resubmitBtn || el === submitBtn) return;
+                el.disabled = !enabled;
+            });
+        }
+
+        function applySubmittedState() {
+            submitBtn.classList.add('d-none');
+            resubmitBtn.classList.remove('d-none');
+            notedAlert.classList.remove('d-none');
+            setFormEnabled(false);
+        }
+
+        function applyInitialState() {
+            submitBtn.classList.remove('d-none');
+            resubmitBtn.classList.add('d-none');
+            notedAlert.classList.add('d-none');
+            setFormEnabled(true);
+            toggleFields();
+        }
+
         paymentMethod.addEventListener('change', toggleFields);
         toggleFields();
+
+        if (wasSubmitted) {
+            applySubmittedState();
+        }
+
+        form.addEventListener('submit', function () {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Mengirim...';
+        });
+
+        resubmitBtn.addEventListener('click', function () {
+            form.reset();
+            applyInitialState();
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Kirim Pengajuan';
+        });
     })();
 </script>
 @endpush

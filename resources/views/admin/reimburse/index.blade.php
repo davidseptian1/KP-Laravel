@@ -57,7 +57,7 @@
                                 <th>Tanggal</th>
                                 <th>Status</th>
                                 <th>Catatan</th>
-                                <th class="text-center">Aksi</th>
+                                <th class="text-center" style="position: sticky; right: 0; background: #f8f9fa; z-index: 2; min-width: 120px;">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -100,7 +100,7 @@
                                         </span>
                                     </td>
                                     <td>{{ $item->catatan_admin ?? '-' }}</td>
-                                    <td class="text-center">
+                                    <td class="text-center" style="position: sticky; right: 0; background: #fff; z-index: 1; min-width: 120px;">
                                         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#aksiModal-{{ $item->id }}">Lihat</button>
 
                                         <div class="modal fade" id="aksiModal-{{ $item->id }}" tabindex="-1" aria-labelledby="aksiModalLabel-{{ $item->id }}" aria-hidden="true">

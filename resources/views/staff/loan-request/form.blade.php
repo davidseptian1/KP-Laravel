@@ -30,7 +30,15 @@
                 <h5 class="mb-0">Form Peminjaman Barang</h5>
             </div>
             <div class="card-body">
-                <form method="POST" action="{{ route('loan-request.form.submit', $form->token) }}">
+                @if (session('success'))
+                    <div class="alert alert-success">{{ session('success') }}</div>
+                @endif
+
+                <div id="loanRequestNotedAlert" class="alert alert-info d-none">
+                    <strong>Noted:</strong> Pengajuan Anda sudah tercatat. Jika ada revisi, klik <strong>Pengajuan Ulang</strong>.
+                </div>
+
+                <form id="loanRequestForm" method="POST" action="{{ route('loan-request.form.submit', $form->token) }}">
                     @csrf
                     <div class="mb-3">
                         <label class="form-label">Nama Server</label>
@@ -64,7 +72,8 @@
                         <label class="form-label">WhatsApp Pengisi</label>
                         <input type="text" name="wa_pengisi" class="form-control" placeholder="628xxxxxxxxxx" required />
                     </div>
-                    <button class="btn btn-primary w-100">Kirim Pengajuan</button>
+                    <button type="submit" id="loanRequestSubmitBtn" class="btn btn-primary w-100">Kirim Pengajuan</button>
+                    <button type="button" id="loanRequestResubmitBtn" class="btn btn-warning w-100 d-none mt-2">Pengajuan Ulang</button>
                 </form>
             </div>
         </div>
@@ -72,3 +81,54 @@
 </div>
 
 @endsection
+
+@push('scripts')
+<script>
+    (function () {
+        const form = document.getElementById('loanRequestForm');
+        if (!form) return;
+
+        const submitBtn = document.getElementById('loanRequestSubmitBtn');
+        const resubmitBtn = document.getElementById('loanRequestResubmitBtn');
+        const notedAlert = document.getElementById('loanRequestNotedAlert');
+        const wasSubmitted = @json((bool) session('loan_request_submitted'));
+
+        function setFormEnabled(enabled) {
+            form.querySelectorAll('input, select, textarea, button').forEach((el) => {
+                if (el === resubmitBtn || el === submitBtn) return;
+                el.disabled = !enabled;
+            });
+        }
+
+        function applySubmittedState() {
+            submitBtn.classList.add('d-none');
+            resubmitBtn.classList.remove('d-none');
+            notedAlert.classList.remove('d-none');
+            setFormEnabled(false);
+        }
+
+        function applyInitialState() {
+            submitBtn.classList.remove('d-none');
+            resubmitBtn.classList.add('d-none');
+            notedAlert.classList.add('d-none');
+            setFormEnabled(true);
+        }
+
+        if (wasSubmitted) {
+            applySubmittedState();
+        }
+
+        form.addEventListener('submit', function () {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Mengirim...';
+        });
+
+        resubmitBtn.addEventListener('click', function () {
+            form.reset();
+            applyInitialState();
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Kirim Pengajuan';
+        });
+    })();
+</script>
+@endpush

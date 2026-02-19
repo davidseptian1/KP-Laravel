@@ -107,8 +107,10 @@ class LoanRequestFormController extends Controller
             $whatsApp->sendText($loanRequest->wa_penerima, $message);
         }
 
-        $waLink = $this->buildWaLink($loanRequest->wa_penerima, $message);
-        return redirect()->away($waLink);
+        return redirect()->back()->with([
+            'success' => 'Pengajuan peminjaman barang berhasil dikirim',
+            'loan_request_submitted' => true,
+        ]);
     }
 
     private function generateKodePengajuan(): string

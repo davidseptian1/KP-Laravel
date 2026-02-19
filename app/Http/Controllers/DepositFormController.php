@@ -153,6 +153,7 @@ class DepositFormController extends Controller
 
         return redirect()->back()
             ->with('success', 'Deposit berhasil dikirim')
+            ->with('deposit_submitted', true)
             ->with('deposit_reply_text', $replyText);
     }
 

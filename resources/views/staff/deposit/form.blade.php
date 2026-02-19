@@ -30,7 +30,7 @@
                 <h5 class="mb-0">Isi Form Deposit</h5>
             </div>
             <div class="card-body">
-                <form method="POST" action="{{ route('deposit.form.submit', $form->token) }}">
+                <form method="POST" action="{{ route('deposit.form.submit', $form->token) }}" id="depositRequestForm">
                     @csrf
                     <div class="mb-3">
                         <label class="form-label">Nama Supplier</label>
@@ -64,14 +64,20 @@
                         <input type="text" name="nama_rekening" class="form-control" required />
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Reply Penambahan</label>
-                        <textarea name="reply_penambahan" class="form-control" rows="3"></textarea>
+                        <label class="form-label">Reply Tiket</label>
+                        <textarea name="reply_tiket" class="form-control" rows="3"></textarea>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Jam</label>
                         <input type="time" name="jam" class="form-control" required />
                     </div>
-                    <button class="btn btn-primary w-100">Kirim Deposit</button>
+
+                    <div id="submitNoted" class="alert alert-info mt-2 d-none">
+                        Noted: Anda telah melakukan pengajuan, jika anda ingin melakukan pengajuan ulang klik button "Pengajuan Ulang".
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100" id="btnSubmit">Kirim Pengajuan</button>
+                    <button type="button" class="btn btn-warning w-100 d-none mt-2" id="btnResubmit">Pengajuan Ulang</button>
                 </form>
 
                 @if (session('deposit_reply_text'))
@@ -90,6 +96,56 @@
 @push('scripts')
 <script>
     (function () {
+        const form = document.getElementById('depositRequestForm');
+        const submitBtn = document.getElementById('btnSubmit');
+        const resubmitBtn = document.getElementById('btnResubmit');
+        const submitNoted = document.getElementById('submitNoted');
+        const wasSubmitted = {{ session('deposit_submitted') ? 'true' : 'false' }};
+
+        function toggleSubmittedState(submitted) {
+            if (!form || !submitBtn || !resubmitBtn || !submitNoted) return;
+
+            if (submitted) {
+                submitBtn.classList.add('d-none');
+                resubmitBtn.classList.remove('d-none');
+                submitNoted.classList.remove('d-none');
+            } else {
+                submitBtn.classList.remove('d-none');
+                resubmitBtn.classList.add('d-none');
+                submitNoted.classList.add('d-none');
+            }
+
+            form.querySelectorAll('input, select, textarea').forEach((el) => {
+                if (el.id === 'depositReplyText') return;
+                if (el.name === '_token') return;
+                if (el.id === 'btnSubmit' || el.id === 'btnResubmit') return;
+                el.disabled = submitted;
+            });
+        }
+
+        if (form) {
+            form.addEventListener('submit', function () {
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Mengirim...';
+                }
+            });
+        }
+
+        if (resubmitBtn) {
+            resubmitBtn.addEventListener('click', function () {
+                if (!form) return;
+                form.reset();
+                toggleSubmittedState(false);
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Kirim Pengajuan';
+                }
+            });
+        }
+
+        toggleSubmittedState(wasSubmitted);
+
         const btn = document.getElementById('copyDepositReplyBtn');
         const text = document.getElementById('depositReplyText');
         if (!btn || !text) return;

@@ -124,8 +124,10 @@ class DataRequestFormController extends Controller
             $whatsApp->sendText($dataRequest->wa_penerima, $message);
         }
 
-        $waLink = $this->buildWaLink($dataRequest->wa_penerima, $message);
-        return redirect()->away($waLink);
+        return redirect()->back()->with([
+            'success' => 'Pengajuan data berhasil dikirim',
+            'data_request_submitted' => true,
+        ]);
     }
 
     private function generateKodePengajuan(): string
