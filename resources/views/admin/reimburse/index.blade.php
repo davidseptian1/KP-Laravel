@@ -156,6 +156,12 @@
                                                                 <input type="text" name="catatan_admin" value="{{ $item->catatan_admin }}" class="form-control" placeholder="Catatan admin" />
                                                                 <button class="btn btn-success">Update + Kirim WA</button>
                                                             </form>
+
+                                                            <form method="POST" action="{{ route('admin.reimburse.destroy', $item->id) }}" onsubmit="return confirm('Yakin ingin menghapus data reimburse ini?');">
+                                                                @csrf
+                                                                @method('DELETE')
+                                                                <button type="submit" class="btn btn-danger">Hapus</button>
+                                                            </form>
                                                         </div>
                                                     </div>
                                                 </div>

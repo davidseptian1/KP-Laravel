@@ -161,6 +161,7 @@ Route::middleware('checkLogin')->group(function () {
         // Reimburse (Admin)
         Route::get('admin/reimburse', [AdminReimburseWebController::class, 'index'])->name('admin.reimburse.index');
         Route::put('admin/reimburse/{id}', [AdminReimburseWebController::class, 'update'])->name('admin.reimburse.update');
+        Route::delete('admin/reimburse/{id}', [AdminReimburseWebController::class, 'destroy'])->name('admin.reimburse.destroy');
         Route::get('admin/reimburse/{id}/download', [AdminReimburseWebController::class, 'download'])->name('admin.reimburse.download');
         Route::get('admin/reimburse/{id}/bukti/{index?}', [AdminReimburseWebController::class, 'view'])->name('admin.reimburse.view');
         Route::post('admin/reimburse/{id}/send-wa', [AdminReimburseWebController::class, 'sendWa'])->name('admin.reimburse.sendWa');
@@ -174,6 +175,7 @@ Route::middleware('checkLogin')->group(function () {
         // Pengajuan Data (Admin)
         Route::get('admin/pengajuan-data', [AdminDataRequestController::class, 'index'])->name('admin.data-request.index');
         Route::put('admin/pengajuan-data/{id}', [AdminDataRequestController::class, 'update'])->name('admin.data-request.update');
+        Route::delete('admin/pengajuan-data/{id}', [AdminDataRequestController::class, 'destroy'])->name('admin.data-request.destroy');
         Route::get('admin/pengajuan-data/{id}/view/{type}', [AdminDataRequestController::class, 'viewFile'])->name('admin.data-request.view');
         Route::get('admin/pengajuan-data/{id}/download/{type}', [AdminDataRequestController::class, 'downloadFile'])->name('admin.data-request.download');
         Route::post('admin/pengajuan-data/{id}/send-wa', [AdminDataRequestController::class, 'sendWa'])->name('admin.data-request.sendWa');
@@ -186,6 +188,7 @@ Route::middleware('checkLogin')->group(function () {
         // Peminjaman Barang (Admin)
         Route::get('admin/peminjaman-barang', [AdminLoanRequestController::class, 'index'])->name('admin.loan-request.index');
         Route::put('admin/peminjaman-barang/{id}', [AdminLoanRequestController::class, 'update'])->name('admin.loan-request.update');
+        Route::delete('admin/peminjaman-barang/{id}', [AdminLoanRequestController::class, 'destroy'])->name('admin.loan-request.destroy');
         Route::post('admin/peminjaman-barang/{id}/send-wa', [AdminLoanRequestController::class, 'sendWa'])->name('admin.loan-request.sendWa');
 
         // Peminjaman Barang Form (Admin)
@@ -201,6 +204,7 @@ Route::middleware('checkLogin')->group(function () {
         Route::put('admin/deposit/{id}', [AdminDepositController::class, 'update'])->name('admin.deposit.update');
         Route::put('admin/deposit/{id}/details', [AdminDepositController::class, 'updateDetails'])->name('admin.deposit.update-details');
         Route::put('admin/deposit/{id}/status', [AdminDepositController::class, 'updateStatus'])->name('admin.deposit.update-status');
+        Route::delete('admin/deposit/{id}', [AdminDepositController::class, 'destroy'])->name('admin.deposit.destroy');
 
         // Create Minusan
         Route::get('minusan/create', [MinusanController::class, 'create'])->name('minusanCreate');

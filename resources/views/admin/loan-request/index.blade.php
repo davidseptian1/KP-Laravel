@@ -80,6 +80,12 @@
                                                 <input type="text" name="catatan_admin" value="{{ $item->catatan_admin }}" class="form-control form-control-sm" placeholder="Catatan admin" />
                                                 <button class="btn btn-success btn-sm">Update + Kirim WA</button>
                                             </form>
+
+                                            <form method="POST" action="{{ route('admin.loan-request.destroy', $item->id) }}" onsubmit="return confirm('Yakin ingin menghapus peminjaman barang ini?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
+                                            </form>
                                         </div>
                                     </td>
                                 </tr>

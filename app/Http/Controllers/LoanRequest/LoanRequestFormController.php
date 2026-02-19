@@ -107,9 +107,22 @@ class LoanRequestFormController extends Controller
             $whatsApp->sendText($loanRequest->wa_penerima, $message);
         }
 
+        $adminNumber = config('whatsapp.admin_numbers.0') ?: '-';
+        $replyText = "FORM PEMINJAMAN BARANG\n" .
+            "Kode         : {$loanRequest->kode_pengajuan}\n" .
+            "Nama Server  : {$loanRequest->nama_server}\n" .
+            "Keperluan    : {$loanRequest->keperluan}\n" .
+            "Nomor HP     : {$loanRequest->nomor_hp}\n" .
+            "Barang       : {$loanRequest->barang_dipinjam}\n" .
+            "Tgl Pinjam   : " . Carbon::parse($loanRequest->tanggal_pinjam)->format('d/m/Y H:i') . "\n" .
+            "Tgl Kembali  : " . ($loanRequest->tanggal_kembali ? Carbon::parse($loanRequest->tanggal_kembali)->format('d/m/Y H:i') : '-') . "\n" .
+            "WA Pengisi   : {$loanRequest->wa_pengisi}\n\n" .
+            "Note: kirimkan ke WhatsApp admin, jika ingin diproses {$adminNumber}";
+
         return redirect()->back()->with([
             'success' => 'Pengajuan peminjaman barang berhasil dikirim',
             'loan_request_submitted' => true,
+            'loan_request_reply_text' => $replyText,
         ]);
     }
 

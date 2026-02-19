@@ -30,6 +30,19 @@
                 <h5 class="mb-0">Isi Form Deposit</h5>
             </div>
             <div class="card-body">
+                @if (session('success'))
+                    <div class="alert alert-success">{{ session('success') }}</div>
+                @endif
+
+                @if (session('deposit_reply_text'))
+                    <div class="alert alert-warning">
+                        Salin data berikut dan kirimkan ke WhatsApp admin jika ingin diproses.
+                    </div>
+                    <textarea id="depositReplyText" class="form-control" rows="9" readonly>{{ session('deposit_reply_text') }}</textarea>
+                    <button type="button" class="btn btn-success w-100 mt-2" id="copyDepositReplyBtn">Copy Semua</button>
+                    <hr class="my-3">
+                @endif
+
                 <form method="POST" action="{{ route('deposit.form.submit', $form->token) }}" id="depositRequestForm">
                     @csrf
                     <div class="mb-3">
@@ -80,12 +93,6 @@
                     <button type="button" class="btn btn-warning w-100 d-none mt-2" id="btnResubmit">Pengajuan Ulang</button>
                 </form>
 
-                @if (session('deposit_reply_text'))
-                    <hr class="my-4">
-                    <h6 class="mb-2">Reply Jawaban (siap copy)</h6>
-                    <textarea id="depositReplyText" class="form-control" rows="9" readonly>{{ session('deposit_reply_text') }}</textarea>
-                    <button type="button" class="btn btn-success w-100 mt-2" id="copyDepositReplyBtn">Copy Semua</button>
-                @endif
             </div>
         </div>
     </div>

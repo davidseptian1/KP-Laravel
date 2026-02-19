@@ -124,9 +124,26 @@ class DataRequestFormController extends Controller
             $whatsApp->sendText($dataRequest->wa_penerima, $message);
         }
 
+        $adminNumber = config('whatsapp.admin_numbers.0') ?: '-';
+        $replyText = "FORM PENGAJUAN DATA\n" .
+            "Kode         : {$dataRequest->kode_pengajuan}\n" .
+            "Aplikasi     : " . strtoupper($dataRequest->aplikasi) . "\n" .
+            "Username     : {$dataRequest->username_akun}\n" .
+            "Nomor HP     : {$dataRequest->nomor_hp}\n" .
+            "Email Lama   : {$dataRequest->email_lama}\n" .
+            "Email Baru   : " . ($dataRequest->email_baru ?: '-') . "\n" .
+            "Nama Pemohon : {$dataRequest->nama_pemohon}\n" .
+            "Jenis        : {$dataRequest->jenis_perubahan}\n" .
+            "Alasan       : {$dataRequest->alasan_perubahan}\n" .
+            "WA Pengisi   : {$dataRequest->wa_pengisi}\n" .
+            "KTP          : Terlampir\n" .
+            "Selfie KTP   : Terlampir\n\n" .
+            "Note: kirimkan ke WhatsApp admin, jika ingin diproses {$adminNumber}";
+
         return redirect()->back()->with([
             'success' => 'Pengajuan data berhasil dikirim',
             'data_request_submitted' => true,
+            'data_request_reply_text' => $replyText,
         ]);
     }
 

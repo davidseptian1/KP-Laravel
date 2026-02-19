@@ -139,6 +139,7 @@ class DepositFormController extends Controller
             'jam' => $validated['jam'],
         ]);
 
+        $adminNumber = config('whatsapp.admin_numbers.0') ?: '-';
         $replyText = "FORM ORDER H2H\n" .
             "Nama Suplier : {$deposit->nama_supplier}\n" .
             "Jenis        : " . strtoupper($deposit->jenis_transaksi) . "\n" .
@@ -149,7 +150,8 @@ class DepositFormController extends Controller
             "Nama Rek     : {$deposit->nama_rekening}\n" .
             "Reply Tiket  : " . ($deposit->reply_tiket ?: '-') . "\n" .
             "Reply Admin  : " . ($deposit->reply_penambahan ?: '-') . "\n" .
-            "Jam          : {$deposit->jam}";
+            "Jam          : {$deposit->jam}\n\n" .
+            "Note: kirimkan ke WhatsApp admin, jika ingin diproses {$adminNumber}";
 
         return redirect()->back()
             ->with('success', 'Deposit berhasil dikirim')

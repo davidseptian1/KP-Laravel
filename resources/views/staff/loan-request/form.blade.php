@@ -34,6 +34,15 @@
                     <div class="alert alert-success">{{ session('success') }}</div>
                 @endif
 
+                @if (session('loan_request_reply_text'))
+                    <div class="alert alert-warning">
+                        Salin data berikut dan kirimkan ke WhatsApp admin jika ingin diproses.
+                    </div>
+                    <textarea id="loanRequestReplyText" class="form-control" rows="10" readonly>{{ session('loan_request_reply_text') }}</textarea>
+                    <button type="button" class="btn btn-success w-100 mt-2" id="copyLoanRequestReplyBtn">Copy Semua</button>
+                    <hr class="my-3">
+                @endif
+
                 <div id="loanRequestNotedAlert" class="alert alert-info d-none">
                     <strong>Noted:</strong> Pengajuan Anda sudah tercatat. Jika ada revisi, klik <strong>Pengajuan Ulang</strong>.
                 </div>
@@ -129,6 +138,23 @@
             submitBtn.disabled = false;
             submitBtn.textContent = 'Kirim Pengajuan';
         });
+
+        const copyBtn = document.getElementById('copyLoanRequestReplyBtn');
+        const copyText = document.getElementById('loanRequestReplyText');
+        if (copyBtn && copyText) {
+            copyBtn.addEventListener('click', async function () {
+                try {
+                    await navigator.clipboard.writeText(copyText.value);
+                    copyBtn.textContent = 'Berhasil di-copy';
+                    setTimeout(() => copyBtn.textContent = 'Copy Semua', 1500);
+                } catch (e) {
+                    copyText.select();
+                    document.execCommand('copy');
+                    copyBtn.textContent = 'Berhasil di-copy';
+                    setTimeout(() => copyBtn.textContent = 'Copy Semua', 1500);
+                }
+            });
+        }
     })();
 </script>
 @endpush

@@ -87,6 +87,14 @@ class AdminDepositController extends Controller
         return redirect()->route('admin.deposit.monitoring')->with('success', 'Status request deposit berhasil diperbarui');
     }
 
+    public function destroy(int $id)
+    {
+        $item = Deposit::findOrFail($id);
+        $item->delete();
+
+        return redirect()->route('admin.deposit.monitoring')->with('success', 'Request deposit berhasil dihapus');
+    }
+
     public function analysis(Request $request)
     {
         $user = Auth::user();

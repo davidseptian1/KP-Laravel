@@ -63,9 +63,14 @@
                                     <td>{{ $item->jam ? \Carbon\Carbon::parse($item->jam)->format('H:i') : '-' }}</td>
                                     <td>{{ $item->created_at?->format('d/m/Y H:i') }}</td>
                                     <td class="text-center" style="min-width:220px;">
-                                        <div class="d-flex gap-2 justify-content-center">
+                                        <div class="d-flex gap-2 justify-content-center align-items-center flex-wrap">
                                             <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editModal-{{ $item->id }}">Edit</button>
                                             <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#statusModal-{{ $item->id }}">Status</button>
+                                            <form method="POST" action="{{ route('admin.deposit.destroy', $item->id) }}" onsubmit="return confirm('Yakin ingin menghapus request deposit ini?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">Hapus</button>
+                                            </form>
                                         </div>
 
                                         <div class="modal fade" id="editModal-{{ $item->id }}" tabindex="-1" aria-hidden="true">

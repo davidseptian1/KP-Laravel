@@ -103,6 +103,14 @@ class AdminLoanRequestController extends Controller
         return redirect()->route('admin.loan-request.index')->with('success', 'Pesan WA terkirim');
     }
 
+    public function destroy(int $id)
+    {
+        $loanRequest = LoanRequest::findOrFail($id);
+        $loanRequest->delete();
+
+        return redirect()->route('admin.loan-request.index')->with('success', 'Data peminjaman barang berhasil dihapus');
+    }
+
     private function normalizePhone(?string $number): string
     {
         $digits = preg_replace('/\D+/', '', (string) $number);

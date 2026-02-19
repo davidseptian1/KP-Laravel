@@ -149,6 +149,32 @@ class AdminReimburseWebController extends Controller
         return redirect()->route('admin.reimburse.index')->with('success', 'Pesan WA terkirim');
     }
 
+    public function destroy(int $id)
+    {
+        $reimburse = Reimburse::findOrFail($id);
+
+        $paths = [];
+        if ($reimburse->bukti_file) {
+            $paths[] = $reimburse->bukti_file;
+        }
+        if (is_array($reimburse->bukti_files)) {
+            $paths = array_merge($paths, $reimburse->bukti_files);
+        }
+        if ($reimburse->payment_proof_image) {
+            $paths[] = $reimburse->payment_proof_image;
+        }
+
+        foreach (array_unique(array_filter($paths)) as $path) {
+            if (Storage::disk('local')->exists($path)) {
+                Storage::disk('local')->delete($path);
+            }
+        }
+
+        $reimburse->delete();
+
+        return redirect()->route('admin.reimburse.index')->with('success', 'Data reimburse berhasil dihapus');
+    }
+
     public function view(int $id, int $index = 0)
     {
         $reimburse = Reimburse::findOrFail($id);

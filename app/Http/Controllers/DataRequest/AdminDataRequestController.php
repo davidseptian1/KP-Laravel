@@ -137,6 +137,21 @@ class AdminDataRequestController extends Controller
         return redirect()->route('admin.data-request.index')->with('success', 'Pesan WA terkirim');
     }
 
+    public function destroy(int $id)
+    {
+        $dataRequest = DataRequest::findOrFail($id);
+
+        foreach ([$dataRequest->foto_ktp, $dataRequest->foto_selfie] as $path) {
+            if ($path && Storage::disk('local')->exists($path)) {
+                Storage::disk('local')->delete($path);
+            }
+        }
+
+        $dataRequest->delete();
+
+        return redirect()->route('admin.data-request.index')->with('success', 'Pengajuan data berhasil dihapus');
+    }
+
     private function normalizePhone(?string $number): string
     {
         $digits = preg_replace('/\D+/', '', (string) $number);

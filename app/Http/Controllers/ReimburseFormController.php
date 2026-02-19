@@ -133,9 +133,25 @@ class ReimburseFormController extends Controller
             $whatsApp->sendText($reimburse->wa_penerima, $message);
         }
 
+        $adminNumber = config('whatsapp.admin_numbers.0') ?: '-';
+        $replyText = "FORM REIMBURSE\n" .
+            "Kode          : {$reimburse->kode_reimburse}\n" .
+            "Nama          : {$reimburse->nama}\n" .
+            "Metode        : " . ($reimburse->payment_method === 'ewallet' ? 'E-Wallet' : 'Bank') . "\n" .
+            "Provider      : " . ($reimburse->payment_provider ? strtoupper($reimburse->payment_provider) : '-') . "\n" .
+            "No Rekening   : {$reimburse->no_rekening}\n" .
+            "Divisi        : {$reimburse->divisi}\n" .
+            "Nominal       : Rp " . number_format((float) $reimburse->nominal, 0, ',', '.') . "\n" .
+            "Nama Barang   : {$reimburse->nama_barang}\n" .
+            "Keperluan     : {$reimburse->keperluan}\n" .
+            "WA Pengisi    : " . ($reimburse->wa_pengisi ?: '-') . "\n" .
+            "Bukti         : Terlampir\n\n" .
+            "Note: kirimkan ke WhatsApp admin, jika ingin diproses {$adminNumber}";
+
         return redirect()->back()->with([
             'success' => 'Pengajuan reimburse berhasil dikirim',
             'reimburse_submitted' => true,
+            'reimburse_reply_text' => $replyText,
         ]);
     }
 
