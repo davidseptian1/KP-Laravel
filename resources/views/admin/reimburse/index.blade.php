@@ -100,8 +100,15 @@
                                         </span>
                                     </td>
                                     <td>{{ $item->catatan_admin ?? '-' }}</td>
-                                    <td class="text-center" style="position: sticky; right: 0; background: #fff; z-index: 1; min-width: 120px;">
-                                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#aksiModal-{{ $item->id }}">Lihat</button>
+                                    <td class="text-center" style="position: sticky; right: 0; background: #fff; z-index: 1; min-width: 170px;">
+                                        <div class="d-flex gap-2 justify-content-center">
+                                            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#aksiModal-{{ $item->id }}">Lihat</button>
+                                            <form method="POST" action="{{ route('admin.reimburse.destroy', $item->id) }}" onsubmit="return confirm('Yakin ingin menghapus data reimburse ini?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
+                                            </form>
+                                        </div>
 
                                         <div class="modal fade" id="aksiModal-{{ $item->id }}" tabindex="-1" aria-labelledby="aksiModalLabel-{{ $item->id }}" aria-hidden="true">
                                             <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -157,11 +164,6 @@
                                                                 <button class="btn btn-success">Update + Kirim WA</button>
                                                             </form>
 
-                                                            <form method="POST" action="{{ route('admin.reimburse.destroy', $item->id) }}" onsubmit="return confirm('Yakin ingin menghapus data reimburse ini?');">
-                                                                @csrf
-                                                                @method('DELETE')
-                                                                <button type="submit" class="btn btn-danger">Hapus</button>
-                                                            </form>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -187,3 +189,15 @@
 </div>
 
 @endsection
+
+@push('scripts')
+<script>
+    (function () {
+        document.querySelectorAll('[id^="aksiModal-"]').forEach(function (modalEl) {
+            if (modalEl.parentElement !== document.body) {
+                document.body.appendChild(modalEl);
+            }
+        });
+    })();
+</script>
+@endpush
