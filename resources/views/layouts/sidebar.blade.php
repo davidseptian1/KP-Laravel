@@ -35,19 +35,15 @@
                     </a>
                 </li>
 
+                    <li class="pc-item pc-caption">
+                        <label>Monitoring Manajemen</label>
+                    </li>
+
                 <!-- Reimburse (Admin) -->
                 <li class="pc-item {{ $menuAdminReimburse ?? '' }}">
                     <a href="{{ route('admin.reimburse.index') }}" class="pc-link">
                         <span class="pc-micon"><i class="ti ti-receipt"></i></span>
                         <span class="pc-mtext">Reimburse Monitoring</span>
-                    </a>
-                </li>
-
-                <!-- Reimburse Form (Admin) -->
-                <li class="pc-item {{ $menuAdminReimburseForm ?? '' }}">
-                    <a href="{{ route('admin.reimburse.forms') }}" class="pc-link">
-                        <span class="pc-micon"><i class="ti ti-link"></i></span>
-                        <span class="pc-mtext">Reimburse Form</span>
                     </a>
                 </li>
 
@@ -59,14 +55,6 @@
                     </a>
                 </li>
 
-                <!-- Pengajuan Data Form (Admin) -->
-                <li class="pc-item {{ $menuAdminDataRequestForm ?? '' }}">
-                    <a href="{{ route('admin.data-request.forms') }}" class="pc-link">
-                        <span class="pc-micon"><i class="ti ti-link"></i></span>
-                        <span class="pc-mtext">Form Pengajuan Data</span>
-                    </a>
-                </li>
-
                 <!-- Peminjaman Barang Monitoring (Admin) -->
                 <li class="pc-item {{ $menuAdminLoanRequest ?? '' }}">
                     <a href="{{ route('admin.loan-request.index') }}" class="pc-link">
@@ -75,21 +63,6 @@
                     </a>
                 </li>
 
-                <!-- Peminjaman Barang Form (Admin) -->
-                <li class="pc-item {{ $menuAdminLoanRequestForm ?? '' }}">
-                    <a href="{{ route('admin.loan-request.forms') }}" class="pc-link">
-                        <span class="pc-micon"><i class="ti ti-link"></i></span>
-                        <span class="pc-mtext">Form Peminjaman<br>Barang</span>
-                    </a>
-                </li>
-
-                <!-- Deposit Form (Admin) -->
-                <li class="pc-item {{ $menuAdminDepositForm ?? '' }}">
-                    <a href="{{ route('admin.deposit.forms') }}" class="pc-link">
-                        <span class="pc-micon"><i class="ti ti-clipboard"></i></span>
-                        <span class="pc-mtext">Form Deposit</span>
-                    </a>
-                </li>
 
                 <!-- Deposit Monitoring (Admin) -->
                 <li class="pc-item {{ $menuAdminDepositMonitoring ?? '' }}">
@@ -98,6 +71,42 @@
                         <span class="pc-mtext">Monitoring Deposit</span>
                     </a>
                 </li>
+
+                    <li class="pc-item pc-caption">
+                        <label>Form Manajement</label>
+                    </li>
+
+                    <!-- Reimburse Form (Admin) -->
+                    <li class="pc-item {{ $menuAdminReimburseForm ?? '' }}">
+                        <a href="{{ route('admin.reimburse.forms') }}" class="pc-link">
+                            <span class="pc-micon"><i class="ti ti-link"></i></span>
+                            <span class="pc-mtext">Reimburse Form</span>
+                        </a>
+                    </li>
+
+                    <!-- Pengajuan Data Form (Admin) -->
+                    <li class="pc-item {{ $menuAdminDataRequestForm ?? '' }}">
+                        <a href="{{ route('admin.data-request.forms') }}" class="pc-link">
+                            <span class="pc-micon"><i class="ti ti-link"></i></span>
+                            <span class="pc-mtext">Form Pengajuan Data</span>
+                        </a>
+                    </li>
+
+                    <!-- Peminjaman Barang Form (Admin) -->
+                    <li class="pc-item {{ $menuAdminLoanRequestForm ?? '' }}">
+                        <a href="{{ route('admin.loan-request.forms') }}" class="pc-link">
+                            <span class="pc-micon"><i class="ti ti-link"></i></span>
+                            <span class="pc-mtext">Form Peminjaman<br>Barang</span>
+                        </a>
+                    </li>
+
+                    <!-- Deposit Form (Admin) -->
+                    <li class="pc-item {{ $menuAdminDepositForm ?? '' }}">
+                        <a href="{{ route('admin.deposit.forms') }}" class="pc-link">
+                            <span class="pc-micon"><i class="ti ti-clipboard"></i></span>
+                            <span class="pc-mtext">Form Deposit</span>
+                        </a>
+                    </li>
 
                 <li class="pc-item pc-caption">
                     <label>Data Matrix</label>
