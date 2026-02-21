@@ -175,6 +175,7 @@ Route::middleware('checkLogin')->group(function () {
 
         // Data Matrix
         Route::get('admin/data-matrix/tag-nomor-pasca-bayar', [DataMatrixController::class, 'tagNomorPascaBayar'])->name('admin.data-matrix.tag-pasca-bayar');
+        Route::post('admin/data-matrix/tag-nomor-pasca-bayar/import', [DataMatrixController::class, 'importTagNomorPascaBayar'])->name('admin.data-matrix.tag-pasca-bayar.import');
         Route::post('admin/data-matrix/tag-nomor-pasca-bayar', [DataMatrixController::class, 'storeTagNomorPascaBayar'])->name('admin.data-matrix.tag-pasca-bayar.store');
         Route::put('admin/data-matrix/tag-nomor-pasca-bayar/{id}', [DataMatrixController::class, 'updateTagNomorPascaBayar'])->name('admin.data-matrix.tag-pasca-bayar.update');
         Route::delete('admin/data-matrix/tag-nomor-pasca-bayar/{id}', [DataMatrixController::class, 'destroyTagNomorPascaBayar'])->name('admin.data-matrix.tag-pasca-bayar.destroy');

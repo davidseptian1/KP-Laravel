@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Imports\TagNomorPascaBayarImport;
 use App\Models\TagNomorPascaBayar;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
 class DataMatrixController extends Controller
 {
@@ -39,6 +41,17 @@ class DataMatrixController extends Controller
         $item->delete();
 
         return redirect()->route('admin.data-matrix.tag-pasca-bayar')->with('success', 'Data nomor pasca bayar berhasil dihapus');
+    }
+
+    public function importTagNomorPascaBayar(Request $request)
+    {
+        $validated = $request->validate([
+            'file_excel' => 'required|file|mimes:xlsx,xls,csv|max:10240',
+        ]);
+
+        Excel::import(new TagNomorPascaBayarImport(), $validated['file_excel']);
+
+        return redirect()->route('admin.data-matrix.tag-pasca-bayar')->with('success', 'Import Excel berhasil. Data langsung terisi/terupdate.');
     }
 
     public function tagPlnInternet()

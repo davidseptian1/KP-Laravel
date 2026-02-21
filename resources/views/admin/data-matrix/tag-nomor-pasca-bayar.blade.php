@@ -15,8 +15,16 @@
             <div class="col-md-12">
                 <div class="page-header-title d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <h2 class="mb-0">Tag Nomor Pasca Bayar</h2>
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambahPascaBayar">Tambah Data</button>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <form method="POST" action="{{ route('admin.data-matrix.tag-pasca-bayar.import') }}" enctype="multipart/form-data" class="d-flex gap-2 flex-wrap align-items-center">
+                            @csrf
+                            <input type="file" name="file_excel" class="form-control form-control-sm" accept=".xlsx,.xls,.csv" required style="max-width:260px;">
+                            <button type="submit" class="btn btn-success btn-sm">Upload Excel</button>
+                        </form>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambahPascaBayar">Tambah Data</button>
+                    </div>
                 </div>
+                <small class="text-muted">Format Excel mengikuti urutan kolom tabel (No, Nomor, Atas Nama, Chip, Keterangan, Bank, Status, Tagihan, Bank, Tanggal Payment, Tagihan).</small>
             </div>
         </div>
     </div>
