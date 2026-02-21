@@ -20,21 +20,4 @@
         <label class="form-label">Keterangan</label>
         <input type="text" name="keterangan" class="form-control" value="{{ old('keterangan', $item->keterangan ?? '') }}">
     </div>
-
-    <div class="col-md-3">
-        <label class="form-label">Januari 2026 - Tagihan</label>
-        <input type="number" step="0.01" min="0" name="periode_januari_2026_tagihan" class="form-control" value="{{ old('periode_januari_2026_tagihan', $item->periode_januari_2026_tagihan ?? '') }}">
-    </div>
-    <div class="col-md-3">
-        <label class="form-label">Januari 2026 - Tanggal Payment</label>
-        <input type="date" name="periode_januari_2026_tanggal_payment" class="form-control" value="{{ old('periode_januari_2026_tanggal_payment', isset($item?->periode_januari_2026_tanggal_payment) ? $item->periode_januari_2026_tanggal_payment->format('Y-m-d') : '') }}">
-    </div>
-    <div class="col-md-3">
-        <label class="form-label">Februari 2026 - Tagihan</label>
-        <input type="number" step="0.01" min="0" name="periode_februari_2026_tagihan" class="form-control" value="{{ old('periode_februari_2026_tagihan', $item->periode_februari_2026_tagihan ?? '') }}">
-    </div>
-    <div class="col-md-3">
-        <label class="form-label">Februari 2026 - Tanggal Payment</label>
-        <input type="date" name="periode_februari_2026_tanggal_payment" class="form-control" value="{{ old('periode_februari_2026_tanggal_payment', isset($item?->periode_februari_2026_tanggal_payment) ? $item->periode_februari_2026_tanggal_payment->format('Y-m-d') : '') }}">
-    </div>
 </div>

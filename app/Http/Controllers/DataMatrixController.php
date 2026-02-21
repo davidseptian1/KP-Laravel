@@ -4,9 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Imports\TagNomorPascaBayarImport;
 use App\Imports\TagPlnInternetImport;
+use App\Models\TagNomorPascaBayarPeriod;
 use App\Models\TagPlnInternet;
+use App\Models\TagPlnInternetPeriod;
 use App\Models\TagNomorPascaBayar;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 
 class DataMatrixController extends Controller
@@ -16,14 +19,17 @@ class DataMatrixController extends Controller
         return view('admin.data-matrix.tag-nomor-pasca-bayar', [
             'title' => 'Tag Nomor Pasca Bayar',
             'menuDataMatrixTagPascaBayar' => 'active',
-            'items' => TagNomorPascaBayar::orderBy('id')->paginate(20),
+            'items' => TagNomorPascaBayar::with('periods')->orderBy('id')->paginate(20),
         ]);
     }
 
     public function storeTagNomorPascaBayar(Request $request)
     {
         $validated = $this->validatePascaBayar($request);
-        TagNomorPascaBayar::create($validated);
+
+        DB::transaction(function () use ($validated) {
+            TagNomorPascaBayar::create($validated);
+        });
 
         return redirect()->route('admin.data-matrix.tag-pasca-bayar')->with('success', 'Data nomor pasca bayar berhasil ditambahkan');
     }
@@ -56,12 +62,42 @@ class DataMatrixController extends Controller
         return redirect()->route('admin.data-matrix.tag-pasca-bayar')->with('success', 'Import Excel berhasil. Data langsung terisi/terupdate.');
     }
 
+    public function storePeriodTagNomorPascaBayar(Request $request, int $id)
+    {
+        $validated = $this->validatePeriodWithBank($request);
+        $item = TagNomorPascaBayar::findOrFail($id);
+
+        TagNomorPascaBayarPeriod::updateOrCreate(
+            [
+                'tag_nomor_pasca_bayar_id' => $item->id,
+                'periode_bulan' => $validated['periode_bulan'],
+                'periode_tahun' => $validated['periode_tahun'],
+            ],
+            [
+                'tagihan' => $validated['tagihan'] ?? null,
+                'bank' => $validated['bank'] ?? null,
+                'tanggal_payment' => $validated['tanggal_payment'] ?? null,
+            ]
+        );
+
+        return redirect()->route('admin.data-matrix.tag-pasca-bayar')->with('success', 'Periode berhasil disimpan');
+    }
+
+    public function destroyPeriodTagNomorPascaBayar(int $id, int $periodId)
+    {
+        $item = TagNomorPascaBayar::findOrFail($id);
+        $period = $item->periods()->where('id', $periodId)->firstOrFail();
+        $period->delete();
+
+        return redirect()->route('admin.data-matrix.tag-pasca-bayar')->with('success', 'Periode berhasil dihapus');
+    }
+
     public function tagPlnInternet()
     {
         return view('admin.data-matrix.tag-pln-internet', [
             'title' => 'Tag PLN & Internet',
             'menuDataMatrixTagPlnInternet' => 'active',
-            'items' => TagPlnInternet::orderBy('id')->paginate(20),
+            'items' => TagPlnInternet::with('periods')->orderBy('id')->paginate(20),
         ]);
     }
 
@@ -82,6 +118,35 @@ class DataMatrixController extends Controller
         TagPlnInternet::create($validated);
 
         return redirect()->route('admin.data-matrix.tag-pln-internet')->with('success', 'Data tag PLN & Internet berhasil ditambahkan');
+    }
+
+    public function storePeriodTagPlnInternet(Request $request, int $id)
+    {
+        $validated = $this->validatePeriod($request);
+        $item = TagPlnInternet::findOrFail($id);
+
+        TagPlnInternetPeriod::updateOrCreate(
+            [
+                'tag_pln_internet_id' => $item->id,
+                'periode_bulan' => $validated['periode_bulan'],
+                'periode_tahun' => $validated['periode_tahun'],
+            ],
+            [
+                'tagihan' => $validated['tagihan'] ?? null,
+                'tanggal_payment' => $validated['tanggal_payment'] ?? null,
+            ]
+        );
+
+        return redirect()->route('admin.data-matrix.tag-pln-internet')->with('success', 'Periode berhasil disimpan');
+    }
+
+    public function destroyPeriodTagPlnInternet(int $id, int $periodId)
+    {
+        $item = TagPlnInternet::findOrFail($id);
+        $period = $item->periods()->where('id', $periodId)->firstOrFail();
+        $period->delete();
+
+        return redirect()->route('admin.data-matrix.tag-pln-internet')->with('success', 'Periode berhasil dihapus');
     }
 
     public function updateTagPlnInternet(Request $request, int $id)
@@ -120,10 +185,6 @@ class DataMatrixController extends Controller
             'keterangan' => 'nullable|string|max:255',
             'bank' => 'nullable|string|max:255',
             'status' => 'required|string|max:100',
-            'periode_des_2025_tagihan' => 'nullable|numeric|min:0',
-            'periode_des_2025_bank' => 'nullable|string|max:255',
-            'periode_feb_2026_tanggal_payment' => 'nullable|date',
-            'periode_feb_2026_tagihan' => 'nullable|numeric|min:0',
         ]);
     }
 
@@ -135,10 +196,27 @@ class DataMatrixController extends Controller
             'atas_nama' => 'required|string|max:255',
             'bank' => 'nullable|string|max:255',
             'keterangan' => 'nullable|string|max:255',
-            'periode_januari_2026_tagihan' => 'nullable|numeric|min:0',
-            'periode_januari_2026_tanggal_payment' => 'nullable|date',
-            'periode_februari_2026_tagihan' => 'nullable|numeric|min:0',
-            'periode_februari_2026_tanggal_payment' => 'nullable|date',
+        ]);
+    }
+
+    private function validatePeriod(Request $request): array
+    {
+        return $request->validate([
+            'periode_bulan' => 'required|integer|min:1|max:12',
+            'periode_tahun' => 'required|integer|min:2000|max:2100',
+            'tagihan' => 'nullable|numeric|min:0',
+            'tanggal_payment' => 'nullable|date',
+        ]);
+    }
+
+    private function validatePeriodWithBank(Request $request): array
+    {
+        return $request->validate([
+            'periode_bulan' => 'required|integer|min:1|max:12',
+            'periode_tahun' => 'required|integer|min:2000|max:2100',
+            'tagihan' => 'nullable|numeric|min:0',
+            'bank' => 'nullable|string|max:255',
+            'tanggal_payment' => 'nullable|date',
         ]);
     }
 }

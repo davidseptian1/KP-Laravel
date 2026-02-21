@@ -3,6 +3,7 @@
 namespace App\Imports;
 
 use App\Models\TagPlnInternet;
+use App\Models\TagPlnInternetPeriod;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\ToCollection;
@@ -38,10 +39,38 @@ class TagPlnInternetImport implements ToCollection
                 'periode_februari_2026_tanggal_payment' => $this->parseDate($cells[9] ?? null),
             ];
 
-            TagPlnInternet::updateOrCreate(
+            $item = TagPlnInternet::updateOrCreate(
                 ['nomor_pln_internet' => $payload['nomor_pln_internet']],
                 $payload
             );
+
+            if ($payload['periode_januari_2026_tagihan'] !== null || !empty($payload['periode_januari_2026_tanggal_payment'])) {
+                TagPlnInternetPeriod::updateOrCreate(
+                    [
+                        'tag_pln_internet_id' => $item->id,
+                        'periode_bulan' => 1,
+                        'periode_tahun' => 2026,
+                    ],
+                    [
+                        'tagihan' => $payload['periode_januari_2026_tagihan'],
+                        'tanggal_payment' => $payload['periode_januari_2026_tanggal_payment'],
+                    ]
+                );
+            }
+
+            if ($payload['periode_februari_2026_tagihan'] !== null || !empty($payload['periode_februari_2026_tanggal_payment'])) {
+                TagPlnInternetPeriod::updateOrCreate(
+                    [
+                        'tag_pln_internet_id' => $item->id,
+                        'periode_bulan' => 2,
+                        'periode_tahun' => 2026,
+                    ],
+                    [
+                        'tagihan' => $payload['periode_februari_2026_tagihan'],
+                        'tanggal_payment' => $payload['periode_februari_2026_tanggal_payment'],
+                    ]
+                );
+            }
         }
     }
 

@@ -29,4 +29,9 @@ class TagNomorPascaBayar extends Model
         'periode_feb_2026_tagihan' => 'decimal:2',
         'periode_feb_2026_tanggal_payment' => 'date',
     ];
+
+    public function periods()
+    {
+        return $this->hasMany(TagNomorPascaBayarPeriod::class)->orderByDesc('periode_tahun')->orderByDesc('periode_bulan');
+    }
 }

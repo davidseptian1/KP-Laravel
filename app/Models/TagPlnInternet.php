@@ -29,4 +29,9 @@ class TagPlnInternet extends Model
         'periode_januari_2026_tanggal_payment' => 'date',
         'periode_februari_2026_tanggal_payment' => 'date',
     ];
+
+    public function periods()
+    {
+        return $this->hasMany(TagPlnInternetPeriod::class)->orderByDesc('periode_tahun')->orderByDesc('periode_bulan');
+    }
 }

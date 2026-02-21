@@ -29,21 +29,4 @@
         <label class="form-label">Bank</label>
         <input type="text" name="bank" class="form-control" value="{{ old('bank', $item->bank ?? '') }}">
     </div>
-
-    <div class="col-md-4">
-        <label class="form-label">Periode Des 2025 - Tagihan</label>
-        <input type="number" step="0.01" min="0" name="periode_des_2025_tagihan" class="form-control" value="{{ old('periode_des_2025_tagihan', $item->periode_des_2025_tagihan ?? '') }}">
-    </div>
-    <div class="col-md-4">
-        <label class="form-label">Periode Des 2025 - Bank</label>
-        <input type="text" name="periode_des_2025_bank" class="form-control" value="{{ old('periode_des_2025_bank', $item->periode_des_2025_bank ?? '') }}">
-    </div>
-    <div class="col-md-4">
-        <label class="form-label">Periode Febru 2026 - Tanggal Payment</label>
-        <input type="date" name="periode_feb_2026_tanggal_payment" class="form-control" value="{{ old('periode_feb_2026_tanggal_payment', isset($item?->periode_feb_2026_tanggal_payment) ? $item->periode_feb_2026_tanggal_payment->format('Y-m-d') : '') }}">
-    </div>
-    <div class="col-md-4">
-        <label class="form-label">Periode Febru 2026 - Tagihan</label>
-        <input type="number" step="0.01" min="0" name="periode_feb_2026_tagihan" class="form-control" value="{{ old('periode_feb_2026_tagihan', $item->periode_feb_2026_tagihan ?? '') }}">
-    </div>
 </div>

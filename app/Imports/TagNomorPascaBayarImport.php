@@ -3,6 +3,7 @@
 namespace App\Imports;
 
 use App\Models\TagNomorPascaBayar;
+use App\Models\TagNomorPascaBayarPeriod;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\ToCollection;
@@ -39,10 +40,40 @@ class TagNomorPascaBayarImport implements ToCollection
                 'periode_feb_2026_tagihan' => $this->parseNumber($cells[10] ?? null),
             ];
 
-            TagNomorPascaBayar::updateOrCreate(
+            $item = TagNomorPascaBayar::updateOrCreate(
                 ['nomor' => $payload['nomor']],
                 $payload
             );
+
+            if ($payload['periode_des_2025_tagihan'] !== null || !empty($payload['periode_des_2025_bank'])) {
+                TagNomorPascaBayarPeriod::updateOrCreate(
+                    [
+                        'tag_nomor_pasca_bayar_id' => $item->id,
+                        'periode_bulan' => 12,
+                        'periode_tahun' => 2025,
+                    ],
+                    [
+                        'tagihan' => $payload['periode_des_2025_tagihan'],
+                        'bank' => $payload['periode_des_2025_bank'],
+                        'tanggal_payment' => null,
+                    ]
+                );
+            }
+
+            if ($payload['periode_feb_2026_tagihan'] !== null || !empty($payload['periode_feb_2026_tanggal_payment'])) {
+                TagNomorPascaBayarPeriod::updateOrCreate(
+                    [
+                        'tag_nomor_pasca_bayar_id' => $item->id,
+                        'periode_bulan' => 2,
+                        'periode_tahun' => 2026,
+                    ],
+                    [
+                        'tagihan' => $payload['periode_feb_2026_tagihan'],
+                        'bank' => null,
+                        'tanggal_payment' => $payload['periode_feb_2026_tanggal_payment'],
+                    ]
+                );
+            }
         }
     }
 
