@@ -99,6 +99,31 @@
                     </a>
                 </li>
 
+                <li class="pc-item pc-caption">
+                    <label>Data Matrix</label>
+                </li>
+
+                <li class="pc-item {{ $menuDataMatrixTagPascaBayar ?? '' }}">
+                    <a href="{{ route('admin.data-matrix.tag-pasca-bayar') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-tags"></i></span>
+                        <span class="pc-mtext">Tag Nomor Pasca Bayar</span>
+                    </a>
+                </li>
+
+                <li class="pc-item {{ $menuDataMatrixTagPlnInternet ?? '' }}">
+                    <a href="{{ route('admin.data-matrix.tag-pln-internet') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-bolt"></i></span>
+                        <span class="pc-mtext">Tag PLN & Internet</span>
+                    </a>
+                </li>
+
+                <li class="pc-item {{ $menuDataMatrixTagLainnya ?? '' }}">
+                    <a href="{{ route('admin.data-matrix.tag-lainnya') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-category"></i></span>
+                        <span class="pc-mtext">Tag lainnya</span>
+                    </a>
+                </li>
+
                 @endif
 
                 @if (auth()->check() && (auth()->user()->jabatan=='Admin' || auth()->user()->jabatan=='HRD'))

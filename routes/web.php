@@ -25,6 +25,7 @@ use App\Http\Controllers\AdminDepositFormController;
 use App\Http\Controllers\DepositFormController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\ServerController;
+use App\Http\Controllers\DataMatrixController;
 
 
 
@@ -171,6 +172,11 @@ Route::middleware('checkLogin')->group(function () {
         Route::post('admin/server', [ServerController::class, 'store'])->name('admin.server.store');
         Route::put('admin/server/{id}', [ServerController::class, 'update'])->name('admin.server.update');
         Route::delete('admin/server/{id}', [ServerController::class, 'destroy'])->name('admin.server.destroy');
+
+        // Data Matrix
+        Route::get('admin/data-matrix/tag-nomor-pasca-bayar', [DataMatrixController::class, 'tagNomorPascaBayar'])->name('admin.data-matrix.tag-pasca-bayar');
+        Route::get('admin/data-matrix/tag-pln-internet', [DataMatrixController::class, 'tagPlnInternet'])->name('admin.data-matrix.tag-pln-internet');
+        Route::get('admin/data-matrix/tag-lainnya', [DataMatrixController::class, 'tagLainnya'])->name('admin.data-matrix.tag-lainnya');
 
         // Reimburse (Admin)
         Route::get('admin/reimburse', [AdminReimburseWebController::class, 'index'])->name('admin.reimburse.index');
