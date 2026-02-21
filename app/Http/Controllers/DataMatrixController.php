@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Imports\TagNomorPascaBayarImport;
 use App\Imports\TagPlnInternetImport;
+use App\Imports\TagLainnyaImport;
+use App\Models\TagLainnya;
+use App\Models\TagLainnyaPeriod;
 use App\Models\TagNomorPascaBayarPeriod;
 use App\Models\TagPlnInternet;
 use App\Models\TagPlnInternetPeriod;
@@ -168,12 +171,76 @@ class DataMatrixController extends Controller
 
     public function tagLainnya()
     {
-        return view('admin.data-matrix.index', [
+        return view('admin.data-matrix.tag-lainnya', [
             'title' => 'Tag Lainnya',
             'menuDataMatrixTagLainnya' => 'active',
-            'pageTitle' => 'Tag Lainnya',
-            'pageDescription' => 'Halaman Data Matrix untuk kebutuhan tag lainnya.',
+            'items' => TagLainnya::with('periods')->orderBy('id')->paginate(20),
         ]);
+    }
+
+    public function importTagLainnya(Request $request)
+    {
+        $validated = $request->validate([
+            'file_excel' => 'required|file|mimes:xlsx,xls,csv|max:10240',
+        ]);
+
+        Excel::import(new TagLainnyaImport(), $validated['file_excel']);
+
+        return redirect()->route('admin.data-matrix.tag-lainnya')->with('success', 'Import Excel berhasil. Data langsung terisi/terupdate.');
+    }
+
+    public function storeTagLainnya(Request $request)
+    {
+        $validated = $this->validateTagLainnya($request);
+        TagLainnya::create($validated);
+
+        return redirect()->route('admin.data-matrix.tag-lainnya')->with('success', 'Data tag lainnya berhasil ditambahkan');
+    }
+
+    public function updateTagLainnya(Request $request, int $id)
+    {
+        $validated = $this->validateTagLainnya($request);
+        $item = TagLainnya::findOrFail($id);
+        $item->update($validated);
+
+        return redirect()->route('admin.data-matrix.tag-lainnya')->with('success', 'Data tag lainnya berhasil diupdate');
+    }
+
+    public function destroyTagLainnya(int $id)
+    {
+        $item = TagLainnya::findOrFail($id);
+        $item->delete();
+
+        return redirect()->route('admin.data-matrix.tag-lainnya')->with('success', 'Data tag lainnya berhasil dihapus');
+    }
+
+    public function storePeriodTagLainnya(Request $request, int $id)
+    {
+        $validated = $this->validatePeriodWithTime($request);
+        $item = TagLainnya::findOrFail($id);
+
+        TagLainnyaPeriod::updateOrCreate(
+            [
+                'tag_lainnya_id' => $item->id,
+                'periode_bulan' => $validated['periode_bulan'],
+                'periode_tahun' => $validated['periode_tahun'],
+            ],
+            [
+                'tagihan' => $validated['tagihan'] ?? null,
+                'tanggal_payment' => $validated['tanggal_payment'] ?? null,
+            ]
+        );
+
+        return redirect()->route('admin.data-matrix.tag-lainnya')->with('success', 'Periode berhasil disimpan');
+    }
+
+    public function destroyPeriodTagLainnya(int $id, int $periodId)
+    {
+        $item = TagLainnya::findOrFail($id);
+        $period = $item->periods()->where('id', $periodId)->firstOrFail();
+        $period->delete();
+
+        return redirect()->route('admin.data-matrix.tag-lainnya')->with('success', 'Periode berhasil dihapus');
     }
 
     private function validatePascaBayar(Request $request): array
@@ -217,6 +284,27 @@ class DataMatrixController extends Controller
             'tagihan' => 'nullable|numeric|min:0',
             'bank' => 'nullable|string|max:255',
             'tanggal_payment' => 'nullable|date',
+        ]);
+    }
+
+    private function validatePeriodWithTime(Request $request): array
+    {
+        return $request->validate([
+            'periode_bulan' => 'required|integer|min:1|max:12',
+            'periode_tahun' => 'required|integer|min:2000|max:2100',
+            'tagihan' => 'nullable|numeric|min:0',
+            'tanggal_payment' => 'nullable|date',
+        ]);
+    }
+
+    private function validateTagLainnya(Request $request): array
+    {
+        return $request->validate([
+            'nama' => 'required|string|max:255',
+            'no_rekening_va' => 'required|string|max:100',
+            'jumlah' => 'nullable|numeric|min:0',
+            'bank' => 'nullable|string|max:255',
+            'keterangan' => 'nullable|string|max:255',
         ]);
     }
 }

@@ -189,6 +189,12 @@ Route::middleware('checkLogin')->group(function () {
         Route::post('admin/data-matrix/tag-pln-internet/{id}/periods', [DataMatrixController::class, 'storePeriodTagPlnInternet'])->name('admin.data-matrix.tag-pln-internet.periods.store');
         Route::delete('admin/data-matrix/tag-pln-internet/{id}/periods/{periodId}', [DataMatrixController::class, 'destroyPeriodTagPlnInternet'])->name('admin.data-matrix.tag-pln-internet.periods.destroy');
         Route::get('admin/data-matrix/tag-lainnya', [DataMatrixController::class, 'tagLainnya'])->name('admin.data-matrix.tag-lainnya');
+        Route::post('admin/data-matrix/tag-lainnya/import', [DataMatrixController::class, 'importTagLainnya'])->name('admin.data-matrix.tag-lainnya.import');
+        Route::post('admin/data-matrix/tag-lainnya', [DataMatrixController::class, 'storeTagLainnya'])->name('admin.data-matrix.tag-lainnya.store');
+        Route::put('admin/data-matrix/tag-lainnya/{id}', [DataMatrixController::class, 'updateTagLainnya'])->name('admin.data-matrix.tag-lainnya.update');
+        Route::delete('admin/data-matrix/tag-lainnya/{id}', [DataMatrixController::class, 'destroyTagLainnya'])->name('admin.data-matrix.tag-lainnya.destroy');
+        Route::post('admin/data-matrix/tag-lainnya/{id}/periods', [DataMatrixController::class, 'storePeriodTagLainnya'])->name('admin.data-matrix.tag-lainnya.periods.store');
+        Route::delete('admin/data-matrix/tag-lainnya/{id}/periods/{periodId}', [DataMatrixController::class, 'destroyPeriodTagLainnya'])->name('admin.data-matrix.tag-lainnya.periods.destroy');
 
         // Reimburse (Admin)
         Route::get('admin/reimburse', [AdminReimburseWebController::class, 'index'])->name('admin.reimburse.index');
