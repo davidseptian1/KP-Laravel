@@ -904,6 +904,26 @@ body.pc-sidebar-hide .pc-container {
     color: rgba(255, 255, 255, 0.8);
 }
 
+/* Collapsible Sidebar Categories */
+.pc-sidebar .pc-item.pc-caption > label {
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.pc-sidebar .pc-item.pc-caption > label::after {
+    content: '▾';
+    font-size: 11px;
+    color: #8b92a3;
+    transition: transform 0.2s ease;
+}
+
+.pc-sidebar .pc-item.pc-caption.is-collapsed > label::after {
+    transform: rotate(-90deg);
+}
+
 .pc-user-card i {
     color: white;
 }

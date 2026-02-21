@@ -198,6 +198,62 @@
             })();
         </script>
 
+        <script>
+            (function () {
+                function initSidebarCategoryToggle() {
+                    const sidebar = document.querySelector('.pc-sidebar .pc-navbar');
+                    if (!sidebar) return;
+
+                    const captions = Array.from(sidebar.querySelectorAll('.pc-item.pc-caption'));
+                    captions.forEach((caption, index) => {
+                        const label = caption.querySelector('label');
+                        if (!label) return;
+
+                        const key = 'sidebar_category_collapsed_' + (label.textContent || '').trim() + '_' + index;
+                        const groupItems = [];
+                        let next = caption.nextElementSibling;
+                        while (next && !next.classList.contains('pc-caption')) {
+                            if (next.classList.contains('pc-item')) {
+                                groupItems.push(next);
+                            }
+                            next = next.nextElementSibling;
+                        }
+
+                        if (!groupItems.length) return;
+
+                        caption.dataset.collapseKey = key;
+
+                        const applyState = (collapsed) => {
+                            caption.classList.toggle('is-collapsed', collapsed);
+                            groupItems.forEach((item) => {
+                                item.style.display = collapsed ? 'none' : '';
+                            });
+                        };
+
+                        const saved = localStorage.getItem(key);
+                        applyState(saved === '1');
+
+                        if (!label.dataset.boundCollapse) {
+                            label.dataset.boundCollapse = '1';
+                            label.addEventListener('click', function () {
+                                const isCollapsed = !caption.classList.contains('is-collapsed');
+                                applyState(isCollapsed);
+                                localStorage.setItem(key, isCollapsed ? '1' : '0');
+                            });
+                        }
+                    });
+                }
+
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', initSidebarCategoryToggle);
+                } else {
+                    initSidebarCategoryToggle();
+                }
+
+                setTimeout(initSidebarCategoryToggle, 100);
+            })();
+        </script>
+
         <!-- DataTables -->
         <script src="{{ asset('sbadmin2/vendor/datatables/jquery.dataTables.min.js') }}"></script>
         <script src="{{ asset('sbadmin2/vendor/datatables/dataTables.bootstrap4.min.js') }}"></script>
