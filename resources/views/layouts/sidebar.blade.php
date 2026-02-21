@@ -105,8 +105,8 @@
 
                 <li class="pc-item {{ $menuDataMatrixTagPascaBayar ?? '' }}">
                     <a href="{{ route('admin.data-matrix.tag-pasca-bayar') }}" class="pc-link">
-                        <span class="pc-micon"><i class="ti ti-tags"></i></span>
-                        <span class="pc-mtext">Tag Nomor Pasca Bayar</span>
+                        <span class="pc-micon"><i class="ti ti-file-text"></i></span>
+                        <span class="pc-mtext">Tag Nomor Pasca<br>Bayar</span>
                     </a>
                 </li>
 
@@ -119,7 +119,7 @@
 
                 <li class="pc-item {{ $menuDataMatrixTagLainnya ?? '' }}">
                     <a href="{{ route('admin.data-matrix.tag-lainnya') }}" class="pc-link">
-                        <span class="pc-micon"><i class="ti ti-category"></i></span>
+                        <span class="pc-micon"><i class="ti ti-list-check"></i></span>
                         <span class="pc-mtext">Tag lainnya</span>
                     </a>
                 </li>
