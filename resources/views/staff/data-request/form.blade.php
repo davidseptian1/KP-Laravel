@@ -90,7 +90,7 @@
                         <label class="form-label">Jenis Perubahan</label>
                         <select name="jenis_perubahan" class="form-select" required>
                             <option value="">Pilih Jenis Perubahan</option>
-                            @foreach (['perubahan email','nomor hp','password'] as $item)
+                            @foreach (['perubahan email','nomor hp','password','pengaktifkan akun member','verifikasi akun member'] as $item)
                                 <option value="{{ $item }}">{{ strtoupper($item) }}</option>
                             @endforeach
                         </select>

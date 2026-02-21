@@ -54,7 +54,7 @@ class DataRequestFormController extends Controller
             'nama_pemohon' => 'required|string|max:255',
             'riwayat_transaksi' => 'required|string',
             'saldo_terakhir' => 'required|numeric|min:0',
-            'jenis_perubahan' => 'required|in:perubahan email,nomor hp,password',
+            'jenis_perubahan' => 'required|in:perubahan email,nomor hp,password,pengaktifkan akun member,verifikasi akun member',
             'alasan_perubahan' => 'required|string',
             'foto_ktp' => 'required|file|mimes:jpg,jpeg,png|max:5120',
             'foto_selfie' => 'required|file|mimes:jpg,jpeg,png|max:5120',
