@@ -217,6 +217,62 @@ class DataMatrixController extends Controller
         ]);
     }
 
+    public function notifikasiSemuaTagihan()
+    {
+        $pascaBayarQuery = DB::table('tag_nomor_pasca_bayar_periods as p')
+            ->join('tag_nomor_pasca_bayars as t', 't.id', '=', 'p.tag_nomor_pasca_bayar_id')
+            ->selectRaw("'Nomor Pasca Bayar' as jenis_tagihan")
+            ->selectRaw('t.atas_nama as nama')
+            ->selectRaw('t.nomor as nomor_referensi')
+            ->selectRaw('COALESCE(p.bank, t.bank) as bank')
+            ->selectRaw('p.periode_bulan')
+            ->selectRaw('p.periode_tahun')
+            ->selectRaw('p.tagihan')
+            ->selectRaw('p.tanggal_payment')
+            ->selectRaw('p.created_at');
+
+        $plnInternetQuery = DB::table('tag_pln_internet_periods as p')
+            ->join('tag_pln_internets as t', 't.id', '=', 'p.tag_pln_internet_id')
+            ->selectRaw("'PLN & Internet' as jenis_tagihan")
+            ->selectRaw('t.nama as nama')
+            ->selectRaw('t.nomor_pln_internet as nomor_referensi')
+            ->selectRaw('t.bank as bank')
+            ->selectRaw('p.periode_bulan')
+            ->selectRaw('p.periode_tahun')
+            ->selectRaw('p.tagihan')
+            ->selectRaw('p.tanggal_payment')
+            ->selectRaw('p.created_at');
+
+        $lainnyaQuery = DB::table('tag_lainnya_periods as p')
+            ->join('tag_lainnyas as t', 't.id', '=', 'p.tag_lainnya_id')
+            ->selectRaw("'Tagihan Lainnya' as jenis_tagihan")
+            ->selectRaw('t.nama as nama')
+            ->selectRaw('t.no_rekening_va as nomor_referensi')
+            ->selectRaw('t.bank as bank')
+            ->selectRaw('p.periode_bulan')
+            ->selectRaw('p.periode_tahun')
+            ->selectRaw('p.tagihan')
+            ->selectRaw('p.tanggal_payment')
+            ->selectRaw('p.created_at');
+
+        $unionQuery = $pascaBayarQuery
+            ->unionAll($plnInternetQuery)
+            ->unionAll($lainnyaQuery);
+
+        $items = DB::query()
+            ->fromSub($unionQuery, 'semua_tagihan')
+            ->orderByDesc('periode_tahun')
+            ->orderByDesc('periode_bulan')
+            ->orderByDesc('created_at')
+            ->paginate(30);
+
+        return view('admin.data-matrix.notifikasi-semua-tagihan', [
+            'title' => 'Semua Tagihan',
+            'menuNotifikasiSemuaTagihan' => 'active',
+            'items' => $items,
+        ]);
+    }
+
     public function importTagLainnya(Request $request)
     {
         $validated = $request->validate([

@@ -198,6 +198,7 @@ Route::middleware('checkLogin')->group(function () {
         Route::get('admin/data-matrix/riwayat-tagihan-nomor-pasca-bayar', [DataMatrixController::class, 'historyTagNomorPascaBayar'])->name('admin.data-matrix.history.tag-pasca-bayar');
         Route::get('admin/data-matrix/riwayat-tagihan-pln-internet', [DataMatrixController::class, 'historyTagPlnInternet'])->name('admin.data-matrix.history.tag-pln-internet');
         Route::get('admin/data-matrix/riwayat-tagihan-lainnya', [DataMatrixController::class, 'historyTagLainnya'])->name('admin.data-matrix.history.tag-lainnya');
+        Route::get('admin/data-matrix/notifikasi/semua-tagihan', [DataMatrixController::class, 'notifikasiSemuaTagihan'])->name('admin.data-matrix.notifikasi.semua-tagihan');
 
         // Reimburse (Admin)
         Route::get('admin/reimburse', [AdminReimburseWebController::class, 'index'])->name('admin.reimburse.index');

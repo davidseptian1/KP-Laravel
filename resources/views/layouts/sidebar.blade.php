@@ -158,6 +158,17 @@
                     </a>
                 </li>
 
+                <li class="pc-item pc-caption">
+                    <label>Notifikasi Tagihan</label>
+                </li>
+
+                <li class="pc-item {{ $menuNotifikasiSemuaTagihan ?? '' }}">
+                    <a href="{{ route('admin.data-matrix.notifikasi.semua-tagihan') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-bell"></i></span>
+                        <span class="pc-mtext">Semua Tagihan</span>
+                    </a>
+                </li>
+
                 @endif
 
                 @if (auth()->check() && (auth()->user()->jabatan=='Admin' || auth()->user()->jabatan=='HRD'))
