@@ -67,25 +67,71 @@
                                             {{ ucfirst($item->status) }}
                                         </span>
                                     </td>
-                                    <td class="text-center">
-                                        <div class="d-flex flex-column gap-2">
-                                            <form method="POST" action="{{ route('admin.loan-request.update', $item->id) }}" class="d-flex flex-column gap-2">
-                                                @csrf
-                                                @method('PUT')
-                                                <select name="status" class="form-select form-select-sm" required>
-                                                    @foreach (['pending' => 'Pending', 'approved' => 'Approved', 'rejected' => 'Rejected', 'revision' => 'Revision'] as $key => $label)
-                                                        <option value="{{ $key }}" {{ $item->status === $key ? 'selected' : '' }}>{{ $label }}</option>
-                                                    @endforeach
-                                                </select>
-                                                <input type="text" name="catatan_admin" value="{{ $item->catatan_admin }}" class="form-control form-control-sm" placeholder="Catatan admin" />
-                                                <button class="btn btn-success btn-sm">Update + Kirim WA</button>
-                                            </form>
-
+                                    <td class="text-center" style="min-width:180px;">
+                                        <div class="d-flex gap-2 justify-content-center flex-wrap">
+                                            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#detailLoanRequest-{{ $item->id }}">Lihat</button>
                                             <form method="POST" action="{{ route('admin.loan-request.destroy', $item->id) }}" onsubmit="return confirm('Yakin ingin menghapus peminjaman barang ini?');">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
                                             </form>
+                                        </div>
+
+                                        <div class="modal fade" id="detailLoanRequest-{{ $item->id }}" tabindex="-1" aria-hidden="true">
+                                            <div class="modal-dialog modal-lg modal-dialog-centered">
+                                                <div class="modal-content text-start">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">Detail Peminjaman - {{ $item->kode_pengajuan }}</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <div class="row g-3">
+                                                            <div class="col-md-6">
+                                                                <label class="form-label mb-1">Nama Server</label>
+                                                                <div class="fw-semibold">{{ $item->nama_server }}</div>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <label class="form-label mb-1">Nomor HP</label>
+                                                                <div class="fw-semibold">{{ $item->nomor_hp }}</div>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <label class="form-label mb-1">Barang Dipinjam</label>
+                                                                <div class="fw-semibold">{{ $item->barang_dipinjam }}</div>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <label class="form-label mb-1">Tanggal Pinjam</label>
+                                                                <div class="fw-semibold">{{ optional($item->tanggal_pinjam)->format('d/m/Y H:i') }}</div>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <label class="form-label mb-1">Tanggal Kembali</label>
+                                                                <div class="fw-semibold">{{ $item->tanggal_kembali ? $item->tanggal_kembali->format('d/m/Y H:i') : '-' }}</div>
+                                                            </div>
+                                                            <div class="col-12"><hr class="my-1"></div>
+                                                            <div class="col-12">
+                                                                <form method="POST" action="{{ route('admin.loan-request.update', $item->id) }}" class="row g-2">
+                                                                    @csrf
+                                                                    @method('PUT')
+                                                                    <div class="col-md-4">
+                                                                        <label class="form-label">Status</label>
+                                                                        <select name="status" class="form-select form-select-sm" required>
+                                                                            @foreach (['pending' => 'Pending', 'approved' => 'Approved', 'rejected' => 'Rejected', 'revision' => 'Revision'] as $key => $label)
+                                                                                <option value="{{ $key }}" {{ $item->status === $key ? 'selected' : '' }}>{{ $label }}</option>
+                                                                            @endforeach
+                                                                        </select>
+                                                                    </div>
+                                                                    <div class="col-md-8">
+                                                                        <label class="form-label">Catatan Admin</label>
+                                                                        <input type="text" name="catatan_admin" value="{{ $item->catatan_admin }}" class="form-control form-control-sm" placeholder="Catatan admin" />
+                                                                    </div>
+                                                                    <div class="col-12 text-end mt-2">
+                                                                        <button class="btn btn-success btn-sm">Update + Kirim WA</button>
+                                                                    </div>
+                                                                </form>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </td>
                                 </tr>

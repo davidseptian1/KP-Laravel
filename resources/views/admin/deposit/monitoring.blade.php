@@ -62,106 +62,93 @@
                                     </td>
                                     <td>{{ $item->jam ? \Carbon\Carbon::parse($item->jam)->format('H:i') : '-' }}</td>
                                     <td>{{ $item->created_at?->format('d/m/Y H:i') }}</td>
-                                    <td class="text-center" style="min-width:220px;">
+                                    <td class="text-center" style="min-width:180px;">
                                         <div class="d-flex gap-2 justify-content-center align-items-center flex-wrap">
-                                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editModal-{{ $item->id }}">Edit</button>
-                                            <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#statusModal-{{ $item->id }}">Status</button>
+                                            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#detailDeposit-{{ $item->id }}">Lihat</button>
                                             <form method="POST" action="{{ route('admin.deposit.destroy', $item->id) }}" onsubmit="return confirm('Yakin ingin menghapus request deposit ini?');">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="btn btn-sm btn-outline-danger">Hapus</button>
+                                                <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
                                             </form>
                                         </div>
 
-                                        <div class="modal fade" id="editModal-{{ $item->id }}" tabindex="-1" aria-hidden="true">
-                                            <div class="modal-dialog modal-lg modal-dialog-centered">
+                                        <div class="modal fade" id="detailDeposit-{{ $item->id }}" tabindex="-1" aria-hidden="true">
+                                            <div class="modal-dialog modal-xl modal-dialog-centered">
                                                 <div class="modal-content text-start">
-                                                    <form method="POST" action="{{ route('admin.deposit.update-details', $item->id) }}">
-                                                        @csrf
-                                                        @method('PUT')
-                                                        <div class="modal-header">
-                                                            <h5 class="modal-title">Edit Request Deposit</h5>
-                                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                                        </div>
-                                                        <div class="modal-body">
-                                                            <div class="row g-3">
-                                                                <div class="col-md-6">
-                                                                    <label class="form-label">Nama Supplier</label>
-                                                                    <input type="text" name="nama_supplier" class="form-control" value="{{ $item->nama_supplier }}" required>
-                                                                </div>
-                                                                <div class="col-md-6">
-                                                                    <label class="form-label">Nominal</label>
-                                                                    <input type="number" name="nominal" class="form-control" value="{{ (int)$item->nominal }}" required>
-                                                                </div>
-                                                                <div class="col-md-6">
-                                                                    <label class="form-label">Deposit / Hutang</label>
-                                                                    <select name="jenis_transaksi" class="form-select" required>
-                                                                        <option value="deposit" {{ ($item->jenis_transaksi ?? 'deposit') === 'deposit' ? 'selected' : '' }}>Deposit</option>
-                                                                        <option value="hutang" {{ ($item->jenis_transaksi ?? 'deposit') === 'hutang' ? 'selected' : '' }}>Hutang</option>
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">Detail Request Deposit</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <div class="row g-4">
+                                                            <div class="col-lg-8">
+                                                                <h6 class="mb-3">Edit Detail</h6>
+                                                                <form method="POST" action="{{ route('admin.deposit.update-details', $item->id) }}" class="row g-3">
+                                                                    @csrf
+                                                                    @method('PUT')
+                                                                    <div class="col-md-6">
+                                                                        <label class="form-label">Nama Supplier</label>
+                                                                        <input type="text" name="nama_supplier" class="form-control" value="{{ $item->nama_supplier }}" required>
+                                                                    </div>
+                                                                    <div class="col-md-6">
+                                                                        <label class="form-label">Nominal</label>
+                                                                        <input type="number" name="nominal" class="form-control" value="{{ (int)$item->nominal }}" required>
+                                                                    </div>
+                                                                    <div class="col-md-6">
+                                                                        <label class="form-label">Deposit / Hutang</label>
+                                                                        <select name="jenis_transaksi" class="form-select" required>
+                                                                            <option value="deposit" {{ ($item->jenis_transaksi ?? 'deposit') === 'deposit' ? 'selected' : '' }}>Deposit</option>
+                                                                            <option value="hutang" {{ ($item->jenis_transaksi ?? 'deposit') === 'hutang' ? 'selected' : '' }}>Hutang</option>
+                                                                        </select>
+                                                                    </div>
+                                                                    <div class="col-md-6">
+                                                                        <label class="form-label">BANK</label>
+                                                                        <input type="text" name="bank" class="form-control" value="{{ $item->bank }}" required>
+                                                                    </div>
+                                                                    <div class="col-md-6">
+                                                                        <label class="form-label">Server</label>
+                                                                        <input type="text" name="server" class="form-control" value="{{ $item->server }}" required>
+                                                                    </div>
+                                                                    <div class="col-md-6">
+                                                                        <label class="form-label">No-Rek</label>
+                                                                        <input type="text" name="no_rek" class="form-control" value="{{ $item->no_rek }}" required>
+                                                                    </div>
+                                                                    <div class="col-md-6">
+                                                                        <label class="form-label">Nama Rekening</label>
+                                                                        <input type="text" name="nama_rekening" class="form-control" value="{{ $item->nama_rekening }}" required>
+                                                                    </div>
+                                                                    <div class="col-md-6">
+                                                                        <label class="form-label">Reply Tiket</label>
+                                                                        <textarea name="reply_tiket" class="form-control" rows="2">{{ $item->reply_tiket }}</textarea>
+                                                                    </div>
+                                                                    <div class="col-md-6">
+                                                                        <label class="form-label">Reply Penambahan</label>
+                                                                        <textarea name="reply_penambahan" class="form-control" rows="2" required>{{ $item->reply_penambahan }}</textarea>
+                                                                    </div>
+                                                                    <div class="col-md-6">
+                                                                        <label class="form-label">Jam</label>
+                                                                        <input type="time" name="jam" class="form-control" value="{{ $item->jam ? \Carbon\Carbon::parse($item->jam)->format('H:i') : '' }}" required>
+                                                                    </div>
+                                                                    <div class="col-12 text-end">
+                                                                        <button type="submit" class="btn btn-primary btn-sm">Simpan Edit</button>
+                                                                    </div>
+                                                                </form>
+                                                            </div>
+                                                            <div class="col-lg-4">
+                                                                <h6 class="mb-3">Update Status</h6>
+                                                                <form method="POST" action="{{ route('admin.deposit.update-status', $item->id) }}" class="d-grid gap-2">
+                                                                    @csrf
+                                                                    @method('PUT')
+                                                                    <select name="status" class="form-select" required>
+                                                                        <option value="approved" {{ ($item->status ?? 'pending') === 'approved' ? 'selected' : '' }}>ACC</option>
+                                                                        <option value="rejected" {{ ($item->status ?? 'pending') === 'rejected' ? 'selected' : '' }}>Rejected</option>
+                                                                        <option value="selesai" {{ ($item->status ?? 'pending') === 'selesai' ? 'selected' : '' }}>Selesai</option>
                                                                     </select>
-                                                                </div>
-                                                                <div class="col-md-6">
-                                                                    <label class="form-label">BANK</label>
-                                                                    <input type="text" name="bank" class="form-control" value="{{ $item->bank }}" required>
-                                                                </div>
-                                                                <div class="col-md-6">
-                                                                    <label class="form-label">Server</label>
-                                                                    <input type="text" name="server" class="form-control" value="{{ $item->server }}" required>
-                                                                </div>
-                                                                <div class="col-md-6">
-                                                                    <label class="form-label">No-Rek</label>
-                                                                    <input type="text" name="no_rek" class="form-control" value="{{ $item->no_rek }}" required>
-                                                                </div>
-                                                                <div class="col-md-6">
-                                                                    <label class="form-label">Nama Rekening</label>
-                                                                    <input type="text" name="nama_rekening" class="form-control" value="{{ $item->nama_rekening }}" required>
-                                                                </div>
-                                                                <div class="col-md-6">
-                                                                    <label class="form-label">Reply Tiket</label>
-                                                                    <textarea name="reply_tiket" class="form-control" rows="2">{{ $item->reply_tiket }}</textarea>
-                                                                </div>
-                                                                <div class="col-md-6">
-                                                                    <label class="form-label">Reply Penambahan</label>
-                                                                    <textarea name="reply_penambahan" class="form-control" rows="2" required>{{ $item->reply_penambahan }}</textarea>
-                                                                </div>
-                                                                <div class="col-md-6">
-                                                                    <label class="form-label">Jam</label>
-                                                                    <input type="time" name="jam" class="form-control" value="{{ $item->jam ? \Carbon\Carbon::parse($item->jam)->format('H:i') : '' }}" required>
-                                                                </div>
+                                                                    <button type="submit" class="btn btn-success btn-sm">Simpan Status</button>
+                                                                </form>
                                                             </div>
                                                         </div>
-                                                        <div class="modal-footer">
-                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                                                            <button type="submit" class="btn btn-primary">Simpan Edit</button>
-                                                        </div>
-                                                    </form>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="modal fade" id="statusModal-{{ $item->id }}" tabindex="-1" aria-hidden="true">
-                                            <div class="modal-dialog modal-dialog-centered">
-                                                <div class="modal-content text-start">
-                                                    <form method="POST" action="{{ route('admin.deposit.update-status', $item->id) }}">
-                                                        @csrf
-                                                        @method('PUT')
-                                                        <div class="modal-header">
-                                                            <h5 class="modal-title">Update Status Request</h5>
-                                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                                        </div>
-                                                        <div class="modal-body">
-                                                            <label class="form-label">Status</label>
-                                                            <select name="status" class="form-select" required>
-                                                                <option value="approved" {{ ($item->status ?? 'pending') === 'approved' ? 'selected' : '' }}>ACC</option>
-                                                                <option value="rejected" {{ ($item->status ?? 'pending') === 'rejected' ? 'selected' : '' }}>Rejected</option>
-                                                                <option value="selesai" {{ ($item->status ?? 'pending') === 'selesai' ? 'selected' : '' }}>Selesai</option>
-                                                            </select>
-                                                        </div>
-                                                        <div class="modal-footer">
-                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                                                            <button type="submit" class="btn btn-success">Simpan Status</button>
-                                                        </div>
-                                                    </form>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>

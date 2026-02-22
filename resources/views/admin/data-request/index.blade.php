@@ -67,34 +67,80 @@
                                             {{ ucfirst($item->status) }}
                                         </span>
                                     </td>
-                                    <td class="text-center">
-                                        <div class="d-flex flex-column gap-2">
-                                            <div class="d-flex gap-2">
-                                                <a class="btn btn-outline-secondary btn-sm" target="_blank" href="{{ route('admin.data-request.view', [$item->id, 'ktp']) }}">Lihat KTP</a>
-                                                <a class="btn btn-outline-secondary btn-sm" target="_blank" href="{{ route('admin.data-request.view', [$item->id, 'selfie']) }}">Lihat Selfie</a>
-                                            </div>
-                                            <div class="d-flex gap-2">
-                                                <a class="btn btn-outline-primary btn-sm" href="{{ route('admin.data-request.download', [$item->id, 'ktp']) }}">Download KTP</a>
-                                                <a class="btn btn-outline-primary btn-sm" href="{{ route('admin.data-request.download', [$item->id, 'selfie']) }}">Download Selfie</a>
-                                            </div>
-
-                                            <form method="POST" action="{{ route('admin.data-request.update', $item->id) }}" class="d-flex flex-column gap-2">
-                                                @csrf
-                                                @method('PUT')
-                                                <select name="status" class="form-select form-select-sm" required>
-                                                    @foreach (['pending' => 'Pending', 'approved' => 'Approved', 'rejected' => 'Rejected', 'revision' => 'Revision'] as $key => $label)
-                                                        <option value="{{ $key }}" {{ $item->status === $key ? 'selected' : '' }}>{{ $label }}</option>
-                                                    @endforeach
-                                                </select>
-                                                <input type="text" name="catatan_admin" value="{{ $item->catatan_admin }}" class="form-control form-control-sm" placeholder="Catatan admin" />
-                                                <button class="btn btn-success btn-sm">Update + Kirim WA</button>
-                                            </form>
-
+                                    <td class="text-center" style="min-width:180px;">
+                                        <div class="d-flex gap-2 justify-content-center flex-wrap">
+                                            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#detailDataRequest-{{ $item->id }}">Lihat</button>
                                             <form method="POST" action="{{ route('admin.data-request.destroy', $item->id) }}" onsubmit="return confirm('Yakin ingin menghapus pengajuan data ini?');">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
                                             </form>
+                                        </div>
+
+                                        <div class="modal fade" id="detailDataRequest-{{ $item->id }}" tabindex="-1" aria-hidden="true">
+                                            <div class="modal-dialog modal-lg modal-dialog-centered">
+                                                <div class="modal-content text-start">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">Detail Pengajuan Data - {{ $item->kode_pengajuan }}</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <div class="row g-3">
+                                                            <div class="col-md-6">
+                                                                <label class="form-label mb-1">Aplikasi</label>
+                                                                <div class="fw-semibold">{{ strtoupper($item->aplikasi) }}</div>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <label class="form-label mb-1">Jenis Perubahan</label>
+                                                                <div class="fw-semibold">{{ $item->jenis_perubahan }}</div>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <label class="form-label mb-1">Username</label>
+                                                                <div class="fw-semibold">{{ $item->username_akun }}</div>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <label class="form-label mb-1">Nama Pemohon</label>
+                                                                <div class="fw-semibold">{{ $item->nama_pemohon }}</div>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <label class="form-label mb-1">Nomor HP</label>
+                                                                <div class="fw-semibold">{{ $item->nomor_hp }}</div>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <label class="form-label mb-1">Lampiran</label>
+                                                                <div class="d-flex gap-2 flex-wrap">
+                                                                    <a class="btn btn-outline-secondary btn-sm" target="_blank" href="{{ route('admin.data-request.view', [$item->id, 'ktp']) }}">Lihat KTP</a>
+                                                                    <a class="btn btn-outline-secondary btn-sm" target="_blank" href="{{ route('admin.data-request.view', [$item->id, 'selfie']) }}">Lihat Selfie</a>
+                                                                    <a class="btn btn-outline-primary btn-sm" href="{{ route('admin.data-request.download', [$item->id, 'ktp']) }}">Download KTP</a>
+                                                                    <a class="btn btn-outline-primary btn-sm" href="{{ route('admin.data-request.download', [$item->id, 'selfie']) }}">Download Selfie</a>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-12"><hr class="my-1"></div>
+                                                            <div class="col-12">
+                                                                <form method="POST" action="{{ route('admin.data-request.update', $item->id) }}" class="row g-2">
+                                                                    @csrf
+                                                                    @method('PUT')
+                                                                    <div class="col-md-4">
+                                                                        <label class="form-label">Status</label>
+                                                                        <select name="status" class="form-select form-select-sm" required>
+                                                                            @foreach (['pending' => 'Pending', 'approved' => 'Approved', 'rejected' => 'Rejected', 'revision' => 'Revision'] as $key => $label)
+                                                                                <option value="{{ $key }}" {{ $item->status === $key ? 'selected' : '' }}>{{ $label }}</option>
+                                                                            @endforeach
+                                                                        </select>
+                                                                    </div>
+                                                                    <div class="col-md-8">
+                                                                        <label class="form-label">Catatan Admin</label>
+                                                                        <input type="text" name="catatan_admin" value="{{ $item->catatan_admin }}" class="form-control form-control-sm" placeholder="Catatan admin" />
+                                                                    </div>
+                                                                    <div class="col-12 text-end mt-2">
+                                                                        <button class="btn btn-success btn-sm">Update + Kirim WA</button>
+                                                                    </div>
+                                                                </form>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </td>
                                 </tr>
