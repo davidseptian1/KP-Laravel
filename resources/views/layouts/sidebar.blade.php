@@ -133,6 +133,31 @@
                     </a>
                 </li>
 
+                <li class="pc-item pc-caption">
+                    <label>Riwayat Tagihan Matrix</label>
+                </li>
+
+                <li class="pc-item {{ $menuDataMatrixHistoryTagPascaBayar ?? '' }}">
+                    <a href="{{ route('admin.data-matrix.history.tag-pasca-bayar') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-history"></i></span>
+                        <span class="pc-mtext">Riwayat Tagihan Nomor<br>Pasca Bayar</span>
+                    </a>
+                </li>
+
+                <li class="pc-item {{ $menuDataMatrixHistoryTagPlnInternet ?? '' }}">
+                    <a href="{{ route('admin.data-matrix.history.tag-pln-internet') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-history"></i></span>
+                        <span class="pc-mtext">Riwayat Tagihan PLN & Internet</span>
+                    </a>
+                </li>
+
+                <li class="pc-item {{ $menuDataMatrixHistoryTagLainnya ?? '' }}">
+                    <a href="{{ route('admin.data-matrix.history.tag-lainnya') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-history"></i></span>
+                        <span class="pc-mtext">Tagihan lainnya</span>
+                    </a>
+                </li>
+
                 @endif
 
                 @if (auth()->check() && (auth()->user()->jabatan=='Admin' || auth()->user()->jabatan=='HRD'))

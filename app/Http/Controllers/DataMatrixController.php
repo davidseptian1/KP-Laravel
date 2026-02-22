@@ -178,6 +178,45 @@ class DataMatrixController extends Controller
         ]);
     }
 
+    public function historyTagNomorPascaBayar()
+    {
+        return view('admin.data-matrix.riwayat-tag-nomor-pasca-bayar', [
+            'title' => 'Riwayat Tagihan Nomor Pasca Bayar',
+            'menuDataMatrixHistoryTagPascaBayar' => 'active',
+            'items' => TagNomorPascaBayarPeriod::with('parent')
+                ->orderByDesc('periode_tahun')
+                ->orderByDesc('periode_bulan')
+                ->orderByDesc('id')
+                ->paginate(30),
+        ]);
+    }
+
+    public function historyTagPlnInternet()
+    {
+        return view('admin.data-matrix.riwayat-tag-pln-internet', [
+            'title' => 'Riwayat Tagihan PLN & Internet',
+            'menuDataMatrixHistoryTagPlnInternet' => 'active',
+            'items' => TagPlnInternetPeriod::with('parent')
+                ->orderByDesc('periode_tahun')
+                ->orderByDesc('periode_bulan')
+                ->orderByDesc('id')
+                ->paginate(30),
+        ]);
+    }
+
+    public function historyTagLainnya()
+    {
+        return view('admin.data-matrix.riwayat-tag-lainnya', [
+            'title' => 'Tagihan Lainnya',
+            'menuDataMatrixHistoryTagLainnya' => 'active',
+            'items' => TagLainnyaPeriod::with('parent')
+                ->orderByDesc('periode_tahun')
+                ->orderByDesc('periode_bulan')
+                ->orderByDesc('id')
+                ->paginate(30),
+        ]);
+    }
+
     public function importTagLainnya(Request $request)
     {
         $validated = $request->validate([

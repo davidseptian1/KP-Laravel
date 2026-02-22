@@ -195,6 +195,9 @@ Route::middleware('checkLogin')->group(function () {
         Route::delete('admin/data-matrix/tag-lainnya/{id}', [DataMatrixController::class, 'destroyTagLainnya'])->name('admin.data-matrix.tag-lainnya.destroy');
         Route::post('admin/data-matrix/tag-lainnya/{id}/periods', [DataMatrixController::class, 'storePeriodTagLainnya'])->name('admin.data-matrix.tag-lainnya.periods.store');
         Route::delete('admin/data-matrix/tag-lainnya/{id}/periods/{periodId}', [DataMatrixController::class, 'destroyPeriodTagLainnya'])->name('admin.data-matrix.tag-lainnya.periods.destroy');
+        Route::get('admin/data-matrix/riwayat-tagihan-nomor-pasca-bayar', [DataMatrixController::class, 'historyTagNomorPascaBayar'])->name('admin.data-matrix.history.tag-pasca-bayar');
+        Route::get('admin/data-matrix/riwayat-tagihan-pln-internet', [DataMatrixController::class, 'historyTagPlnInternet'])->name('admin.data-matrix.history.tag-pln-internet');
+        Route::get('admin/data-matrix/riwayat-tagihan-lainnya', [DataMatrixController::class, 'historyTagLainnya'])->name('admin.data-matrix.history.tag-lainnya');
 
         // Reimburse (Admin)
         Route::get('admin/reimburse', [AdminReimburseWebController::class, 'index'])->name('admin.reimburse.index');
