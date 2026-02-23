@@ -256,6 +256,17 @@
                     </a>
                 </li>
 
+                <li class="pc-item pc-caption">
+                    <label>API Manajement</label>
+                </li>
+
+                <li class="pc-item {{ $menuApiManagement ?? '' }}">
+                    <a href="{{ route('admin.api-management.index') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-api"></i></span>
+                        <span class="pc-mtext">Semua Monitoring API</span>
+                    </a>
+                </li>
+
                 @endif
 
                 @if (auth()->check() && auth()->user()->jabatan=='Staff')
