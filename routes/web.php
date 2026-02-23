@@ -176,6 +176,8 @@ Route::middleware('checkLogin')->group(function () {
 
         // API Management
         Route::get('admin/api-management', [ApiManagementController::class, 'index'])->name('admin.api-management.index');
+        Route::post('admin/api-management/keys', [ApiManagementController::class, 'store'])->name('admin.api-management.keys.store');
+        Route::delete('admin/api-management/keys/{id}', [ApiManagementController::class, 'destroy'])->name('admin.api-management.keys.destroy');
 
         // Data Matrix
         Route::get('admin/data-matrix/tag-nomor-pasca-bayar', [DataMatrixController::class, 'tagNomorPascaBayar'])->name('admin.data-matrix.tag-pasca-bayar');

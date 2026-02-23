@@ -59,7 +59,7 @@ class AdminLoanRequestController extends Controller
         $item->catatan_admin = $validated['catatan_admin'] ?? null;
 
         if (in_array($validated['status'], ['approved', 'rejected'], true)) {
-            $item->approved_by = $request->user()->id;
+            $item->approved_by = optional($request->user())->id;
             $item->approved_at = now();
         } else {
             $item->approved_by = null;

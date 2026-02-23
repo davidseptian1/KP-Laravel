@@ -71,6 +71,7 @@ class Kernel extends HttpKernel
         'isAdmin' => \App\Http\Middleware\isAdmin::class,
         'isLogin' => \App\Http\Middleware\isLogin::class,
         'admin.api' => \App\Http\Middleware\EnsureAdminApi::class,
+        'api.key' => \App\Http\Middleware\AuthenticateApiKey::class,
 
 
     ];

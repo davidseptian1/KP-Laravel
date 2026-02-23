@@ -50,3 +50,21 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/admin/monitoring/deposit/{id}', [AdminDepositController::class, 'destroy']);
     });
 });
+
+Route::prefix('v1')->middleware('api.key')->group(function () {
+    Route::get('/monitoring/data-request', [AdminDataRequestController::class, 'index']);
+    Route::get('/monitoring/data-request/{id}', [AdminDataRequestController::class, 'show']);
+    Route::put('/monitoring/data-request/{id}', [AdminDataRequestController::class, 'update']);
+    Route::delete('/monitoring/data-request/{id}', [AdminDataRequestController::class, 'destroy']);
+
+    Route::get('/monitoring/loan-request', [AdminLoanRequestController::class, 'index']);
+    Route::get('/monitoring/loan-request/{id}', [AdminLoanRequestController::class, 'show']);
+    Route::put('/monitoring/loan-request/{id}', [AdminLoanRequestController::class, 'update']);
+    Route::delete('/monitoring/loan-request/{id}', [AdminLoanRequestController::class, 'destroy']);
+
+    Route::get('/monitoring/deposit', [AdminDepositController::class, 'index']);
+    Route::get('/monitoring/deposit/{id}', [AdminDepositController::class, 'show']);
+    Route::put('/monitoring/deposit/{id}/details', [AdminDepositController::class, 'updateDetails']);
+    Route::put('/monitoring/deposit/{id}/status', [AdminDepositController::class, 'updateStatus']);
+    Route::delete('/monitoring/deposit/{id}', [AdminDepositController::class, 'destroy']);
+});
