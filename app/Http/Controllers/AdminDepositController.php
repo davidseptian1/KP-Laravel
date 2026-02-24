@@ -12,12 +12,47 @@ class AdminDepositController extends Controller
 {
     public function monitoring(Request $request)
     {
-        $items = Deposit::orderByDesc('created_at')->paginate(15);
+        $validated = $request->validate([
+            'server' => 'nullable|string|max:100',
+            'start_date' => 'nullable|date_format:Y-m-d',
+            'end_date' => 'nullable|date_format:Y-m-d',
+        ]);
+
+        $server = $validated['server'] ?? null;
+        $startDate = $validated['start_date'] ?? null;
+        $endDate = $validated['end_date'] ?? null;
+
+        $query = Deposit::query()->orderByDesc('created_at');
+
+        if ($server) {
+            $query->where('server', $server);
+        }
+
+        if ($startDate) {
+            $query->whereDate('created_at', '>=', $startDate);
+        }
+
+        if ($endDate) {
+            $query->whereDate('created_at', '<=', $endDate);
+        }
+
+        $items = $query->paginate(15)->withQueryString();
+        $serverOptions = Deposit::query()
+            ->whereNotNull('server')
+            ->where('server', '!=', '')
+            ->select('server')
+            ->distinct()
+            ->orderBy('server')
+            ->pluck('server');
 
         return view('admin.deposit.monitoring', [
             'title' => 'Monitoring Deposit',
             'menuAdminDepositMonitoring' => 'active',
             'items' => $items,
+            'server' => $server,
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+            'serverOptions' => $serverOptions,
         ]);
     }
 

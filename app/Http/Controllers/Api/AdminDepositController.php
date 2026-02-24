@@ -10,8 +10,19 @@ class AdminDepositController extends Controller
 {
     public function index(Request $request)
     {
-        $status = $request->query('status');
-        $search = $request->query('search');
+        $validated = $request->validate([
+            'status' => 'nullable|in:pending,approved,rejected,selesai',
+            'search' => 'nullable|string|max:100',
+            'server' => 'nullable|string|max:100',
+            'start_date' => 'nullable|date_format:Y-m-d',
+            'end_date' => 'nullable|date_format:Y-m-d',
+        ]);
+
+        $status = $validated['status'] ?? null;
+        $search = $validated['search'] ?? null;
+        $server = $validated['server'] ?? null;
+        $startDate = $validated['start_date'] ?? null;
+        $endDate = $validated['end_date'] ?? null;
 
         $query = Deposit::query()->orderByDesc('created_at');
 
@@ -25,6 +36,18 @@ class AdminDepositController extends Controller
                     ->orWhere('server', 'like', "%{$search}%")
                     ->orWhere('no_rek', 'like', "%{$search}%");
             });
+        }
+
+        if ($server) {
+            $query->where('server', $server);
+        }
+
+        if ($startDate) {
+            $query->whereDate('created_at', '>=', $startDate);
+        }
+
+        if ($endDate) {
+            $query->whereDate('created_at', '<=', $endDate);
         }
 
         return response()->json([

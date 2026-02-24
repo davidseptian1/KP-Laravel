@@ -24,6 +24,30 @@
     <div class="col-12">
         <div class="card shadow-sm">
             <div class="card-body">
+                <form method="GET" class="row g-2 align-items-end mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Filter Server</label>
+                        <select name="server" class="form-select form-select-sm">
+                            <option value="">Semua Server</option>
+                            @foreach (($serverOptions ?? []) as $serverName)
+                                <option value="{{ $serverName }}" {{ ($server ?? '') === $serverName ? 'selected' : '' }}>{{ $serverName }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Start Date</label>
+                        <input type="date" name="start_date" class="form-control form-control-sm" value="{{ $startDate ?? '' }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">End Date</label>
+                        <input type="date" name="end_date" class="form-control form-control-sm" value="{{ $endDate ?? '' }}">
+                    </div>
+                    <div class="col-md-2 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-sm w-100">Filter</button>
+                        <a href="{{ route('admin.deposit.monitoring') }}" class="btn btn-outline-secondary btn-sm w-100">Reset</a>
+                    </div>
+                </form>
+
                 <div class="table-responsive">
                     <table class="table table-hover align-middle">
                         <thead class="table-light">
