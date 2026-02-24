@@ -14,8 +14,17 @@ class AdminDataRequestController extends Controller
 {
     public function index(Request $request)
     {
-        $status = $request->query('status');
-        $search = $request->query('search');
+        $validated = $request->validate([
+            'status' => 'nullable|in:pending,approved,rejected,revision',
+            'search' => 'nullable|string|max:100',
+            'start_date' => 'nullable|date_format:Y-m-d',
+            'end_date' => 'nullable|date_format:Y-m-d',
+        ]);
+
+        $status = $validated['status'] ?? null;
+        $search = $validated['search'] ?? null;
+        $startDate = $validated['start_date'] ?? null;
+        $endDate = $validated['end_date'] ?? null;
 
         $query = DataRequest::with('form')->orderByDesc('tanggal_pengajuan');
 
@@ -29,6 +38,14 @@ class AdminDataRequestController extends Controller
                     ->orWhere('nama_pemohon', 'like', "%{$search}%")
                     ->orWhere('username_akun', 'like', "%{$search}%");
             });
+        }
+
+        if ($startDate) {
+            $query->whereDate('tanggal_pengajuan', '>=', $startDate);
+        }
+
+        if ($endDate) {
+            $query->whereDate('tanggal_pengajuan', '<=', $endDate);
         }
 
         return response()->json([

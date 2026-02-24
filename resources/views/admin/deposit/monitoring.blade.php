@@ -26,13 +26,8 @@
             <div class="card-body">
                 <form method="GET" class="row g-2 align-items-end mb-3">
                     <div class="col-md-4">
-                        <label class="form-label">Filter Server</label>
-                        <select name="server" class="form-select form-select-sm">
-                            <option value="">Semua Server</option>
-                            @foreach (($serverOptions ?? []) as $serverName)
-                                <option value="{{ $serverName }}" {{ ($server ?? '') === $serverName ? 'selected' : '' }}>{{ $serverName }}</option>
-                            @endforeach
-                        </select>
+                        <label class="form-label">Search by Server</label>
+                        <input type="text" name="server" class="form-control form-control-sm" value="{{ $server ?? '' }}" placeholder="Contoh: server-1">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Start Date</label>

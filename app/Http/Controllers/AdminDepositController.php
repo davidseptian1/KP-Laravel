@@ -25,7 +25,7 @@ class AdminDepositController extends Controller
         $query = Deposit::query()->orderByDesc('created_at');
 
         if ($server) {
-            $query->where('server', $server);
+            $query->where('server', 'like', "%{$server}%");
         }
 
         if ($startDate) {

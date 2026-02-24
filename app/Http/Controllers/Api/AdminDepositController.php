@@ -39,7 +39,7 @@ class AdminDepositController extends Controller
         }
 
         if ($server) {
-            $query->where('server', $server);
+            $query->where('server', 'like', "%{$server}%");
         }
 
         if ($startDate) {

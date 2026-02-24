@@ -12,8 +12,19 @@ class AdminLoanRequestController extends Controller
 {
     public function index(Request $request)
     {
-        $status = $request->query('status');
-        $search = $request->query('search');
+        $validated = $request->validate([
+            'status' => 'nullable|in:pending,approved,rejected,revision',
+            'search' => 'nullable|string|max:100',
+            'server' => 'nullable|string|max:100',
+            'start_date' => 'nullable|date_format:Y-m-d',
+            'end_date' => 'nullable|date_format:Y-m-d',
+        ]);
+
+        $status = $validated['status'] ?? null;
+        $search = $validated['search'] ?? null;
+        $server = $validated['server'] ?? null;
+        $startDate = $validated['start_date'] ?? null;
+        $endDate = $validated['end_date'] ?? null;
 
         $query = LoanRequest::with('form')->orderByDesc('tanggal_pengajuan');
 
@@ -27,6 +38,18 @@ class AdminLoanRequestController extends Controller
                     ->orWhere('nama_server', 'like', "%{$search}%")
                     ->orWhere('barang_dipinjam', 'like', "%{$search}%");
             });
+        }
+
+        if ($server) {
+            $query->where('nama_server', 'like', "%{$server}%");
+        }
+
+        if ($startDate) {
+            $query->whereDate('tanggal_pengajuan', '>=', $startDate);
+        }
+
+        if ($endDate) {
+            $query->whereDate('tanggal_pengajuan', '<=', $endDate);
         }
 
         return response()->json([
