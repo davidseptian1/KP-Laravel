@@ -97,7 +97,7 @@
                         <span class="text-danger">*</span>
                         Nomor :
                     </label>
-                    <input type="number" name="nomor" class="form-control @error('nomor') is-invalid @enderror" value="{{ $minusan->nomor }}">
+                    <input type="text" name="nomor" inputmode="numeric" pattern="[0-9]*" class="form-control @error('nomor') is-invalid @enderror" value="{{ $minusan->nomor }}">
                     @error('nomor')
                     <small class="text-danger">
                         {{ $message }}

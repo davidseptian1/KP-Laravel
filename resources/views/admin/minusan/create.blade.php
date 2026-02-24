@@ -92,7 +92,7 @@
                     <label class="form-label">
                         <span class="text-danger">*</span> Nomor :
                     </label>
-                    <input type="number" name="nomor"
+                    <input type="text" name="nomor" inputmode="numeric" pattern="[0-9]*"
                         class="form-control @error('nomor') is-invalid @enderror"
                         value="{{ old('nomor') }}">
                     @error('nomor')
