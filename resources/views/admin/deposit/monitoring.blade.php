@@ -24,6 +24,12 @@
     <div class="col-12">
         <div class="card shadow-sm">
             <div class="card-body">
+                <div class="d-flex justify-content-end mb-3">
+                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalUploadManualDeposit">
+                        Upload Manual Excel
+                    </button>
+                </div>
+
                 <form method="GET" class="row g-2 align-items-end mb-3">
                     <div class="col-md-4">
                         <label class="form-label">Search by Server</label>
@@ -186,6 +192,36 @@
                     {{ $items->links() }}
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalUploadManualDeposit" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" action="{{ route('admin.deposit.import-manual') }}" enctype="multipart/form-data">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title">Upload Manual Deposit</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Tanggal Input</label>
+                        <input type="date" name="manual_date" class="form-control" value="{{ old('manual_date', now()->format('Y-m-d')) }}" required>
+                        <small class="text-muted">Semua data dari file akan masuk ke tanggal ini dan status otomatis selesai.</small>
+                    </div>
+                    <div>
+                        <label class="form-label">File Excel</label>
+                        <input type="file" name="manual_file" class="form-control" accept=".xlsx,.xls,.csv,.txt" required>
+                        <small class="text-muted">Kolom minimal: Nama Supplier, Nominal, Bank, Server, No Rek, Nama Rekening, Jam.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Upload</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

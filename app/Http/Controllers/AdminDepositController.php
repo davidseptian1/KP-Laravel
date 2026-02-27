@@ -2,14 +2,45 @@
 
 namespace App\Http\Controllers;
 
+use App\Imports\DepositManualImport;
 use App\Models\Deposit;
 use App\Models\NotificationItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 
 class AdminDepositController extends Controller
 {
+    public function importManual(Request $request)
+    {
+        $validated = $request->validate([
+            'manual_date' => 'required|date_format:Y-m-d',
+            'manual_file' => 'required|file|mimes:xlsx,xls,csv,txt|max:10240',
+        ], [
+            'manual_date.required' => 'Tanggal input wajib dipilih.',
+            'manual_date.date_format' => 'Format tanggal input tidak valid.',
+            'manual_file.required' => 'File Excel wajib dipilih.',
+            'manual_file.mimes' => 'File harus berformat xlsx, xls, csv, atau txt.',
+            'manual_file.max' => 'Ukuran file maksimal 10MB.',
+        ]);
+
+        try {
+            Excel::import(
+                new DepositManualImport($validated['manual_date'], Auth::id()),
+                $request->file('manual_file')
+            );
+
+            return redirect()
+                ->route('admin.deposit.monitoring')
+                ->with('success', 'Upload manual berhasil diproses. Status otomatis diset ke selesai.');
+        } catch (\Throwable $e) {
+            return redirect()
+                ->route('admin.deposit.monitoring')
+                ->with('error', 'Upload manual gagal diproses: ' . $e->getMessage());
+        }
+    }
+
     public function monitoring(Request $request)
     {
         $validated = $request->validate([
