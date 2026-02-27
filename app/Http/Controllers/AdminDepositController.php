@@ -26,14 +26,24 @@ class AdminDepositController extends Controller
         ]);
 
         try {
+            $importer = new DepositManualImport($validated['manual_date'], Auth::id());
+
             Excel::import(
-                new DepositManualImport($validated['manual_date'], Auth::id()),
+                $importer,
                 $request->file('manual_file')
             );
 
+            $insertedRows = $importer->getInsertedCount();
+
+            if ($insertedRows < 1) {
+                return redirect()
+                    ->route('admin.deposit.monitoring')
+                    ->with('error', 'Upload berhasil dibaca, tetapi tidak ada baris valid yang bisa diinput. Cek format kolom file Excel Anda.');
+            }
+
             return redirect()
                 ->route('admin.deposit.monitoring')
-                ->with('success', 'Upload manual berhasil diproses. Status otomatis diset ke selesai.');
+                ->with('success', "Upload manual berhasil diproses. {$insertedRows} baris berhasil diinput dengan status selesai.");
         } catch (\Throwable $e) {
             return redirect()
                 ->route('admin.deposit.monitoring')

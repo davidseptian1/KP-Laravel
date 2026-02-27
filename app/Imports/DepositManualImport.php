@@ -6,11 +6,13 @@ use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\ToCollection;
+use Maatwebsite\Excel\Concerns\WithHeadingRow;
 
-class DepositManualImport implements ToCollection
+class DepositManualImport implements ToCollection, WithHeadingRow
 {
     private string $inputDate;
     private ?int $userId;
+    private int $insertedCount = 0;
 
     public function __construct(string $inputDate, ?int $userId = null)
     {
@@ -77,11 +79,39 @@ class DepositManualImport implements ToCollection
 
         foreach (array_chunk($insertRows, 500) as $chunk) {
             DB::table('deposits')->insert($chunk);
+            $this->insertedCount += count($chunk);
         }
+    }
+
+    public function getInsertedCount(): int
+    {
+        return $this->insertedCount;
     }
 
     private function normalizeRow(array $row): array
     {
+        $hasStringKey = false;
+        foreach (array_keys($row) as $key) {
+            if (!is_numeric($key)) {
+                $hasStringKey = true;
+                break;
+            }
+        }
+
+        if (!$hasStringKey) {
+            $cells = array_values($row);
+            return [
+                'nama_supplier' => $cells[1] ?? null,
+                'nominal' => $cells[2] ?? null,
+                'bank' => $cells[3] ?? null,
+                'server' => $cells[4] ?? null,
+                'no_rek' => $cells[5] ?? null,
+                'nama_rekening' => $cells[6] ?? null,
+                'reply_penambahan' => $cells[7] ?? null,
+                'jam' => $cells[8] ?? null,
+            ];
+        }
+
         $normalized = [];
 
         foreach ($row as $key => $value) {
@@ -104,6 +134,7 @@ class DepositManualImport implements ToCollection
             'nama_rek', 'nama_rekening' => 'nama_rekening',
             'reply_penambahan', 'reply_penambahan_' => 'reply_penambahan',
             'reply_tiket', 'reply_ticket' => 'reply_tiket',
+            'jam_', 'waktu', 'time' => 'jam',
             default => $key,
         };
     }
