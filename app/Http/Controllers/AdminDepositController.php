@@ -178,46 +178,153 @@ class AdminDepositController extends Controller
             abort(403, 'Akses ditolak');
         }
 
-        $summary = Deposit::selectRaw('COUNT(*) as total, SUM(nominal) as total_nominal, AVG(nominal) as avg_nominal, MIN(nominal) as min_nominal, MAX(nominal) as max_nominal')
+        $validated = $request->validate([
+            'start_date' => 'nullable|date_format:Y-m-d',
+            'end_date' => 'nullable|date_format:Y-m-d',
+            'server' => 'nullable|string|max:100',
+            'bank' => 'nullable|string|max:100',
+            'status' => 'nullable|in:pending,approved,rejected,selesai',
+            'nama_supplier' => 'nullable|string|max:255',
+            'jenis_transaksi' => 'nullable|in:deposit,hutang',
+        ]);
+
+        $filters = [
+            'start_date' => $validated['start_date'] ?? null,
+            'end_date' => $validated['end_date'] ?? null,
+            'server' => $validated['server'] ?? null,
+            'bank' => $validated['bank'] ?? null,
+            'status' => $validated['status'] ?? null,
+            'nama_supplier' => $validated['nama_supplier'] ?? null,
+            'jenis_transaksi' => $validated['jenis_transaksi'] ?? null,
+        ];
+
+        $baseQuery = Deposit::query();
+
+        if ($filters['start_date']) {
+            $baseQuery->whereDate('created_at', '>=', $filters['start_date']);
+        }
+        if ($filters['end_date']) {
+            $baseQuery->whereDate('created_at', '<=', $filters['end_date']);
+        }
+        if ($filters['server']) {
+            $baseQuery->where('server', $filters['server']);
+        }
+        if ($filters['bank']) {
+            $baseQuery->where('bank', $filters['bank']);
+        }
+        if ($filters['status']) {
+            $baseQuery->where('status', $filters['status']);
+        }
+        if ($filters['nama_supplier']) {
+            $baseQuery->where('nama_supplier', $filters['nama_supplier']);
+        }
+        if ($filters['jenis_transaksi']) {
+            $baseQuery->where('jenis_transaksi', $filters['jenis_transaksi']);
+        }
+
+        $summary = (clone $baseQuery)
+            ->selectRaw('COUNT(*) as total')
+            ->selectRaw('COALESCE(SUM(nominal), 0) as total_nominal')
+            ->selectRaw('COALESCE(AVG(nominal), 0) as avg_nominal')
+            ->selectRaw('COALESCE(MIN(nominal), 0) as min_nominal')
+            ->selectRaw('COALESCE(MAX(nominal), 0) as max_nominal')
+            ->selectRaw('SUM(CASE WHEN status = "pending" THEN 1 ELSE 0 END) as total_pending')
+            ->selectRaw('SUM(CASE WHEN status = "approved" THEN 1 ELSE 0 END) as total_approved')
+            ->selectRaw('SUM(CASE WHEN status = "rejected" THEN 1 ELSE 0 END) as total_rejected')
+            ->selectRaw('SUM(CASE WHEN status = "selesai" THEN 1 ELSE 0 END) as total_selesai')
             ->first();
 
-        $byBank = Deposit::selectRaw('bank, COUNT(*) as jumlah, SUM(nominal) as total')
+        $byBank = (clone $baseQuery)
+            ->selectRaw('bank, COUNT(*) as jumlah, SUM(nominal) as total')
             ->groupBy('bank')
             ->orderByDesc('total')
+            ->limit(10)
             ->get();
 
-        $byServer = Deposit::selectRaw('server, COUNT(*) as jumlah, SUM(nominal) as total')
+        $byServer = (clone $baseQuery)
+            ->selectRaw('server, COUNT(*) as jumlah, SUM(nominal) as total')
             ->groupBy('server')
             ->orderByDesc('total')
+            ->limit(10)
             ->get();
 
-        $bySupplier = Deposit::selectRaw('nama_supplier, COUNT(*) as jumlah, SUM(nominal) as total')
+        $bySupplier = (clone $baseQuery)
+            ->selectRaw('nama_supplier, COUNT(*) as jumlah, SUM(nominal) as total')
             ->groupBy('nama_supplier')
             ->orderByDesc('total')
+            ->limit(10)
             ->get();
 
-        $byAccount = Deposit::selectRaw('no_rek, nama_rekening, COUNT(*) as jumlah, SUM(nominal) as total')
+        $byAccount = (clone $baseQuery)
+            ->selectRaw('no_rek, nama_rekening, COUNT(*) as jumlah, SUM(nominal) as total')
             ->groupBy('no_rek', 'nama_rekening')
             ->orderByDesc('total')
+            ->limit(10)
             ->get();
 
-        $byHour = Deposit::selectRaw('HOUR(jam) as jam, COUNT(*) as jumlah, SUM(nominal) as total')
-            ->groupBy('jam')
+        $byHour = (clone $baseQuery)
+            ->selectRaw('HOUR(jam) as jam, COUNT(*) as jumlah, SUM(nominal) as total')
+            ->groupBy(DB::raw('HOUR(jam)'))
             ->orderBy('jam')
             ->get();
 
-        $replyCount = Deposit::whereNotNull('reply_penambahan')
-            ->where('reply_penambahan', '!=', '')
-            ->count();
-
-        $byStatus = Deposit::selectRaw('status, COUNT(*) as jumlah, SUM(nominal) as total')
+        $byStatus = (clone $baseQuery)
+            ->selectRaw('status, COUNT(*) as jumlah, SUM(nominal) as total')
             ->groupBy('status')
             ->orderByDesc('jumlah')
             ->get();
 
+        $trendDaily = (clone $baseQuery)
+            ->selectRaw('DATE(created_at) as tanggal, COUNT(*) as jumlah, SUM(nominal) as total')
+            ->groupBy(DB::raw('DATE(created_at)'))
+            ->orderByDesc('tanggal')
+            ->limit(31)
+            ->get();
+
+        $replyCount = (clone $baseQuery)
+            ->whereNotNull('reply_penambahan')
+            ->where('reply_penambahan', '!=', '')
+            ->count();
+
+        $activeDays = (clone $baseQuery)
+            ->selectRaw('COUNT(DISTINCT DATE(created_at)) as total_hari')
+            ->value('total_hari') ?? 0;
+
+        $period = (clone $baseQuery)
+            ->selectRaw('MIN(DATE(created_at)) as min_date, MAX(DATE(created_at)) as max_date')
+            ->first();
+
+        $approvalRate = ($summary->total ?? 0) > 0
+            ? round((($summary->total_approved ?? 0) / $summary->total) * 100, 2)
+            : 0;
+
+        $completionRate = ($summary->total ?? 0) > 0
+            ? round((($summary->total_selesai ?? 0) / $summary->total) * 100, 2)
+            : 0;
+
+        $rejectionRate = ($summary->total ?? 0) > 0
+            ? round((($summary->total_rejected ?? 0) / $summary->total) * 100, 2)
+            : 0;
+
+        $avgPerDay = $activeDays > 0
+            ? ($summary->total_nominal / $activeDays)
+            : 0;
+
+        $topBank = $byBank->first();
+        $topServer = $byServer->first();
+        $topSupplier = $bySupplier->first();
+
+        $filterOptions = [
+            'servers' => Deposit::query()->whereNotNull('server')->where('server', '!=', '')->distinct()->orderBy('server')->pluck('server'),
+            'banks' => Deposit::query()->whereNotNull('bank')->where('bank', '!=', '')->distinct()->orderBy('bank')->pluck('bank'),
+            'suppliers' => Deposit::query()->whereNotNull('nama_supplier')->where('nama_supplier', '!=', '')->distinct()->orderBy('nama_supplier')->pluck('nama_supplier'),
+        ];
+
         return view('admin.deposit.analysis', [
             'title' => 'Analisis Deposit',
             'menuDepositAnalysis' => 'active',
+            'filters' => $filters,
+            'filterOptions' => $filterOptions,
             'summary' => $summary,
             'byBank' => $byBank,
             'byServer' => $byServer,
@@ -226,6 +333,16 @@ class AdminDepositController extends Controller
             'byHour' => $byHour,
             'replyCount' => $replyCount,
             'byStatus' => $byStatus,
+            'trendDaily' => $trendDaily,
+            'activeDays' => $activeDays,
+            'approvalRate' => $approvalRate,
+            'completionRate' => $completionRate,
+            'rejectionRate' => $rejectionRate,
+            'avgPerDay' => $avgPerDay,
+            'topBank' => $topBank,
+            'topServer' => $topServer,
+            'topSupplier' => $topSupplier,
+            'period' => $period,
         ]);
     }
 }
