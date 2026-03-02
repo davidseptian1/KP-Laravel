@@ -155,7 +155,7 @@
                                                                         <label class="form-label">Reply Tiket</label>
                                                                         <textarea name="reply_tiket" class="form-control" rows="2">{{ $item->reply_tiket }}</textarea>
                                                                     </div>
-                                                                    <div class="col-md-6">
+                                                                    <div class="col-md-6 js-reply-text-wrap" data-target="{{ $item->id }}" style="display: {{ ($item->reply_penambahan_type ?? 'text') === 'text' ? 'block' : 'none' }};">
                                                                         <label class="form-label">Reply Penambahan</label>
                                                                         <textarea name="reply_penambahan" class="form-control" rows="2">{{ $item->reply_penambahan }}</textarea>
                                                                     </div>
@@ -281,10 +281,14 @@
             select.addEventListener('change', function () {
                 const targetId = this.dataset.target;
                 const imageWrap = document.querySelector('.js-reply-image-wrap[data-target="' + targetId + '"]');
-                if (!imageWrap) return;
+                const textWrap = document.querySelector('.js-reply-text-wrap[data-target="' + targetId + '"]');
+                if (!imageWrap || !textWrap) return;
 
                 imageWrap.style.display = this.value === 'image' ? 'block' : 'none';
+                textWrap.style.display = this.value === 'text' ? 'block' : 'none';
             });
+
+            select.dispatchEvent(new Event('change'));
         });
 
         document.querySelectorAll('.js-reply-image-input').forEach(function (input) {
