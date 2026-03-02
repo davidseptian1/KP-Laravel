@@ -155,9 +155,9 @@
                                                                         <label class="form-label">Reply Tiket</label>
                                                                         <textarea name="reply_tiket" class="form-control" rows="2">{{ $item->reply_tiket }}</textarea>
                                                                     </div>
-                                                                    <div class="col-md-6 js-reply-text-wrap" data-target="{{ $item->id }}" style="display: {{ ($item->reply_penambahan_type ?? 'text') === 'text' ? 'block' : 'none' }};">
-                                                                        <label class="form-label">Reply Penambahan</label>
-                                                                        <textarea name="reply_penambahan" class="form-control" rows="2">{{ $item->reply_penambahan }}</textarea>
+                                                                    <div class="col-md-6">
+                                                                        <label class="form-label">Reply Penambahan / Reply Bukti</label>
+                                                                        <textarea name="reply_penambahan" class="form-control" rows="2" placeholder="Isi teks reply atau caption bukti (opsional jika tipe Image)">{{ ($item->reply_penambahan ?? '') === 'Menunggu Konfirmasi Admin' ? '' : ($item->reply_penambahan ?? '') }}</textarea>
                                                                     </div>
                                                                     <div class="col-md-6">
                                                                         <label class="form-label">Tipe Reply Penambahan</label>
@@ -281,11 +281,9 @@
             select.addEventListener('change', function () {
                 const targetId = this.dataset.target;
                 const imageWrap = document.querySelector('.js-reply-image-wrap[data-target="' + targetId + '"]');
-                const textWrap = document.querySelector('.js-reply-text-wrap[data-target="' + targetId + '"]');
-                if (!imageWrap || !textWrap) return;
+                if (!imageWrap) return;
 
                 imageWrap.style.display = this.value === 'image' ? 'block' : 'none';
-                textWrap.style.display = this.value === 'text' ? 'block' : 'none';
             });
 
             select.dispatchEvent(new Event('change'));
