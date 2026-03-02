@@ -8,6 +8,8 @@ use App\Models\NotificationItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
 
 class AdminDepositController extends Controller
@@ -100,12 +102,14 @@ class AdminDepositController extends Controller
     public function update(Request $request, int $id)
     {
         $validated = $request->validate([
-            'reply_penambahan' => 'required|string',
+            'reply_penambahan' => 'nullable|string',
+            'reply_penambahan_type' => 'nullable|in:text,image',
+            'reply_penambahan_image' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:5120',
             'status' => 'required|in:pending,approved,rejected,selesai',
         ]);
 
         $item = Deposit::findOrFail($id);
-        $item->reply_penambahan = $validated['reply_penambahan'];
+        $this->applyReplyPenambahan($request, $item, $validated);
         $item->status = $validated['status'];
         $item->save();
 
@@ -130,7 +134,9 @@ class AdminDepositController extends Controller
             'no_rek' => 'required|regex:/^[0-9]+$/|max:100',
             'nama_rekening' => 'required|string|max:255',
             'reply_tiket' => 'nullable|string',
-            'reply_penambahan' => 'required|string',
+            'reply_penambahan' => 'nullable|string',
+            'reply_penambahan_type' => 'nullable|in:text,image',
+            'reply_penambahan_image' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:5120',
             'jam' => 'required|date_format:H:i',
         ]);
 
@@ -143,7 +149,7 @@ class AdminDepositController extends Controller
         $item->no_rek = $validated['no_rek'];
         $item->nama_rekening = $validated['nama_rekening'];
         $item->reply_tiket = $validated['reply_tiket'] ?? null;
-        $item->reply_penambahan = $validated['reply_penambahan'];
+        $this->applyReplyPenambahan($request, $item, $validated);
         $item->jam = $validated['jam'];
         $item->save();
 
@@ -163,12 +169,70 @@ class AdminDepositController extends Controller
         return redirect()->route('admin.deposit.monitoring')->with('success', 'Status request deposit berhasil diperbarui');
     }
 
+    public function viewReplyImage(int $id)
+    {
+        $item = Deposit::findOrFail($id);
+        $path = $item->reply_penambahan_image;
+
+        if (!$path || !Storage::disk('local')->exists($path)) {
+            return redirect()->route('admin.deposit.monitoring')->with('error', 'Gambar reply penambahan tidak ditemukan');
+        }
+
+        return Storage::disk('local')->response($path);
+    }
+
     public function destroy(int $id)
     {
         $item = Deposit::findOrFail($id);
+
+        if ($item->reply_penambahan_image && Storage::disk('local')->exists($item->reply_penambahan_image)) {
+            Storage::disk('local')->delete($item->reply_penambahan_image);
+        }
+
         $item->delete();
 
         return redirect()->route('admin.deposit.monitoring')->with('success', 'Request deposit berhasil dihapus');
+    }
+
+    private function applyReplyPenambahan(Request $request, Deposit $item, array $validated): void
+    {
+        $type = $validated['reply_penambahan_type'] ?? ($request->hasFile('reply_penambahan_image') ? 'image' : 'text');
+        $textReply = trim((string) ($validated['reply_penambahan'] ?? ''));
+
+        if ($type === 'image') {
+            if ($request->hasFile('reply_penambahan_image')) {
+                if ($item->reply_penambahan_image && Storage::disk('local')->exists($item->reply_penambahan_image)) {
+                    Storage::disk('local')->delete($item->reply_penambahan_image);
+                }
+
+                $path = $request->file('reply_penambahan_image')->store('deposit/reply-penambahan', 'local');
+                $item->reply_penambahan_image = $path;
+            }
+
+            if (!$item->reply_penambahan_image) {
+                throw ValidationException::withMessages([
+                    'reply_penambahan_image' => 'Pilih atau paste gambar terlebih dahulu untuk tipe image.',
+                ]);
+            }
+
+            $item->reply_penambahan_type = 'image';
+            $item->reply_penambahan = $textReply !== '' ? $textReply : null;
+            return;
+        }
+
+        if ($textReply === '') {
+            throw ValidationException::withMessages([
+                'reply_penambahan' => 'Reply penambahan teks wajib diisi untuk tipe text.',
+            ]);
+        }
+
+        if ($item->reply_penambahan_image && Storage::disk('local')->exists($item->reply_penambahan_image)) {
+            Storage::disk('local')->delete($item->reply_penambahan_image);
+            $item->reply_penambahan_image = null;
+        }
+
+        $item->reply_penambahan_type = 'text';
+        $item->reply_penambahan = $textReply;
     }
 
     public function analysis(Request $request)

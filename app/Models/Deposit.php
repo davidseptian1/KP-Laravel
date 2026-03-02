@@ -24,6 +24,8 @@ class Deposit extends Model
         'nama_rekening',
         'reply_tiket',
         'reply_penambahan',
+        'reply_penambahan_type',
+        'reply_penambahan_image',
         'status',
         'jam',
     ];

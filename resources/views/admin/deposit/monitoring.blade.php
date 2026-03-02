@@ -79,7 +79,16 @@
                                     <td>{{ $item->no_rek }}</td>
                                     <td>{{ $item->nama_rekening }}</td>
                                     <td>{{ $item->reply_tiket ?? '-' }}</td>
-                                    <td>{{ $item->reply_penambahan ?? '-' }}</td>
+                                    <td>
+                                        @if (($item->reply_penambahan_type ?? 'text') === 'image')
+                                            @if (!empty($item->reply_penambahan))
+                                                <div class="mb-1">{{ $item->reply_penambahan }}</div>
+                                            @endif
+                                            <a href="{{ route('admin.deposit.reply-image', $item->id) }}" target="_blank" class="btn btn-outline-primary btn-sm">Lihat Gambar</a>
+                                        @else
+                                            {{ $item->reply_penambahan ?? '-' }}
+                                        @endif
+                                    </td>
                                     <td>
                                         <span class="badge bg-{{ $item->status === 'approved' ? 'success' : ($item->status === 'rejected' ? 'danger' : ($item->status === 'selesai' ? 'primary' : 'warning')) }}">
                                             {{ ucfirst($item->status ?? 'pending') }}
@@ -108,7 +117,7 @@
                                                         <div class="row g-4">
                                                             <div class="col-lg-8">
                                                                 <h6 class="mb-3">Edit Detail</h6>
-                                                                <form method="POST" action="{{ route('admin.deposit.update-details', $item->id) }}" class="row g-3">
+                                                                <form method="POST" action="{{ route('admin.deposit.update-details', $item->id) }}" class="row g-3" enctype="multipart/form-data">
                                                                     @csrf
                                                                     @method('PUT')
                                                                     <div class="col-md-6">
@@ -148,7 +157,28 @@
                                                                     </div>
                                                                     <div class="col-md-6">
                                                                         <label class="form-label">Reply Penambahan</label>
-                                                                        <textarea name="reply_penambahan" class="form-control" rows="2" required>{{ $item->reply_penambahan }}</textarea>
+                                                                        <textarea name="reply_penambahan" class="form-control" rows="2">{{ $item->reply_penambahan }}</textarea>
+                                                                    </div>
+                                                                    <div class="col-md-6">
+                                                                        <label class="form-label">Tipe Reply Penambahan</label>
+                                                                        <select name="reply_penambahan_type" class="form-select js-reply-type" data-target="{{ $item->id }}" required>
+                                                                            <option value="text" {{ ($item->reply_penambahan_type ?? 'text') === 'text' ? 'selected' : '' }}>Text</option>
+                                                                            <option value="image" {{ ($item->reply_penambahan_type ?? 'text') === 'image' ? 'selected' : '' }}>Image</option>
+                                                                        </select>
+                                                                    </div>
+                                                                    <div class="col-md-6 js-reply-image-wrap" data-target="{{ $item->id }}" style="display: {{ ($item->reply_penambahan_type ?? 'text') === 'image' ? 'block' : 'none' }};">
+                                                                        <label class="form-label">Upload / Paste Gambar</label>
+                                                                        <input type="file" name="reply_penambahan_image" class="form-control js-reply-image-input" data-target="{{ $item->id }}" accept="image/png,image/jpeg,image/jpg,image/webp">
+                                                                        <small class="text-muted d-block mt-1">Bisa Ctrl+V dari clipboard saat fokus di area paste.</small>
+                                                                        <div class="border rounded p-2 mt-2 js-paste-zone" data-target="{{ $item->id }}" tabindex="0" style="min-height:60px;">
+                                                                            Paste gambar di sini (Ctrl+V)
+                                                                        </div>
+                                                                        <div class="mt-2 js-image-preview-wrap" data-target="{{ $item->id }}" style="display:none;">
+                                                                            <img src="" alt="Preview" class="img-fluid rounded border js-image-preview" data-target="{{ $item->id }}" style="max-height:180px;">
+                                                                        </div>
+                                                                        @if (!empty($item->reply_penambahan_image))
+                                                                            <a href="{{ route('admin.deposit.reply-image', $item->id) }}" target="_blank" class="btn btn-outline-primary btn-sm mt-2">Lihat Gambar Tersimpan</a>
+                                                                        @endif
                                                                     </div>
                                                                     <div class="col-md-6">
                                                                         <label class="form-label">Jam</label>
@@ -227,3 +257,75 @@
 </div>
 
 @endsection
+
+@push('scripts')
+<script>
+    (function () {
+        function setPreview(targetId, file) {
+            const wrap = document.querySelector('.js-image-preview-wrap[data-target="' + targetId + '"]');
+            const img = document.querySelector('.js-image-preview[data-target="' + targetId + '"]');
+
+            if (!wrap || !img || !file) {
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                img.src = event.target.result;
+                wrap.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        document.querySelectorAll('.js-reply-type').forEach(function (select) {
+            select.addEventListener('change', function () {
+                const targetId = this.dataset.target;
+                const imageWrap = document.querySelector('.js-reply-image-wrap[data-target="' + targetId + '"]');
+                if (!imageWrap) return;
+
+                imageWrap.style.display = this.value === 'image' ? 'block' : 'none';
+            });
+        });
+
+        document.querySelectorAll('.js-reply-image-input').forEach(function (input) {
+            input.addEventListener('change', function () {
+                const targetId = this.dataset.target;
+                const file = this.files && this.files[0] ? this.files[0] : null;
+                if (file) setPreview(targetId, file);
+            });
+        });
+
+        document.querySelectorAll('.js-paste-zone').forEach(function (zone) {
+            zone.addEventListener('paste', function (event) {
+                const targetId = this.dataset.target;
+                const input = document.querySelector('.js-reply-image-input[data-target="' + targetId + '"]');
+                if (!input) return;
+
+                const items = (event.clipboardData || window.clipboardData).items;
+                if (!items) return;
+
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i].type.indexOf('image') !== -1) {
+                        const file = items[i].getAsFile();
+                        if (!file) continue;
+
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(file);
+                        input.files = dataTransfer.files;
+
+                        const typeSelect = document.querySelector('.js-reply-type[data-target="' + targetId + '"]');
+                        if (typeSelect) {
+                            typeSelect.value = 'image';
+                            typeSelect.dispatchEvent(new Event('change'));
+                        }
+
+                        setPreview(targetId, file);
+                        event.preventDefault();
+                        break;
+                    }
+                }
+            });
+        });
+    })();
+</script>
+@endpush
