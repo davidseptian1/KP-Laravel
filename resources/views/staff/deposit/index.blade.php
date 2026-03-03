@@ -2,6 +2,10 @@
 
 @section('content')
 
+@php
+    $perPage = (int) ($perPage ?? request('per_page', 10));
+@endphp
+
 <style>
     textarea.js-auto-resize-textarea {
         overflow-y: auto;
