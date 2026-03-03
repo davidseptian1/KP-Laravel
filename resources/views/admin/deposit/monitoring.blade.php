@@ -2,6 +2,13 @@
 
 @section('content')
 
+<style>
+    #monitoringTableContainer tr.latest-row-highlight > td {
+        background-color: var(--bs-primary-bg-subtle, #cfe2ff) !important;
+        color: var(--bs-body-color, #212529);
+    }
+</style>
+
 <div class="page-header" style="margin: 0; padding: 0;">
     <div class="page-block">
         <div class="row align-items-center">
@@ -56,7 +63,7 @@
                             <small class="text-muted" id="adminBrowserNotifStatus">Status browser notification: mengecek...</small>
                         </div>
                         <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-sm btn-outline-primary" id="btnEnableAdminBrowserNotif">Aktifkan Notifikasi Browser</button>
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="btnEnableAdminBrowserNotif">Notif Off</button>
                         </div>
                     </div>
                 </div>
@@ -122,6 +129,19 @@
         const notifStatusEl = document.getElementById('adminBrowserNotifStatus');
         const enableNotifBtn = document.getElementById('btnEnableAdminBrowserNotif');
 
+        function updateNotifToggleButton() {
+            if (!enableNotifBtn) return;
+
+            if (!('Notification' in window)) {
+                enableNotifBtn.textContent = 'Notif Off';
+                enableNotifBtn.disabled = true;
+                return;
+            }
+
+            enableNotifBtn.disabled = false;
+            enableNotifBtn.textContent = Notification.permission === 'granted' ? 'Notif On' : 'Notif Off';
+        }
+
         function updateNotifStatusText() {
             if (!notifStatusEl) return;
 
@@ -137,10 +157,18 @@
             } else {
                 notifStatusEl.textContent = 'Status browser notification: belum diizinkan.';
             }
+
+            updateNotifToggleButton();
         }
 
         async function requestBrowserNotificationPermission() {
             if (!('Notification' in window)) return;
+
+            if (Notification.permission === 'granted') {
+                updateNotifStatusText();
+                return;
+            }
+
             await Notification.requestPermission();
             updateNotifStatusText();
         }
@@ -240,13 +268,13 @@
             if (!targetId) return;
 
             document.querySelectorAll('#monitoringTableContainer tr[data-deposit-id]').forEach(function (row) {
-                row.classList.remove('table-primary');
+                row.classList.remove('latest-row-highlight');
             });
 
             const targetRow = document.querySelector('#monitoringTableContainer tr[data-deposit-id="' + targetId + '"]');
             if (!targetRow) return;
 
-            targetRow.classList.add('table-primary');
+            targetRow.classList.add('latest-row-highlight');
             targetRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
