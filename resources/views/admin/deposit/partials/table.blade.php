@@ -3,7 +3,9 @@
         <thead class="table-light">
             <tr>
                 <th>Tanggal</th>
+                <th>Nama SPL</th>
                 <th>Nama Rekening</th>
+                <th>Nama Bank</th>
                 <th>Nama Server</th>
                 <th>Bukti Tiket</th>
                 <th>Bukti Penambahan</th>
@@ -17,7 +19,9 @@
             @forelse ($items as $item)
                 <tr data-deposit-id="{{ $item->id }}" class="{{ (int)($latestIncomingId ?? 0) === (int)$item->id ? 'latest-row-highlight' : '' }}">
                     <td>{{ $item->created_at?->format('d/m/Y H:i') }}</td>
+                    <td>{{ $item->nama_supplier ?? '-' }}</td>
                     <td>{{ $item->nama_rekening }}</td>
+                    <td>{{ $item->bank ?? '-' }}</td>
                     <td>{{ $item->server ?? '-' }}</td>
                     <td>{{ $item->reply_tiket ?? '-' }}</td>
                     <td>{{ $item->reply_penambahan ?? '-' }}</td>
@@ -152,7 +156,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="9" class="text-center text-muted py-4">Belum ada deposit</td>
+                    <td colspan="11" class="text-center text-muted py-4">Belum ada deposit</td>
                 </tr>
             @endforelse
         </tbody>

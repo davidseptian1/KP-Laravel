@@ -39,11 +39,11 @@
             </div>
             <div class="card-body">
                 <form method="GET" class="row g-2 align-items-end mb-3">
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label class="form-label">Tanggal</label>
                         <input type="date" name="tanggal" class="form-control form-control-sm" value="{{ $tanggal ?? now()->format('Y-m-d') }}">
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label class="form-label">Status</label>
                         <select name="status" class="form-select form-select-sm">
                             <option value="">Semua Status</option>
@@ -56,6 +56,10 @@
                     <div class="col-md-3">
                         <label class="form-label">Cari Nama Supplier</label>
                         <input type="text" name="search_supplier" class="form-control form-control-sm" value="{{ $searchSupplier ?? '' }}" placeholder="Contoh: DIGIFLAZZ">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Nominal</label>
+                        <input type="text" name="nominal" class="form-control form-control-sm" value="{{ $nominalFilter ?? '' }}" placeholder="Contoh: 2.500.000">
                     </div>
                     <div class="col-md-3 d-flex gap-2">
                         <button type="submit" class="btn btn-primary btn-sm w-100">Filter</button>
@@ -295,6 +299,7 @@
         const tanggal = @json($tanggal ?? now()->format('Y-m-d'));
         const searchSupplier = @json($searchSupplier ?? '');
         const status = @json($status ?? '');
+        const nominalFilter = @json($nominalFilter ?? '');
         const pollIntervalMs = 1000;
 
         const notifStatusEl = document.getElementById('browserNotifStatus');
@@ -362,6 +367,10 @@
 
                 if (status) {
                     params.set('status', status);
+                }
+
+                if (nominalFilter) {
+                    params.set('nominal', nominalFilter);
                 }
 
                 if (latestUpdatedAt) {

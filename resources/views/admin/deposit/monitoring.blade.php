@@ -49,9 +49,32 @@
                 </div>
 
                 <form method="GET" class="row g-2 align-items-end mb-3">
-                    <div class="col-md-4">
-                        <label class="form-label">Search by Server</label>
-                        <input type="text" name="server" class="form-control form-control-sm" value="{{ $server ?? '' }}" placeholder="Contoh: server-1">
+                    <div class="col-md-2">
+                        <label class="form-label">Nama Server</label>
+                        <select name="server" class="form-select form-select-sm">
+                            <option value="">Semua Server</option>
+                            @foreach (($serverOptions ?? collect()) as $serverOption)
+                                <option value="{{ $serverOption }}" {{ ($server ?? '') === $serverOption ? 'selected' : '' }}>{{ $serverOption }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Nama Bank</label>
+                        <select name="bank" class="form-select form-select-sm">
+                            <option value="">Semua Bank</option>
+                            @foreach (($bankOptions ?? collect()) as $bankOption)
+                                <option value="{{ $bankOption }}" {{ ($bank ?? '') === $bankOption ? 'selected' : '' }}>{{ $bankOption }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Nama SPL</label>
+                        <select name="nama_supplier" class="form-select form-select-sm">
+                            <option value="">Semua SPL</option>
+                            @foreach (($supplierOptions ?? collect()) as $supplierOption)
+                                <option value="{{ $supplierOption }}" {{ ($namaSupplier ?? '') === $supplierOption ? 'selected' : '' }}>{{ $supplierOption }}</option>
+                            @endforeach
+                        </select>
                     </div>
                     <div class="col-md-2">
                         <label class="form-label">Status</label>
@@ -83,13 +106,13 @@
                     </small>
                     <div class="d-flex gap-2">
                         <a
-                            href="{{ route('admin.deposit.monitoring.export-excel', ['server' => $server, 'status' => $status, 'start_date' => $startDate, 'end_date' => $endDate]) }}"
+                            href="{{ route('admin.deposit.monitoring.export-excel', ['server' => $server, 'bank' => $bank, 'nama_supplier' => $namaSupplier, 'status' => $status, 'start_date' => $startDate, 'end_date' => $endDate]) }}"
                             class="btn btn-success btn-sm"
                         >
                             Download Excel
                         </a>
                         <a
-                            href="{{ route('admin.deposit.monitoring.export-pdf', ['server' => $server, 'status' => $status, 'start_date' => $startDate, 'end_date' => $endDate]) }}"
+                            href="{{ route('admin.deposit.monitoring.export-pdf', ['server' => $server, 'bank' => $bank, 'nama_supplier' => $namaSupplier, 'status' => $status, 'start_date' => $startDate, 'end_date' => $endDate]) }}"
                             class="btn btn-danger btn-sm"
                             target="_blank"
                         >
@@ -162,6 +185,8 @@
         let latestIncomingId = @json($latestIncomingId ?? null);
         const filters = {
             server: @json($server ?? ''),
+            bank: @json($bank ?? ''),
+            nama_supplier: @json($namaSupplier ?? ''),
             status: @json($status ?? ''),
             start_date: @json($startDate ?? ''),
             end_date: @json($endDate ?? ''),
@@ -362,6 +387,8 @@
             try {
                 const params = new URLSearchParams();
                 if (filters.server) params.set('server', filters.server);
+                if (filters.bank) params.set('bank', filters.bank);
+                if (filters.nama_supplier) params.set('nama_supplier', filters.nama_supplier);
                 if (filters.status) params.set('status', filters.status);
                 if (filters.start_date) params.set('start_date', filters.start_date);
                 if (filters.end_date) params.set('end_date', filters.end_date);

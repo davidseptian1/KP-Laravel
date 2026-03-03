@@ -92,11 +92,29 @@ class AdminDepositController extends Controller
             ->orderBy('server')
             ->pluck('server');
 
+        $bankOptions = Deposit::query()
+            ->whereNotNull('bank')
+            ->where('bank', '!=', '')
+            ->select('bank')
+            ->distinct()
+            ->orderBy('bank')
+            ->pluck('bank');
+
+        $supplierOptions = Deposit::query()
+            ->whereNotNull('nama_supplier')
+            ->where('nama_supplier', '!=', '')
+            ->select('nama_supplier')
+            ->distinct()
+            ->orderBy('nama_supplier')
+            ->pluck('nama_supplier');
+
         return view('admin.deposit.monitoring', [
             'title' => 'Monitoring Deposit',
             'menuAdminDepositMonitoring' => 'active',
             'items' => $items,
             'server' => $filters['server'] ?? null,
+            'bank' => $filters['bank'] ?? null,
+            'namaSupplier' => $filters['nama_supplier'] ?? null,
             'startDate' => $filters['start_date'] ?? null,
             'endDate' => $filters['end_date'] ?? null,
             'status' => $filters['status'] ?? null,
@@ -104,6 +122,8 @@ class AdminDepositController extends Controller
             'latestIncomingAt' => $latestIncomingAt,
             'latestIncomingId' => $latestIncomingId,
             'serverOptions' => $serverOptions,
+            'bankOptions' => $bankOptions,
+            'supplierOptions' => $supplierOptions,
         ]);
     }
 
@@ -111,6 +131,8 @@ class AdminDepositController extends Controller
     {
         $filters = $request->validate([
             'server' => 'nullable|string|max:100',
+            'bank' => 'nullable|string|max:100',
+            'nama_supplier' => 'nullable|string|max:255',
             'start_date' => 'nullable|date_format:Y-m-d',
             'end_date' => 'nullable|date_format:Y-m-d',
             'status' => 'nullable|in:pending,approved,rejected,selesai',
@@ -198,12 +220,22 @@ class AdminDepositController extends Controller
         $query = Deposit::query()->orderByDesc('created_at')->orderByDesc('id');
 
         $server = $filters['server'] ?? null;
+        $bank = $filters['bank'] ?? null;
+        $namaSupplier = $filters['nama_supplier'] ?? null;
         $startDate = $filters['start_date'] ?? null;
         $endDate = $filters['end_date'] ?? null;
         $status = $filters['status'] ?? null;
 
         if ($server) {
             $query->where('server', 'like', "%{$server}%");
+        }
+
+        if ($bank) {
+            $query->where('bank', 'like', "%{$bank}%");
+        }
+
+        if ($namaSupplier) {
+            $query->where('nama_supplier', 'like', "%{$namaSupplier}%");
         }
 
         if ($status) {
@@ -230,6 +262,8 @@ class AdminDepositController extends Controller
     {
         $filters = $request->validate([
             'server' => 'nullable|string|max:100',
+            'bank' => 'nullable|string|max:100',
+            'nama_supplier' => 'nullable|string|max:255',
             'start_date' => 'nullable|date_format:Y-m-d',
             'end_date' => 'nullable|date_format:Y-m-d',
             'status' => 'nullable|in:pending,approved,rejected,selesai',

@@ -34,11 +34,14 @@ class DepositFormController extends Controller
             'tanggal' => 'nullable|date_format:Y-m-d',
             'search_supplier' => 'nullable|string|max:255',
             'status' => 'nullable|in:pending,approved,rejected,selesai',
+            'nominal' => 'nullable|string|max:50',
         ]);
 
         $tanggal = $validated['tanggal'] ?? now()->format('Y-m-d');
         $searchSupplier = trim((string) ($validated['search_supplier'] ?? ''));
         $status = $validated['status'] ?? null;
+        $nominalFilter = trim((string) ($validated['nominal'] ?? ''));
+        $normalizedNominalFilter = preg_replace('/[^0-9]/', '', $nominalFilter);
 
         $activeForms = DepositForm::where('is_active', true)
             ->where(function ($q) {
@@ -55,6 +58,9 @@ class DepositFormController extends Controller
             })
             ->when($status, function ($q) use ($status) {
                 $q->where('status', $status);
+            })
+            ->when($normalizedNominalFilter !== '', function ($q) use ($normalizedNominalFilter) {
+                $q->where('nominal', (float) $normalizedNominalFilter);
             })
             ->orderByDesc('created_at')
             ->orderByDesc('id')
@@ -78,6 +84,7 @@ class DepositFormController extends Controller
             'tanggal' => $tanggal,
             'searchSupplier' => $searchSupplier,
             'status' => $status,
+            'nominalFilter' => $nominalFilter,
             'latestUpdatedAt' => $latestUpdatedAt,
             'latestActivityItem' => $latestActivityItem,
         ]);
@@ -90,12 +97,15 @@ class DepositFormController extends Controller
             'tanggal' => 'nullable|date_format:Y-m-d',
             'search_supplier' => 'nullable|string|max:255',
             'status' => 'nullable|in:pending,approved,rejected,selesai',
+            'nominal' => 'nullable|string|max:50',
         ]);
 
         $since = !empty($validated['since']) ? Carbon::parse($validated['since']) : now()->subMinutes(1);
         $tanggal = $validated['tanggal'] ?? now()->format('Y-m-d');
         $searchSupplier = trim((string) ($validated['search_supplier'] ?? ''));
         $status = $validated['status'] ?? null;
+        $nominalFilter = trim((string) ($validated['nominal'] ?? ''));
+        $normalizedNominalFilter = preg_replace('/[^0-9]/', '', $nominalFilter);
 
         $query = Deposit::where('user_id', Auth::id())
             ->whereDate('created_at', $tanggal)
@@ -104,6 +114,9 @@ class DepositFormController extends Controller
             })
             ->when($status, function ($q) use ($status) {
                 $q->where('status', $status);
+            })
+            ->when($normalizedNominalFilter !== '', function ($q) use ($normalizedNominalFilter) {
+                $q->where('nominal', (float) $normalizedNominalFilter);
             })
             ->orderByDesc('created_at')
             ->orderByDesc('id');
