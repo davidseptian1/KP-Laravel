@@ -7,6 +7,42 @@
 @endphp
 
 <style>
+    .staff-deposit-page .section-card {
+        border: 1px solid var(--bs-border-color, #dee2e6);
+        border-radius: 10px;
+        background: var(--bs-body-bg, #fff);
+    }
+
+    .staff-deposit-page .section-title {
+        font-size: 0.92rem;
+        font-weight: 600;
+        color: var(--bs-heading-color, #212529);
+    }
+
+    .staff-deposit-page .filter-row .form-label {
+        margin-bottom: 0.35rem;
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--bs-secondary-color, #6c757d);
+    }
+
+    .staff-deposit-page .filter-row .form-control-sm,
+    .staff-deposit-page .filter-row .form-select-sm {
+        min-height: 36px;
+    }
+
+    .staff-deposit-page .table-wrap {
+        border: 1px solid var(--bs-border-color, #dee2e6);
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .staff-deposit-page .table thead th {
+        font-size: 0.78rem;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+    }
+
     textarea.js-auto-resize-textarea {
         overflow-y: auto;
         resize: none;
@@ -33,21 +69,22 @@
     </div>
 </div>
 
-<div class="row mt-0">
+<div class="row mt-0 staff-deposit-page">
     <div class="col-12">
         <div class="card shadow-sm">
-            <div class="card-header bg-white d-flex justify-content-end">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <div class="section-title mb-0"><i class="ti ti-adjustments-horizontal me-1"></i>Filter & Aktivitas</div>
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalRequestDeposit">
-                    Request Deposit +
+                    <i class="ti ti-plus me-1"></i>Request Deposit
                 </button>
             </div>
             <div class="card-body">
-                <form method="GET" class="row g-2 align-items-end mb-3">
-                    <div class="col-md-2">
+                <form method="GET" class="row g-3 align-items-end mb-3 filter-row">
+                    <div class="col-xl-2 col-lg-3 col-md-4">
                         <label class="form-label">Tanggal</label>
                         <input type="date" name="tanggal" class="form-control form-control-sm" value="{{ $tanggal ?? now()->format('Y-m-d') }}">
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-xl-2 col-lg-3 col-md-4">
                         <label class="form-label">Nama Server</label>
                         <select name="server" class="form-select form-select-sm">
                             <option value="">Semua Server</option>
@@ -56,7 +93,7 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-xl-2 col-lg-3 col-md-4">
                         <label class="form-label">Status</label>
                         <select name="status" class="form-select form-select-sm">
                             <option value="">Semua Status</option>
@@ -66,32 +103,29 @@
                             <option value="rejected" {{ ($status ?? '') === 'rejected' ? 'selected' : '' }}>Rejected</option>
                         </select>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-xl-3 col-lg-6 col-md-6">
                         <label class="form-label">Cari Nama Supplier</label>
                         <input type="text" name="search_supplier" class="form-control form-control-sm" value="{{ $searchSupplier ?? '' }}" placeholder="Contoh: DIGIFLAZZ">
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-xl-2 col-lg-3 col-md-4">
                         <label class="form-label">Nominal</label>
                         <input type="text" name="nominal" class="form-control form-control-sm" value="{{ $nominalFilter ?? '' }}" placeholder="Contoh: 2.500.000">
                     </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Data per halaman</label>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="small text-muted">Tampilkan</span>
-                            <select name="per_page" class="form-select form-select-sm">
-                                @foreach ([10, 25, 50, 100] as $limit)
-                                    <option value="{{ $limit }}" {{ (int)($perPage ?? 10) === $limit ? 'selected' : '' }}>{{ $limit }}</option>
-                                @endforeach
-                            </select>
-                        </div>
+                    <div class="col-xl-1 col-lg-3 col-md-4">
+                        <label class="form-label">Tampilkan</label>
+                        <select name="per_page" class="form-select form-select-sm">
+                            @foreach ([10, 25, 50, 100] as $limit)
+                                <option value="{{ $limit }}" {{ (int)($perPage ?? 10) === $limit ? 'selected' : '' }}>{{ $limit }}</option>
+                            @endforeach
+                        </select>
                     </div>
-                    <div class="col-md-3 d-flex gap-2">
-                        <button type="submit" class="btn btn-primary btn-sm w-100">Filter</button>
-                        <a href="{{ route('deposit.request.index') }}" class="btn btn-outline-secondary btn-sm w-100">Hari Ini</a>
+                    <div class="col-12 d-flex justify-content-end gap-2">
+                        <button type="submit" class="btn btn-primary btn-sm px-4"><i class="ti ti-filter me-1"></i>Filter</button>
+                        <a href="{{ route('deposit.request.index') }}" class="btn btn-outline-secondary btn-sm px-4">Hari Ini</a>
                     </div>
                 </form>
 
-                <div class="card border-0 bg-light mb-3">
+                <div class="section-card mb-3">
                     <div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 py-2">
                         <div>
                             <div class="fw-semibold mb-1"><i class="ti ti-download me-1"></i>Download Laporan Harian (00:00 - 23:59)</div>
@@ -115,7 +149,7 @@
                     </div>
                 </div>
 
-                <div class="card border-0 bg-light mb-3">
+                <div class="section-card mb-3">
                     <div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 py-2">
                         <div>
                             <div class="fw-semibold mb-1"><i class="ti ti-bell me-1"></i>Pengaturan Notifikasi</div>
@@ -156,7 +190,7 @@
                     </div>
                 </div>
 
-                <div class="table-responsive">
+                <div class="table-responsive table-wrap">
                     <table class="table table-hover align-middle">
                         <thead class="table-light">
                             <tr>
