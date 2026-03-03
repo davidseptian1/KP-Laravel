@@ -45,7 +45,12 @@
                     </div>
                     <div class="col-md-2">
                         <label class="form-label">Nama Server</label>
-                        <input type="text" name="server" class="form-control form-control-sm" value="{{ $serverFilter ?? '' }}" placeholder="Contoh: server-1">
+                        <select name="server" class="form-select form-select-sm">
+                            <option value="">Semua Server</option>
+                            @foreach (($servers ?? collect()) as $server)
+                                <option value="{{ $server }}" {{ ($serverFilter ?? '') === $server ? 'selected' : '' }}>{{ $server }}</option>
+                            @endforeach
+                        </select>
                     </div>
                     <div class="col-md-2">
                         <label class="form-label">Status</label>
@@ -87,6 +92,10 @@
 
                 <div id="latestActivityCardContainer">
                     @include('staff.deposit.partials.latest-activity-card', ['latestActivityItem' => $latestActivityItem ?? null])
+                </div>
+
+                <div id="todayTotalCardContainer">
+                    @include('staff.deposit.partials.today-total-card', ['todayDepositSummary' => $todayDepositSummary ?? null])
                 </div>
 
                 <div class="row g-2 mb-3">
@@ -437,6 +446,13 @@
                         const latestCardContainer = document.getElementById('latestActivityCardContainer');
                         if (latestCardContainer) {
                             latestCardContainer.innerHTML = result.latest_card_html;
+                        }
+                    }
+
+                    if (result.today_total_card_html) {
+                        const todayTotalCardContainer = document.getElementById('todayTotalCardContainer');
+                        if (todayTotalCardContainer) {
+                            todayTotalCardContainer.innerHTML = result.today_total_card_html;
                         }
                     }
 

@@ -82,6 +82,15 @@ class DepositFormController extends Controller
 
         $suppliers = Supplier::orderBy('nama_supplier')->pluck('nama_supplier');
         $servers = Server::orderBy('nama_server')->pluck('nama_server');
+        $todayDepositSummary = Deposit::where('user_id', Auth::id())
+            ->where(function ($q) {
+                $q->where('is_deleted_by_staff', false)
+                    ->orWhereNull('is_deleted_by_staff');
+            })
+            ->whereDate('created_at', now()->format('Y-m-d'))
+            ->where('jenis_transaksi', 'deposit')
+            ->selectRaw('COUNT(*) as total_request, COALESCE(SUM(nominal), 0) as total_nominal')
+            ->first();
 
         return view('staff.deposit.index', [
             'title' => 'Request Deposit',
@@ -97,6 +106,7 @@ class DepositFormController extends Controller
             'nominalFilter' => $nominalFilter,
             'latestUpdatedAt' => $latestUpdatedAt,
             'latestActivityItem' => $latestActivityItem,
+            'todayDepositSummary' => $todayDepositSummary,
         ]);
     }
 
@@ -152,6 +162,15 @@ class DepositFormController extends Controller
 
         $latestUpdatedAt = (clone $query)->max('updated_at');
         $latestActivityItem = (clone $query)->first();
+        $todayDepositSummary = Deposit::where('user_id', Auth::id())
+            ->where(function ($q) {
+                $q->where('is_deleted_by_staff', false)
+                    ->orWhereNull('is_deleted_by_staff');
+            })
+            ->whereDate('created_at', now()->format('Y-m-d'))
+            ->where('jenis_transaksi', 'deposit')
+            ->selectRaw('COUNT(*) as total_request, COALESCE(SUM(nominal), 0) as total_nominal')
+            ->first();
 
         $changeTitle = null;
         $changeDescription = null;
@@ -225,6 +244,9 @@ class DepositFormController extends Controller
             'latest_updated_at' => $latestUpdatedAt,
             'latest_card_html' => view('staff.deposit.partials.latest-activity-card', [
                 'latestActivityItem' => $latestActivityItem,
+            ])->render(),
+            'today_total_card_html' => view('staff.deposit.partials.today-total-card', [
+                'todayDepositSummary' => $todayDepositSummary,
             ])->render(),
             'change_title' => $changeTitle,
             'change_description' => $changeDescription,
