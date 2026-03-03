@@ -44,6 +44,10 @@
                         <input type="date" name="tanggal" class="form-control form-control-sm" value="{{ $tanggal ?? now()->format('Y-m-d') }}">
                     </div>
                     <div class="col-md-2">
+                        <label class="form-label">Nama Server</label>
+                        <input type="text" name="server" class="form-control form-control-sm" value="{{ $serverFilter ?? '' }}" placeholder="Contoh: server-1">
+                    </div>
+                    <div class="col-md-2">
                         <label class="form-label">Status</label>
                         <select name="status" class="form-select form-select-sm">
                             <option value="">Semua Status</option>
@@ -326,6 +330,7 @@
         const transferImageBaseUrl = @json(url('deposit/request'));
         const tanggal = @json($tanggal ?? now()->format('Y-m-d'));
         const searchSupplier = @json($searchSupplier ?? '');
+        const serverFilter = @json($serverFilter ?? '');
         const status = @json($status ?? '');
         const nominalFilter = @json($nominalFilter ?? '');
         const pollIntervalMs = 1000;
@@ -392,6 +397,10 @@
                     tanggal: tanggal,
                     search_supplier: searchSupplier
                 });
+
+                if (serverFilter) {
+                    params.set('server', serverFilter);
+                }
 
                 if (status) {
                     params.set('status', status);

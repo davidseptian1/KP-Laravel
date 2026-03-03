@@ -33,12 +33,14 @@ class DepositFormController extends Controller
         $validated = $request->validate([
             'tanggal' => 'nullable|date_format:Y-m-d',
             'search_supplier' => 'nullable|string|max:255',
+            'server' => 'nullable|string|max:100',
             'status' => 'nullable|in:pending,approved,rejected,selesai',
             'nominal' => 'nullable|string|max:50',
         ]);
 
         $tanggal = $validated['tanggal'] ?? now()->format('Y-m-d');
         $searchSupplier = trim((string) ($validated['search_supplier'] ?? ''));
+        $server = trim((string) ($validated['server'] ?? ''));
         $status = $validated['status'] ?? null;
         $nominalFilter = trim((string) ($validated['nominal'] ?? ''));
         $normalizedNominalFilter = preg_replace('/[^0-9]/', '', $nominalFilter);
@@ -57,6 +59,9 @@ class DepositFormController extends Controller
                     ->orWhereNull('is_deleted_by_staff');
             })
             ->whereDate('created_at', $tanggal)
+            ->when($server !== '', function ($q) use ($server) {
+                $q->where('server', 'like', '%' . $server . '%');
+            })
             ->when($searchSupplier !== '', function ($q) use ($searchSupplier) {
                 $q->where('nama_supplier', 'like', '%' . $searchSupplier . '%');
             })
@@ -87,6 +92,7 @@ class DepositFormController extends Controller
             'servers' => $servers,
             'tanggal' => $tanggal,
             'searchSupplier' => $searchSupplier,
+            'serverFilter' => $server,
             'status' => $status,
             'nominalFilter' => $nominalFilter,
             'latestUpdatedAt' => $latestUpdatedAt,
@@ -100,6 +106,7 @@ class DepositFormController extends Controller
             'since' => 'nullable|date',
             'tanggal' => 'nullable|date_format:Y-m-d',
             'search_supplier' => 'nullable|string|max:255',
+            'server' => 'nullable|string|max:100',
             'status' => 'nullable|in:pending,approved,rejected,selesai',
             'nominal' => 'nullable|string|max:50',
         ]);
@@ -107,6 +114,7 @@ class DepositFormController extends Controller
         $since = !empty($validated['since']) ? Carbon::parse($validated['since']) : now()->subMinutes(1);
         $tanggal = $validated['tanggal'] ?? now()->format('Y-m-d');
         $searchSupplier = trim((string) ($validated['search_supplier'] ?? ''));
+        $server = trim((string) ($validated['server'] ?? ''));
         $status = $validated['status'] ?? null;
         $nominalFilter = trim((string) ($validated['nominal'] ?? ''));
         $normalizedNominalFilter = preg_replace('/[^0-9]/', '', $nominalFilter);
@@ -117,6 +125,9 @@ class DepositFormController extends Controller
                     ->orWhereNull('is_deleted_by_staff');
             })
             ->whereDate('created_at', $tanggal)
+            ->when($server !== '', function ($q) use ($server) {
+                $q->where('server', 'like', '%' . $server . '%');
+            })
             ->when($searchSupplier !== '', function ($q) use ($searchSupplier) {
                 $q->where('nama_supplier', 'like', '%' . $searchSupplier . '%');
             })
