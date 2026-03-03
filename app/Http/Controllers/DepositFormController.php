@@ -14,6 +14,20 @@ use Illuminate\Support\Facades\Storage;
 
 class DepositFormController extends Controller
 {
+    private function normalizeNumericFields(Request $request): void
+    {
+        $rawNominal = (string) $request->input('nominal', '');
+        $rawNoRek = (string) $request->input('no_rek', '');
+
+        $normalizedNominal = preg_replace('/[^0-9]/', '', $rawNominal);
+        $normalizedNoRek = preg_replace('/[^0-9]/', '', $rawNoRek);
+
+        $request->merge([
+            'nominal' => $normalizedNominal,
+            'no_rek' => $normalizedNoRek,
+        ]);
+    }
+
     public function index(Request $request)
     {
         $validated = $request->validate([
@@ -186,6 +200,8 @@ class DepositFormController extends Controller
 
     public function storeFromRequestPage(Request $request)
     {
+        $this->normalizeNumericFields($request);
+
         $validated = $request->validate([
             'form_id' => 'nullable|exists:deposit_forms,id',
             'nama_supplier' => 'required|string|max:255|exists:suppliers,nama_supplier',
@@ -263,6 +279,8 @@ class DepositFormController extends Controller
         if ($form->expires_at && now()->greaterThan($form->expires_at->copy()->endOfDay())) {
             abort(404, 'Form sudah kedaluwarsa');
         }
+
+        $this->normalizeNumericFields($request);
 
         $validated = $request->validate([
             'nama_supplier' => 'required|string|max:255|exists:suppliers,nama_supplier',

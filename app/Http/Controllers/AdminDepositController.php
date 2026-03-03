@@ -17,6 +17,20 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class AdminDepositController extends Controller
 {
+    private function normalizeNumericFields(Request $request): void
+    {
+        $rawNominal = (string) $request->input('nominal', '');
+        $rawNoRek = (string) $request->input('no_rek', '');
+
+        $normalizedNominal = preg_replace('/[^0-9]/', '', $rawNominal);
+        $normalizedNoRek = preg_replace('/[^0-9]/', '', $rawNoRek);
+
+        $request->merge([
+            'nominal' => $normalizedNominal,
+            'no_rek' => $normalizedNoRek,
+        ]);
+    }
+
     public function importManual(Request $request)
     {
         $validated = $request->validate([
@@ -290,6 +304,8 @@ class AdminDepositController extends Controller
 
     public function updateDetails(Request $request, int $id)
     {
+        $this->normalizeNumericFields($request);
+
         $validated = $request->validate([
             'nama_supplier' => 'required|string|max:255',
             'jenis_transaksi' => 'required|in:deposit,hutang',
