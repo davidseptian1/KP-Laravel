@@ -103,13 +103,17 @@ class AdminDepositController extends Controller
     {
         $validated = $request->validate([
             'reply_penambahan' => 'nullable|string',
-            'reply_penambahan_type' => 'nullable|in:text,image',
-            'reply_penambahan_image' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:5120',
+            'bukti_transfer_admin_type' => 'nullable|in:text,image',
+            'bukti_transfer_admin_text' => 'nullable|string',
+            'bukti_transfer_admin_image' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:5120',
             'status' => 'required|in:pending,approved,rejected,selesai',
         ]);
 
         $item = Deposit::findOrFail($id);
-        $this->applyReplyPenambahan($request, $item, $validated);
+        $item->reply_penambahan = trim((string) ($validated['reply_penambahan'] ?? '')) !== ''
+            ? trim((string) $validated['reply_penambahan'])
+            : $item->reply_penambahan;
+        $this->applyBuktiTransferAdmin($request, $item, $validated);
         $item->status = $validated['status'];
         $item->save();
 
@@ -135,8 +139,9 @@ class AdminDepositController extends Controller
             'nama_rekening' => 'required|string|max:255',
             'reply_tiket' => 'nullable|string',
             'reply_penambahan' => 'nullable|string',
-            'reply_penambahan_type' => 'nullable|in:text,image',
-            'reply_penambahan_image' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:5120',
+            'bukti_transfer_admin_type' => 'nullable|in:text,image',
+            'bukti_transfer_admin_text' => 'nullable|string',
+            'bukti_transfer_admin_image' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:5120',
             'jam' => 'required|date_format:H:i',
         ]);
 
@@ -149,7 +154,10 @@ class AdminDepositController extends Controller
         $item->no_rek = $validated['no_rek'];
         $item->nama_rekening = $validated['nama_rekening'];
         $item->reply_tiket = $validated['reply_tiket'] ?? null;
-        $this->applyReplyPenambahan($request, $item, $validated);
+        $item->reply_penambahan = trim((string) ($validated['reply_penambahan'] ?? '')) !== ''
+            ? trim((string) $validated['reply_penambahan'])
+            : null;
+        $this->applyBuktiTransferAdmin($request, $item, $validated);
         $item->jam = $validated['jam'];
         $item->save();
 
@@ -181,6 +189,18 @@ class AdminDepositController extends Controller
         return Storage::disk('local')->response($path);
     }
 
+    public function viewTransferAdminImage(int $id)
+    {
+        $item = Deposit::findOrFail($id);
+        $path = $item->bukti_transfer_admin_image;
+
+        if (!$path || !Storage::disk('local')->exists($path)) {
+            return redirect()->route('admin.deposit.monitoring')->with('error', 'Gambar bukti transfer admin tidak ditemukan');
+        }
+
+        return Storage::disk('local')->response($path);
+    }
+
     public function destroy(int $id)
     {
         $item = Deposit::findOrFail($id);
@@ -189,50 +209,54 @@ class AdminDepositController extends Controller
             Storage::disk('local')->delete($item->reply_penambahan_image);
         }
 
+        if ($item->bukti_transfer_admin_image && Storage::disk('local')->exists($item->bukti_transfer_admin_image)) {
+            Storage::disk('local')->delete($item->bukti_transfer_admin_image);
+        }
+
         $item->delete();
 
         return redirect()->route('admin.deposit.monitoring')->with('success', 'Request deposit berhasil dihapus');
     }
 
-    private function applyReplyPenambahan(Request $request, Deposit $item, array $validated): void
+    private function applyBuktiTransferAdmin(Request $request, Deposit $item, array $validated): void
     {
-        $type = $validated['reply_penambahan_type'] ?? ($request->hasFile('reply_penambahan_image') ? 'image' : 'text');
-        $textReply = trim((string) ($validated['reply_penambahan'] ?? ''));
+        $type = $validated['bukti_transfer_admin_type'] ?? ($request->hasFile('bukti_transfer_admin_image') ? 'image' : 'text');
+        $textReply = trim((string) ($validated['bukti_transfer_admin_text'] ?? ''));
 
         if ($type === 'image') {
-            if ($request->hasFile('reply_penambahan_image')) {
-                if ($item->reply_penambahan_image && Storage::disk('local')->exists($item->reply_penambahan_image)) {
-                    Storage::disk('local')->delete($item->reply_penambahan_image);
+            if ($request->hasFile('bukti_transfer_admin_image')) {
+                if ($item->bukti_transfer_admin_image && Storage::disk('local')->exists($item->bukti_transfer_admin_image)) {
+                    Storage::disk('local')->delete($item->bukti_transfer_admin_image);
                 }
 
-                $path = $request->file('reply_penambahan_image')->store('deposit/reply-penambahan', 'local');
-                $item->reply_penambahan_image = $path;
+                $path = $request->file('bukti_transfer_admin_image')->store('deposit/bukti-transfer-admin', 'local');
+                $item->bukti_transfer_admin_image = $path;
             }
 
-            if (!$item->reply_penambahan_image) {
+            if (!$item->bukti_transfer_admin_image) {
                 throw ValidationException::withMessages([
-                    'reply_penambahan_image' => 'Pilih atau paste gambar terlebih dahulu untuk tipe image.',
+                    'bukti_transfer_admin_image' => 'Pilih atau paste gambar bukti transfer admin terlebih dahulu untuk tipe image.',
                 ]);
             }
 
-            $item->reply_penambahan_type = 'image';
-            $item->reply_penambahan = $textReply !== '' ? $textReply : null;
+            $item->bukti_transfer_admin_type = 'image';
+            $item->bukti_transfer_admin_text = $textReply !== '' ? $textReply : null;
             return;
         }
 
         if ($textReply === '') {
             throw ValidationException::withMessages([
-                'reply_penambahan' => 'Reply penambahan teks wajib diisi untuk tipe text.',
+                'bukti_transfer_admin_text' => 'Input bukti transfer admin wajib diisi untuk tipe text.',
             ]);
         }
 
-        if ($item->reply_penambahan_image && Storage::disk('local')->exists($item->reply_penambahan_image)) {
-            Storage::disk('local')->delete($item->reply_penambahan_image);
-            $item->reply_penambahan_image = null;
+        if ($item->bukti_transfer_admin_image && Storage::disk('local')->exists($item->bukti_transfer_admin_image)) {
+            Storage::disk('local')->delete($item->bukti_transfer_admin_image);
+            $item->bukti_transfer_admin_image = null;
         }
 
-        $item->reply_penambahan_type = 'text';
-        $item->reply_penambahan = $textReply;
+        $item->bukti_transfer_admin_type = 'text';
+        $item->bukti_transfer_admin_text = $textReply;
     }
 
     public function analysis(Request $request)

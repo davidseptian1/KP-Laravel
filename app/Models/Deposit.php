@@ -26,6 +26,9 @@ class Deposit extends Model
         'reply_penambahan',
         'reply_penambahan_type',
         'reply_penambahan_image',
+        'bukti_transfer_admin_type',
+        'bukti_transfer_admin_text',
+        'bukti_transfer_admin_image',
         'status',
         'jam',
     ];

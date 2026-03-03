@@ -53,40 +53,31 @@
                     <table class="table table-hover align-middle">
                         <thead class="table-light">
                             <tr>
-                                <th>Nama Supplier</th>
-                                <th>Jenis</th>
-                                <th class="text-end">Nominal</th>
-                                <th>BANK</th>
-                                <th>Server</th>
-                                <th>No-Rek</th>
+                                <th>Tanggal</th>
                                 <th>Nama Rekening</th>
-                                <th>Reply Tiket</th>
-                                <th>Bukti Transfer Admin</th>
+                                <th>Bukti Tiket</th>
+                                <th>Bukti Penambahan</th>
+                                <th>Bukti Transfers Admin</th>
                                 <th>Status</th>
                                 <th>Jam</th>
-                                <th>Tanggal</th>
                                 <th class="text-center">Aksi Admin</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse ($items as $item)
                                 <tr>
-                                    <td>{{ $item->nama_supplier }}</td>
-                                    <td>{{ strtoupper($item->jenis_transaksi ?? 'deposit') }}</td>
-                                    <td class="text-end">Rp {{ number_format($item->nominal, 0, ',', '.') }}</td>
-                                    <td>{{ $item->bank }}</td>
-                                    <td>{{ $item->server }}</td>
-                                    <td>{{ $item->no_rek }}</td>
+                                    <td>{{ $item->created_at?->format('d/m/Y H:i') }}</td>
                                     <td>{{ $item->nama_rekening }}</td>
                                     <td>{{ $item->reply_tiket ?? '-' }}</td>
+                                    <td>{{ $item->reply_penambahan ?? '-' }}</td>
                                     <td>
-                                        @if (($item->reply_penambahan_type ?? 'text') === 'image')
-                                            @if (!empty($item->reply_penambahan))
-                                                <div class="mb-1">{{ $item->reply_penambahan }}</div>
+                                        @if (($item->bukti_transfer_admin_type ?? 'text') === 'image')
+                                            @if (!empty($item->bukti_transfer_admin_text))
+                                                <div class="mb-1">{{ $item->bukti_transfer_admin_text }}</div>
                                             @endif
-                                            <a href="{{ route('admin.deposit.reply-image', $item->id) }}" target="_blank" class="btn btn-outline-primary btn-sm">Lihat Gambar</a>
+                                            <a href="{{ route('admin.deposit.transfer-admin-image', $item->id) }}" target="_blank" class="btn btn-outline-primary btn-sm">Lihat Gambar</a>
                                         @else
-                                            {{ $item->reply_penambahan ?? '-' }}
+                                            {{ $item->bukti_transfer_admin_text ?? '-' }}
                                         @endif
                                     </td>
                                     <td>
@@ -95,7 +86,6 @@
                                         </span>
                                     </td>
                                     <td>{{ $item->jam ? \Carbon\Carbon::parse($item->jam)->format('H:i') : '-' }}</td>
-                                    <td>{{ $item->created_at?->format('d/m/Y H:i') }}</td>
                                     <td class="text-center" style="min-width:180px;">
                                         <div class="d-flex gap-2 justify-content-center align-items-center flex-wrap">
                                             <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#detailDeposit-{{ $item->id }}">Lihat</button>
@@ -155,20 +145,24 @@
                                                                         <label class="form-label">Reply Tiket</label>
                                                                         <textarea name="reply_tiket" class="form-control" rows="2">{{ $item->reply_tiket }}</textarea>
                                                                     </div>
-                                                                    <div class="col-md-6 js-reply-text-wrap" data-target="{{ $item->id }}" style="display: {{ ($item->reply_penambahan_type ?? 'text') === 'text' ? 'block' : 'none' }};">
+                                                                    <div class="col-md-6">
+                                                                        <label class="form-label">Bukti Penambahan</label>
+                                                                        <textarea name="reply_penambahan" class="form-control" rows="2" placeholder="Masukkan bukti penambahan">{{ ($item->reply_penambahan ?? '') === 'Menunggu Konfirmasi Admin' ? '' : ($item->reply_penambahan ?? '') }}</textarea>
+                                                                    </div>
+                                                                    <div class="col-md-6 js-transfer-text-wrap" data-target="{{ $item->id }}" style="display: {{ ($item->bukti_transfer_admin_type ?? 'text') === 'text' ? 'block' : 'none' }};">
                                                                         <label class="form-label">Input Bukti Transfer Admin</label>
-                                                                        <textarea name="reply_penambahan" class="form-control" rows="2" placeholder="Masukkan bukti transfer admin dalam bentuk teks">{{ ($item->reply_penambahan ?? '') === 'Menunggu Konfirmasi Admin' ? '' : ($item->reply_penambahan ?? '') }}</textarea>
+                                                                        <textarea name="bukti_transfer_admin_text" class="form-control" rows="2" placeholder="Masukkan bukti transfer admin dalam bentuk teks">{{ $item->bukti_transfer_admin_text ?? '' }}</textarea>
                                                                     </div>
                                                                     <div class="col-md-6">
                                                                         <label class="form-label">Tipe Bukti Transfer Admin</label>
-                                                                        <select name="reply_penambahan_type" class="form-select js-reply-type" data-target="{{ $item->id }}" required>
-                                                                            <option value="text" {{ ($item->reply_penambahan_type ?? 'text') === 'text' ? 'selected' : '' }}>Text</option>
-                                                                            <option value="image" {{ ($item->reply_penambahan_type ?? 'text') === 'image' ? 'selected' : '' }}>Image</option>
+                                                                        <select name="bukti_transfer_admin_type" class="form-select js-reply-type" data-target="{{ $item->id }}" required>
+                                                                            <option value="text" {{ ($item->bukti_transfer_admin_type ?? 'text') === 'text' ? 'selected' : '' }}>Text</option>
+                                                                            <option value="image" {{ ($item->bukti_transfer_admin_type ?? 'text') === 'image' ? 'selected' : '' }}>Image</option>
                                                                         </select>
                                                                     </div>
-                                                                    <div class="col-md-6 js-reply-image-wrap" data-target="{{ $item->id }}" style="display: {{ ($item->reply_penambahan_type ?? 'text') === 'image' ? 'block' : 'none' }};">
+                                                                    <div class="col-md-6 js-reply-image-wrap" data-target="{{ $item->id }}" style="display: {{ ($item->bukti_transfer_admin_type ?? 'text') === 'image' ? 'block' : 'none' }};">
                                                                         <label class="form-label">Upload / Paste Gambar</label>
-                                                                        <input type="file" name="reply_penambahan_image" class="form-control js-reply-image-input" data-target="{{ $item->id }}" accept="image/png,image/jpeg,image/jpg,image/webp">
+                                                                        <input type="file" name="bukti_transfer_admin_image" class="form-control js-reply-image-input" data-target="{{ $item->id }}" accept="image/png,image/jpeg,image/jpg,image/webp">
                                                                         <small class="text-muted d-block mt-1">Bisa Ctrl+V dari clipboard saat fokus di area paste.</small>
                                                                         <div class="border rounded p-2 mt-2 js-paste-zone" data-target="{{ $item->id }}" tabindex="0" style="min-height:60px;">
                                                                             Paste gambar di sini (Ctrl+V)
@@ -176,8 +170,8 @@
                                                                         <div class="mt-2 js-image-preview-wrap" data-target="{{ $item->id }}" style="display:none;">
                                                                             <img src="" alt="Preview" class="img-fluid rounded border js-image-preview" data-target="{{ $item->id }}" style="max-height:180px;">
                                                                         </div>
-                                                                        @if (!empty($item->reply_penambahan_image))
-                                                                            <a href="{{ route('admin.deposit.reply-image', $item->id) }}" target="_blank" class="btn btn-outline-primary btn-sm mt-2">Lihat Gambar Tersimpan</a>
+                                                                        @if (!empty($item->bukti_transfer_admin_image))
+                                                                            <a href="{{ route('admin.deposit.transfer-admin-image', $item->id) }}" target="_blank" class="btn btn-outline-primary btn-sm mt-2">Lihat Gambar Tersimpan</a>
                                                                         @endif
                                                                     </div>
                                                                     <div class="col-md-6">
@@ -211,7 +205,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="13" class="text-center text-muted py-4">Belum ada deposit</td>
+                                    <td colspan="8" class="text-center text-muted py-4">Belum ada deposit</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -281,11 +275,11 @@
             select.addEventListener('change', function () {
                 const targetId = this.dataset.target;
                 const imageWrap = document.querySelector('.js-reply-image-wrap[data-target="' + targetId + '"]');
-                const textWrap = document.querySelector('.js-reply-text-wrap[data-target="' + targetId + '"]');
-                if (!imageWrap || !textWrap) return;
+                const transferTextWrap = document.querySelector('.js-transfer-text-wrap[data-target="' + targetId + '"]');
+                if (!imageWrap || !transferTextWrap) return;
 
                 imageWrap.style.display = this.value === 'image' ? 'block' : 'none';
-                textWrap.style.display = this.value === 'text' ? 'block' : 'none';
+                transferTextWrap.style.display = this.value === 'text' ? 'block' : 'none';
             });
 
             select.dispatchEvent(new Event('change'));
