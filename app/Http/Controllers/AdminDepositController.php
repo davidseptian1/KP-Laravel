@@ -56,16 +56,16 @@ class AdminDepositController extends Controller
 
             if ($insertedRows < 1) {
                 return redirect()
-                    ->route('admin.deposit.monitoring')
+                    ->back()
                     ->with('error', 'Upload berhasil dibaca, tetapi tidak ada baris valid yang bisa diinput. Cek format kolom file Excel Anda.');
             }
 
             return redirect()
-                ->route('admin.deposit.monitoring')
+                ->back()
                 ->with('success', "Upload manual berhasil diproses. {$insertedRows} baris berhasil diinput dengan status selesai.");
         } catch (\Throwable $e) {
             return redirect()
-                ->route('admin.deposit.monitoring')
+                ->back()
                 ->with('error', 'Upload manual gagal diproses: ' . $e->getMessage());
         }
     }
@@ -351,7 +351,7 @@ class AdminDepositController extends Controller
             'is_read' => false,
         ]);
 
-        return redirect()->route('admin.deposit.monitoring')->with('success', 'Request deposit berhasil diperbarui');
+        return redirect()->back()->with('success', 'Request deposit berhasil diperbarui');
     }
 
     public function updateDetails(Request $request, int $id)
@@ -392,7 +392,7 @@ class AdminDepositController extends Controller
         $item->status = $validated['status'];
         $item->save();
 
-        return redirect()->route('admin.deposit.monitoring')->with('success', 'Data request deposit dan status berhasil diperbarui');
+        return redirect()->back()->with('success', 'Data request deposit dan status berhasil diperbarui');
     }
 
     public function updateStatus(Request $request, int $id)
@@ -405,7 +405,7 @@ class AdminDepositController extends Controller
         $item->status = $validated['status'];
         $item->save();
 
-        return redirect()->route('admin.deposit.monitoring')->with('success', 'Status request deposit berhasil diperbarui');
+        return redirect()->back()->with('success', 'Status request deposit berhasil diperbarui');
     }
 
     public function viewReplyImage(int $id)
@@ -446,7 +446,7 @@ class AdminDepositController extends Controller
 
         $item->delete();
 
-        return redirect()->route('admin.deposit.monitoring')->with('success', 'Request deposit berhasil dihapus');
+        return redirect()->back()->with('success', 'Request deposit berhasil dihapus');
     }
 
     private function applyBuktiTransferAdmin(Request $request, Deposit $item, array $validated): void
