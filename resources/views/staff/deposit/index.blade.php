@@ -249,3 +249,65 @@
 
 @endsection
 
+@push('scripts')
+<script>
+    (function () {
+        let latestUpdatedAt = @json($latestUpdatedAt);
+        const pollingUrl = @json(route('deposit.request.changes'));
+        const tanggal = @json($tanggal ?? now()->format('Y-m-d'));
+        const searchSupplier = @json($searchSupplier ?? '');
+        let isReloading = false;
+
+        async function checkChanges() {
+            if (isReloading) return;
+
+            try {
+                const params = new URLSearchParams({
+                    tanggal: tanggal,
+                    search_supplier: searchSupplier
+                });
+
+                if (latestUpdatedAt) {
+                    params.set('since', latestUpdatedAt);
+                }
+
+                const response = await fetch(pollingUrl + '?' + params.toString(), {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) return;
+
+                const result = await response.json();
+
+                if (result.latest_updated_at) {
+                    latestUpdatedAt = result.latest_updated_at;
+                }
+
+                if (result.has_changes) {
+                    isReloading = true;
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'info',
+                        title: 'Ada perubahan data deposit (' + result.changes_count + ')',
+                        showConfirmButton: false,
+                        timer: 1800,
+                        timerProgressBar: true,
+                    });
+
+                    setTimeout(function () {
+                        window.location.reload();
+                    }, 900);
+                }
+            } catch (error) {
+            }
+        }
+
+        setInterval(checkChanges, 15000);
+    })();
+</script>
+@endpush
+

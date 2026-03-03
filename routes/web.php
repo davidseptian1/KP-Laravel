@@ -130,6 +130,7 @@ Route::middleware('checkLogin')->group(function () {
 
     // Deposit Request (User)
     Route::get('deposit/request', [DepositFormController::class, 'index'])->name('deposit.request.index');
+    Route::get('deposit/request/changes', [DepositFormController::class, 'changes'])->name('deposit.request.changes');
     Route::post('deposit/request', [DepositFormController::class, 'storeFromRequestPage'])->name('deposit.request.store');
     Route::get('deposit/request/{id}/transfer-admin-image', [DepositFormController::class, 'viewTransferAdminImage'])->name('deposit.request.transfer-admin-image');
     Route::put('deposit/request/{id}/reply-penambahan', [DepositFormController::class, 'updateReplyPenambahan'])->name('deposit.request.reply.update');

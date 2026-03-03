@@ -7,6 +7,7 @@ use App\Models\DepositForm;
 use App\Models\NotificationItem;
 use App\Models\Server;
 use App\Models\Supplier;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -39,6 +40,8 @@ class DepositFormController extends Controller
             ->orderByDesc('created_at')
             ;
 
+        $latestUpdatedAt = (clone $query)->max('updated_at');
+
         $items = $query->paginate(10)->withQueryString();
 
         $suppliers = Supplier::orderBy('nama_supplier')->pluck('nama_supplier');
@@ -53,6 +56,39 @@ class DepositFormController extends Controller
             'servers' => $servers,
             'tanggal' => $tanggal,
             'searchSupplier' => $searchSupplier,
+            'latestUpdatedAt' => $latestUpdatedAt,
+        ]);
+    }
+
+    public function changes(Request $request)
+    {
+        $validated = $request->validate([
+            'since' => 'nullable|date',
+            'tanggal' => 'nullable|date_format:Y-m-d',
+            'search_supplier' => 'nullable|string|max:255',
+        ]);
+
+        $since = !empty($validated['since']) ? Carbon::parse($validated['since']) : now()->subMinutes(1);
+        $tanggal = $validated['tanggal'] ?? now()->format('Y-m-d');
+        $searchSupplier = trim((string) ($validated['search_supplier'] ?? ''));
+
+        $query = Deposit::where('user_id', Auth::id())
+            ->whereDate('created_at', $tanggal)
+            ->when($searchSupplier !== '', function ($q) use ($searchSupplier) {
+                $q->where('nama_supplier', 'like', '%' . $searchSupplier . '%');
+            });
+
+        $changesCount = (clone $query)
+            ->where('updated_at', '>', $since)
+            ->count();
+
+        $latestUpdatedAt = (clone $query)->max('updated_at');
+
+        return response()->json([
+            'has_changes' => $changesCount > 0,
+            'changes_count' => $changesCount,
+            'latest_updated_at' => $latestUpdatedAt,
+            'server_time' => now()->toDateTimeString(),
         ]);
     }
 
