@@ -61,7 +61,7 @@
                                 <th>No-Rek</th>
                                 <th>Nama Rekening</th>
                                 <th>Reply Tiket</th>
-                                <th>Reply Penambahan</th>
+                                <th>Bukti Transfer Admin</th>
                                 <th>Status</th>
                                 <th>Jam</th>
                                 <th>Tanggal</th>
@@ -155,12 +155,12 @@
                                                                         <label class="form-label">Reply Tiket</label>
                                                                         <textarea name="reply_tiket" class="form-control" rows="2">{{ $item->reply_tiket }}</textarea>
                                                                     </div>
-                                                                    <div class="col-md-6">
-                                                                        <label class="form-label">Reply Penambahan / Reply Bukti</label>
-                                                                        <textarea name="reply_penambahan" class="form-control" rows="2" placeholder="Isi teks reply atau caption bukti (opsional jika tipe Image)">{{ ($item->reply_penambahan ?? '') === 'Menunggu Konfirmasi Admin' ? '' : ($item->reply_penambahan ?? '') }}</textarea>
+                                                                    <div class="col-md-6 js-reply-text-wrap" data-target="{{ $item->id }}" style="display: {{ ($item->reply_penambahan_type ?? 'text') === 'text' ? 'block' : 'none' }};">
+                                                                        <label class="form-label">Input Bukti Transfer Admin</label>
+                                                                        <textarea name="reply_penambahan" class="form-control" rows="2" placeholder="Masukkan bukti transfer admin dalam bentuk teks">{{ ($item->reply_penambahan ?? '') === 'Menunggu Konfirmasi Admin' ? '' : ($item->reply_penambahan ?? '') }}</textarea>
                                                                     </div>
                                                                     <div class="col-md-6">
-                                                                        <label class="form-label">Tipe Reply Penambahan</label>
+                                                                        <label class="form-label">Tipe Bukti Transfer Admin</label>
                                                                         <select name="reply_penambahan_type" class="form-select js-reply-type" data-target="{{ $item->id }}" required>
                                                                             <option value="text" {{ ($item->reply_penambahan_type ?? 'text') === 'text' ? 'selected' : '' }}>Text</option>
                                                                             <option value="image" {{ ($item->reply_penambahan_type ?? 'text') === 'image' ? 'selected' : '' }}>Image</option>
@@ -281,9 +281,11 @@
             select.addEventListener('change', function () {
                 const targetId = this.dataset.target;
                 const imageWrap = document.querySelector('.js-reply-image-wrap[data-target="' + targetId + '"]');
-                if (!imageWrap) return;
+                const textWrap = document.querySelector('.js-reply-text-wrap[data-target="' + targetId + '"]');
+                if (!imageWrap || !textWrap) return;
 
                 imageWrap.style.display = this.value === 'image' ? 'block' : 'none';
+                textWrap.style.display = this.value === 'text' ? 'block' : 'none';
             });
 
             select.dispatchEvent(new Event('change'));
