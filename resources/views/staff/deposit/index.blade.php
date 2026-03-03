@@ -2,6 +2,15 @@
 
 @section('content')
 
+<style>
+    textarea.js-auto-resize-textarea {
+        overflow-y: auto;
+        resize: none;
+        min-height: 70px;
+        max-height: 260px;
+    }
+</style>
+
 <div class="page-header" style="margin: 0; padding: 0;">
     <div class="page-block">
         <div class="row align-items-center">
@@ -169,7 +178,7 @@
                                                             </div>
                                                             <div class="modal-body">
                                                                 <label class="form-label">Reply Penambahan</label>
-                                                                <textarea name="reply_penambahan" class="form-control" rows="4" required>{{ $item->reply_penambahan }}</textarea>
+                                                                <textarea name="reply_penambahan" class="form-control js-auto-resize-textarea" rows="4" required>{{ $item->reply_penambahan }}</textarea>
                                                             </div>
                                                             <div class="modal-footer">
                                                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
@@ -262,7 +271,7 @@
                         </div>
                         <div class="col-12">
                             <label class="form-label">Reply Tiket</label>
-                            <textarea name="reply_tiket" class="form-control" rows="2"></textarea>
+                            <textarea name="reply_tiket" class="form-control js-auto-resize-textarea" rows="2"></textarea>
                         </div>
                     </div>
                 </div>
@@ -493,11 +502,45 @@
             }
         }
 
+        function bindAutoResizeTextareas() {
+            document.querySelectorAll('textarea.js-auto-resize-textarea').forEach(function (textarea) {
+                if (textarea.dataset.boundAutosize === '1') return;
+                textarea.dataset.boundAutosize = '1';
+
+                const resize = function () {
+                    const maxHeight = 260;
+                    textarea.style.height = 'auto';
+                    const nextHeight = Math.min(textarea.scrollHeight, maxHeight);
+                    textarea.style.height = nextHeight + 'px';
+                    textarea.style.overflowY = textarea.scrollHeight > maxHeight ? 'auto' : 'hidden';
+                };
+
+                textarea.addEventListener('input', resize);
+                resize();
+            });
+
+            document.querySelectorAll('.modal').forEach(function (modalEl) {
+                if (modalEl.dataset.boundModalAutosize === '1') return;
+                modalEl.dataset.boundModalAutosize = '1';
+
+                modalEl.addEventListener('shown.bs.modal', function () {
+                    modalEl.querySelectorAll('textarea.js-auto-resize-textarea').forEach(function (textarea) {
+                        const maxHeight = 260;
+                        textarea.style.height = 'auto';
+                        const nextHeight = Math.min(textarea.scrollHeight, maxHeight);
+                        textarea.style.height = nextHeight + 'px';
+                        textarea.style.overflowY = textarea.scrollHeight > maxHeight ? 'auto' : 'hidden';
+                    });
+                });
+            });
+        }
+
         if (enableNotifBtn) {
             enableNotifBtn.addEventListener('click', requestBrowserNotificationPermission);
         }
 
         updateNotifStatusText();
+        bindAutoResizeTextareas();
 
         document.addEventListener('visibilitychange', function () {
             if (!document.hidden) {

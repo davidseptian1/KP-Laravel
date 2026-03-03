@@ -13,9 +13,10 @@
     }
 
     #monitoringTableContainer textarea.js-auto-resize-textarea {
-        overflow-y: hidden;
+        overflow-y: auto;
         resize: none;
         min-height: 70px;
+        max-height: 260px;
     }
 </style>
 
@@ -312,12 +313,34 @@
                 textarea.dataset.boundAutosize = '1';
 
                 const resize = function () {
+                    const maxHeight = 260;
                     textarea.style.height = 'auto';
-                    textarea.style.height = textarea.scrollHeight + 'px';
+                    const nextHeight = Math.min(textarea.scrollHeight, maxHeight);
+                    textarea.style.height = nextHeight + 'px';
+                    textarea.style.overflowY = textarea.scrollHeight > maxHeight ? 'auto' : 'hidden';
                 };
 
                 textarea.addEventListener('input', resize);
                 resize();
+            });
+        }
+
+        function bindModalTextareaResize() {
+            const container = document.getElementById('monitoringTableContainer');
+            if (!container || container.dataset.boundModalAutosize === '1') return;
+
+            container.dataset.boundModalAutosize = '1';
+            container.addEventListener('shown.bs.modal', function (event) {
+                const modalEl = event.target;
+                if (!modalEl) return;
+
+                modalEl.querySelectorAll('textarea.js-auto-resize-textarea').forEach(function (textarea) {
+                    textarea.style.height = 'auto';
+                    const maxHeight = 260;
+                    const nextHeight = Math.min(textarea.scrollHeight, maxHeight);
+                    textarea.style.height = nextHeight + 'px';
+                    textarea.style.overflowY = textarea.scrollHeight > maxHeight ? 'auto' : 'hidden';
+                });
             });
         }
 
@@ -378,6 +401,7 @@
                         tableContainer.innerHTML = result.table_html;
                         initTransferFormControls();
                         initAutoResizeTextareas();
+                        bindModalTextareaResize();
                         applyLatestRowHighlight(latestIncomingId);
                     }
                 }
@@ -407,6 +431,7 @@
         updateNotifStatusText();
         initTransferFormControls();
         initAutoResizeTextareas();
+        bindModalTextareaResize();
         applyLatestRowHighlight(latestIncomingId);
 
         document.addEventListener('visibilitychange', function () {

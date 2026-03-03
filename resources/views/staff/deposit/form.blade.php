@@ -2,6 +2,15 @@
 
 @section('content')
 
+<style>
+    textarea.js-auto-resize-textarea {
+        overflow-y: auto;
+        resize: none;
+        min-height: 70px;
+        max-height: 260px;
+    }
+</style>
+
 <div class="page-header" style="margin: 0; padding: 0;">
     <div class="page-block">
         <div class="row align-items-center">
@@ -94,7 +103,7 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Reply Tiket</label>
-                        <textarea name="reply_tiket" class="form-control" rows="3"></textarea>
+                        <textarea name="reply_tiket" class="form-control js-auto-resize-textarea" rows="3"></textarea>
                     </div>
                     <div id="submitNoted" class="alert alert-info mt-2 d-none">
                         Noted: Anda telah melakukan pengajuan, jika anda ingin melakukan pengajuan ulang klik button "Pengajuan Ulang".
@@ -166,6 +175,20 @@
 
         const btn = document.getElementById('copyDepositReplyBtn');
         const text = document.getElementById('depositReplyText');
+
+        document.querySelectorAll('textarea.js-auto-resize-textarea').forEach(function (textarea) {
+            const resize = function () {
+                const maxHeight = 260;
+                textarea.style.height = 'auto';
+                const nextHeight = Math.min(textarea.scrollHeight, maxHeight);
+                textarea.style.height = nextHeight + 'px';
+                textarea.style.overflowY = textarea.scrollHeight > maxHeight ? 'auto' : 'hidden';
+            };
+
+            textarea.addEventListener('input', resize);
+            resize();
+        });
+
         if (!btn || !text) return;
 
         btn.addEventListener('click', async function () {
