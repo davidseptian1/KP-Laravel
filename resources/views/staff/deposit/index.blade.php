@@ -44,6 +44,20 @@
                     </div>
                 </form>
 
+                <div class="card border-0 bg-light mb-3">
+                    <div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 py-2">
+                        <div>
+                            <div class="fw-semibold mb-1"><i class="ti ti-bell me-1"></i>Pengaturan Notifikasi</div>
+                            <small class="text-muted" id="browserNotifStatus">Status browser notification: mengecek...</small>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="btnEnableBrowserNotif">
+                                Aktifkan Notifikasi Browser
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="row g-2 mb-3">
                     <div class="col-md-6">
                         <div class="card border-0 bg-success-subtle h-100">
@@ -257,6 +271,63 @@
         const tanggal = @json($tanggal ?? now()->format('Y-m-d'));
         const searchSupplier = @json($searchSupplier ?? '');
         let isReloading = false;
+        const pollIntervalMs = 5000;
+
+        const notifStatusEl = document.getElementById('browserNotifStatus');
+        const enableNotifBtn = document.getElementById('btnEnableBrowserNotif');
+
+        function updateNotifStatusText() {
+            if (!notifStatusEl) return;
+
+            if (!('Notification' in window)) {
+                notifStatusEl.textContent = 'Status browser notification: browser tidak mendukung notifikasi.';
+                return;
+            }
+
+            if (Notification.permission === 'granted') {
+                notifStatusEl.textContent = 'Status browser notification: diizinkan.';
+            } else if (Notification.permission === 'denied') {
+                notifStatusEl.textContent = 'Status browser notification: ditolak. Ubah dari pengaturan browser.';
+            } else {
+                notifStatusEl.textContent = 'Status browser notification: belum diizinkan.';
+            }
+        }
+
+        async function requestBrowserNotificationPermission() {
+            if (!('Notification' in window)) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Browser tidak mendukung notifikasi',
+                    timer: 1800,
+                    showConfirmButton: false,
+                });
+                return;
+            }
+
+            const permission = await Notification.requestPermission();
+            updateNotifStatusText();
+
+            if (permission === 'granted') {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: 'Notifikasi browser berhasil diaktifkan',
+                    showConfirmButton: false,
+                    timer: 1800,
+                });
+            }
+        }
+
+        function sendBrowserNotification(changesCount) {
+            if (!('Notification' in window)) return;
+            if (Notification.permission !== 'granted') return;
+
+            new Notification('Update Request Deposit', {
+                body: 'Ada ' + changesCount + ' perubahan data deposit.',
+                tag: 'deposit-request-update',
+            });
+        }
 
         async function checkChanges() {
             if (isReloading) return;
@@ -288,6 +359,7 @@
 
                 if (result.has_changes) {
                     isReloading = true;
+                    sendBrowserNotification(result.changes_count);
                     Swal.fire({
                         toast: true,
                         position: 'top-end',
@@ -306,7 +378,19 @@
             }
         }
 
-        setInterval(checkChanges, 15000);
+        if (enableNotifBtn) {
+            enableNotifBtn.addEventListener('click', requestBrowserNotificationPermission);
+        }
+
+        updateNotifStatusText();
+
+        document.addEventListener('visibilitychange', function () {
+            if (!document.hidden) {
+                checkChanges();
+            }
+        });
+
+        setInterval(checkChanges, pollIntervalMs);
     })();
 </script>
 @endpush
