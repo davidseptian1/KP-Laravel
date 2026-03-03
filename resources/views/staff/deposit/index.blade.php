@@ -179,9 +179,9 @@
                                         </span>
                                     </td>
                                     <td class="cell-jam">{{ $item->jam ? \Carbon\Carbon::parse($item->jam)->format('H:i') : '-' }}</td>
-                                    <td>
+                                    <td class="cell-aksi">
                                         @if (($item->status ?? 'pending') === 'approved')
-                                            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalInputReply-{{ $item->id }}">Input</button>
+                                            <button type="button" class="btn btn-sm btn-primary js-action-input-reply" data-bs-toggle="modal" data-bs-target="#modalInputReply-{{ $item->id }}">Input</button>
 
                                             <div class="modal fade" id="modalInputReply-{{ $item->id }}" tabindex="-1" aria-hidden="true">
                                                 <div class="modal-dialog modal-dialog-centered">
@@ -206,7 +206,7 @@
                                                 </div>
                                             </div>
                                         @elseif (($item->status ?? 'pending') === 'pending')
-                                            <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalDeletePending-{{ $item->id }}">Hapus</button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger js-action-delete-pending" data-bs-toggle="modal" data-bs-target="#modalDeletePending-{{ $item->id }}">Hapus</button>
 
                                             <div class="modal fade" id="modalDeletePending-{{ $item->id }}" tabindex="-1" aria-hidden="true">
                                                 <div class="modal-dialog modal-dialog-centered">
@@ -529,6 +529,7 @@
             }
 
             let hasMissingRow = false;
+            let hasActionMismatch = false;
 
             items.forEach(function (item) {
                 const row = document.querySelector('tr[data-deposit-id="' + item.id + '"]');
@@ -544,6 +545,7 @@
                 const buktiCell = row.querySelector('.cell-bukti-transfer');
                 const statusCell = row.querySelector('.cell-status');
                 const jamCell = row.querySelector('.cell-jam');
+                const aksiCell = row.querySelector('.cell-aksi');
 
                 if (supplierCell) supplierCell.textContent = item.nama_supplier || '-';
                 if (rekeningCell) rekeningCell.textContent = item.nama_rekening || '-';
@@ -553,13 +555,23 @@
                 if (statusCell) statusCell.innerHTML = statusBadgeHtml(item.status || 'pending');
                 if (jamCell) jamCell.textContent = item.jam || '-';
 
+                if (aksiCell) {
+                    const normalizedStatus = String(item.status || 'pending').toLowerCase();
+                    if (normalizedStatus === 'approved' && !aksiCell.querySelector('.js-action-input-reply')) {
+                        hasActionMismatch = true;
+                    }
+                    if (normalizedStatus === 'pending' && !aksiCell.querySelector('.js-action-delete-pending')) {
+                        hasActionMismatch = true;
+                    }
+                }
+
                 row.classList.add('table-info');
                 setTimeout(function () {
                     row.classList.remove('table-info');
                 }, 2200);
             });
 
-            if (hasMissingRow) {
+            if (hasMissingRow || hasActionMismatch) {
                 window.location.reload();
             }
         }
