@@ -4,6 +4,7 @@
             <tr>
                 <th>Tanggal</th>
                 <th>Nama Rekening</th>
+                <th>Nama Server</th>
                 <th>Bukti Tiket</th>
                 <th>Bukti Penambahan</th>
                 <th>Bukti Transfers Admin</th>
@@ -17,6 +18,7 @@
                 <tr data-deposit-id="{{ $item->id }}" class="{{ (int)($latestIncomingId ?? 0) === (int)$item->id ? 'latest-row-highlight' : '' }}">
                     <td>{{ $item->created_at?->format('d/m/Y H:i') }}</td>
                     <td>{{ $item->nama_rekening }}</td>
+                    <td>{{ $item->server ?? '-' }}</td>
                     <td>{{ $item->reply_tiket ?? '-' }}</td>
                     <td>{{ $item->reply_penambahan ?? '-' }}</td>
                     <td>
@@ -154,7 +156,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="8" class="text-center text-muted py-4">Belum ada deposit</td>
+                    <td colspan="9" class="text-center text-muted py-4">Belum ada deposit</td>
                 </tr>
             @endforelse
         </tbody>

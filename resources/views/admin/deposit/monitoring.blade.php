@@ -42,11 +42,21 @@
                         <label class="form-label">Search by Server</label>
                         <input type="text" name="server" class="form-control form-control-sm" value="{{ $server ?? '' }}" placeholder="Contoh: server-1">
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
+                        <label class="form-label">Status</label>
+                        <select name="status" class="form-select form-select-sm">
+                            <option value="">Semua Status</option>
+                            <option value="pending" {{ ($status ?? '') === 'pending' ? 'selected' : '' }}>Pending</option>
+                            <option value="approved" {{ ($status ?? '') === 'approved' ? 'selected' : '' }}>Approved</option>
+                            <option value="selesai" {{ ($status ?? '') === 'selesai' ? 'selected' : '' }}>Selesai</option>
+                            <option value="rejected" {{ ($status ?? '') === 'rejected' ? 'selected' : '' }}>Rejected</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
                         <label class="form-label">Start Date</label>
                         <input type="date" name="start_date" class="form-control form-control-sm" value="{{ $startDate ?? '' }}">
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label class="form-label">End Date</label>
                         <input type="date" name="end_date" class="form-control form-control-sm" value="{{ $endDate ?? '' }}">
                     </div>
@@ -62,13 +72,13 @@
                     </small>
                     <div class="d-flex gap-2">
                         <a
-                            href="{{ route('admin.deposit.monitoring.export-excel', ['server' => $server, 'start_date' => $startDate, 'end_date' => $endDate]) }}"
+                            href="{{ route('admin.deposit.monitoring.export-excel', ['server' => $server, 'status' => $status, 'start_date' => $startDate, 'end_date' => $endDate]) }}"
                             class="btn btn-success btn-sm"
                         >
                             Download Excel
                         </a>
                         <a
-                            href="{{ route('admin.deposit.monitoring.export-pdf', ['server' => $server, 'start_date' => $startDate, 'end_date' => $endDate]) }}"
+                            href="{{ route('admin.deposit.monitoring.export-pdf', ['server' => $server, 'status' => $status, 'start_date' => $startDate, 'end_date' => $endDate]) }}"
                             class="btn btn-danger btn-sm"
                             target="_blank"
                         >
@@ -141,6 +151,7 @@
         let latestIncomingId = @json($latestIncomingId ?? null);
         const filters = {
             server: @json($server ?? ''),
+            status: @json($status ?? ''),
             start_date: @json($startDate ?? ''),
             end_date: @json($endDate ?? ''),
             page: @json($items->currentPage()),
@@ -303,6 +314,7 @@
             try {
                 const params = new URLSearchParams();
                 if (filters.server) params.set('server', filters.server);
+                if (filters.status) params.set('status', filters.status);
                 if (filters.start_date) params.set('start_date', filters.start_date);
                 if (filters.end_date) params.set('end_date', filters.end_date);
                 if (filters.page) params.set('page', filters.page);

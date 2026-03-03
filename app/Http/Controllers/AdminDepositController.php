@@ -99,6 +99,7 @@ class AdminDepositController extends Controller
             'server' => $filters['server'] ?? null,
             'startDate' => $filters['start_date'] ?? null,
             'endDate' => $filters['end_date'] ?? null,
+            'status' => $filters['status'] ?? null,
             'latestUpdatedAt' => $latestUpdatedAt,
             'latestIncomingAt' => $latestIncomingAt,
             'latestIncomingId' => $latestIncomingId,
@@ -112,6 +113,7 @@ class AdminDepositController extends Controller
             'server' => 'nullable|string|max:100',
             'start_date' => 'nullable|date_format:Y-m-d',
             'end_date' => 'nullable|date_format:Y-m-d',
+            'status' => 'nullable|in:pending,approved,rejected,selesai',
             'since' => 'nullable|date',
             'page' => 'nullable|integer|min:1',
         ]);
@@ -198,9 +200,14 @@ class AdminDepositController extends Controller
         $server = $filters['server'] ?? null;
         $startDate = $filters['start_date'] ?? null;
         $endDate = $filters['end_date'] ?? null;
+        $status = $filters['status'] ?? null;
 
         if ($server) {
             $query->where('server', 'like', "%{$server}%");
+        }
+
+        if ($status) {
+            $query->where('status', $status);
         }
 
         if ($startDate && $endDate) {
@@ -225,6 +232,7 @@ class AdminDepositController extends Controller
             'server' => 'nullable|string|max:100',
             'start_date' => 'nullable|date_format:Y-m-d',
             'end_date' => 'nullable|date_format:Y-m-d',
+            'status' => 'nullable|in:pending,approved,rejected,selesai',
         ]);
 
         return $this->applyDefaultDateRange($filters);
