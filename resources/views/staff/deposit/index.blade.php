@@ -102,9 +102,9 @@
                                 @php
                                     $isHighNominal = (float) $item->nominal >= 10000000;
                                 @endphp
-                                <tr>
+                                <tr data-deposit-id="{{ $item->id }}">
                                     <td>{{ $item->created_at?->format('d/m/Y') }}</td>
-                                    <td>{{ $item->nama_supplier }}</td>
+                                    <td class="cell-nama-supplier">{{ $item->nama_supplier }}</td>
                                     <td>{{ strtoupper($item->jenis_transaksi ?? 'deposit') }}</td>
                                     <td class="text-end">
                                         <div class="d-inline-block rounded px-2 py-1 {{ $isHighNominal ? 'bg-success-subtle text-success fw-bold' : 'bg-primary-subtle text-primary fw-semibold' }}">
@@ -115,10 +115,10 @@
                                     <td>{{ $item->bank }}</td>
                                     <td>{{ $item->server }}</td>
                                     <td>{{ $item->no_rek }}</td>
-                                    <td>{{ $item->nama_rekening }}</td>
-                                    <td>{{ $item->reply_tiket ?? '-' }}</td>
-                                    <td>{{ $item->reply_penambahan ?? 'Menunggu Konfirmasi Admin' }}</td>
-                                    <td>
+                                    <td class="cell-nama-rekening">{{ $item->nama_rekening }}</td>
+                                    <td class="cell-reply-tiket">{{ $item->reply_tiket ?? '-' }}</td>
+                                    <td class="cell-reply-penambahan">{{ $item->reply_penambahan ?? 'Menunggu Konfirmasi Admin' }}</td>
+                                    <td class="cell-bukti-transfer">
                                         @if (($item->bukti_transfer_admin_type ?? 'text') === 'image')
                                             @if (!empty($item->bukti_transfer_admin_text))
                                                 <div class="mb-1">{{ $item->bukti_transfer_admin_text }}</div>
@@ -132,13 +132,13 @@
                                             {{ $item->bukti_transfer_admin_text ?? '-' }}
                                         @endif
                                     </td>
-                                    <td>
+                                    <td class="cell-status">
                                         <span class="badge bg-{{ $item->status === 'approved' ? 'success' : ($item->status === 'rejected' ? 'danger' : ($item->status === 'selesai' ? 'primary' : 'warning')) }}">
                                             <i class="ti {{ $item->status === 'approved' ? 'ti-circle-check' : ($item->status === 'rejected' ? 'ti-circle-x' : ($item->status === 'selesai' ? 'ti-checks' : 'ti-hourglass')) }} me-1"></i>
                                             {{ ucfirst($item->status ?? 'pending') }}
                                         </span>
                                     </td>
-                                    <td>{{ $item->jam ? \Carbon\Carbon::parse($item->jam)->format('H:i') : '-' }}</td>
+                                    <td class="cell-jam">{{ $item->jam ? \Carbon\Carbon::parse($item->jam)->format('H:i') : '-' }}</td>
                                     <td>
                                         @if (($item->status ?? 'pending') === 'approved')
                                             <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalInputReply-{{ $item->id }}">Input</button>
@@ -268,10 +268,10 @@
     (function () {
         let latestUpdatedAt = @json($latestUpdatedAt);
         const pollingUrl = @json(route('deposit.request.changes'));
+        const transferImageBaseUrl = @json(url('deposit/request'));
         const tanggal = @json($tanggal ?? now()->format('Y-m-d'));
         const searchSupplier = @json($searchSupplier ?? '');
-        let isReloading = false;
-        const pollIntervalMs = 5000;
+        const pollIntervalMs = 1000;
 
         const notifStatusEl = document.getElementById('browserNotifStatus');
         const enableNotifBtn = document.getElementById('btnEnableBrowserNotif');
@@ -330,8 +330,6 @@
         }
 
         async function checkChanges() {
-            if (isReloading) return;
-
             try {
                 const params = new URLSearchParams({
                     tanggal: tanggal,
@@ -358,9 +356,10 @@
                 }
 
                 if (result.has_changes) {
-                    isReloading = true;
                     const notifTitle = result.change_title || ('Ada perubahan data deposit (' + result.changes_count + ')');
                     const notifDescription = result.change_description || 'Ada perubahan data oleh admin.';
+
+                    applyChangedItems(result.changed_items || []);
 
                     sendBrowserNotification(notifTitle, notifDescription, result.changes_count);
                     Swal.fire({
@@ -373,13 +372,90 @@
                         timer: 2400,
                         timerProgressBar: true,
                     });
-
-                    setTimeout(function () {
-                        window.location.reload();
-                    }, 900);
                 }
             } catch (error) {
             }
+        }
+
+        function statusBadgeHtml(status) {
+            const normalized = (status || 'pending').toLowerCase();
+            let badgeClass = 'warning';
+            let iconClass = 'ti-hourglass';
+
+            if (normalized === 'approved') {
+                badgeClass = 'success';
+                iconClass = 'ti-circle-check';
+            } else if (normalized === 'rejected') {
+                badgeClass = 'danger';
+                iconClass = 'ti-circle-x';
+            } else if (normalized === 'selesai') {
+                badgeClass = 'primary';
+                iconClass = 'ti-checks';
+            }
+
+            const label = normalized.charAt(0).toUpperCase() + normalized.slice(1);
+            return '<span class="badge bg-' + badgeClass + '"><i class="ti ' + iconClass + ' me-1"></i>' + label + '</span>';
+        }
+
+        function buktiTransferHtml(item) {
+            if ((item.bukti_transfer_admin_type || 'text') === 'image') {
+                let html = '';
+
+                if (item.bukti_transfer_admin_text) {
+                    html += '<div class="mb-1">' + escapeHtml(item.bukti_transfer_admin_text) + '</div>';
+                }
+
+                if (item.has_bukti_transfer_admin_image) {
+                    html += '<a href="' + transferImageBaseUrl + '/' + item.id + '/transfer-admin-image" target="_blank" class="btn btn-outline-primary btn-sm">Lihat Gambar</a>';
+                } else {
+                    html += '-';
+                }
+
+                return html;
+            }
+
+            return escapeHtml(item.bukti_transfer_admin_text || '-');
+        }
+
+        function escapeHtml(text) {
+            return String(text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function applyChangedItems(items) {
+            if (!Array.isArray(items) || items.length === 0) {
+                return;
+            }
+
+            items.forEach(function (item) {
+                const row = document.querySelector('tr[data-deposit-id="' + item.id + '"]');
+                if (!row) return;
+
+                const supplierCell = row.querySelector('.cell-nama-supplier');
+                const rekeningCell = row.querySelector('.cell-nama-rekening');
+                const tiketCell = row.querySelector('.cell-reply-tiket');
+                const penambahanCell = row.querySelector('.cell-reply-penambahan');
+                const buktiCell = row.querySelector('.cell-bukti-transfer');
+                const statusCell = row.querySelector('.cell-status');
+                const jamCell = row.querySelector('.cell-jam');
+
+                if (supplierCell) supplierCell.textContent = item.nama_supplier || '-';
+                if (rekeningCell) rekeningCell.textContent = item.nama_rekening || '-';
+                if (tiketCell) tiketCell.textContent = item.reply_tiket || '-';
+                if (penambahanCell) penambahanCell.textContent = item.reply_penambahan || 'Menunggu Konfirmasi Admin';
+                if (buktiCell) buktiCell.innerHTML = buktiTransferHtml(item);
+                if (statusCell) statusCell.innerHTML = statusBadgeHtml(item.status || 'pending');
+                if (jamCell) jamCell.textContent = item.jam || '-';
+
+                row.classList.add('table-info');
+                setTimeout(function () {
+                    row.classList.remove('table-info');
+                }, 2200);
+            });
         }
 
         if (enableNotifBtn) {

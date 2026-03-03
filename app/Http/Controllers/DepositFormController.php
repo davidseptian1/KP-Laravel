@@ -91,6 +91,7 @@ class DepositFormController extends Controller
 
         $changeTitle = null;
         $changeDescription = null;
+        $changedItemsPayload = [];
 
         if ($latestChangedItem) {
             $changeTitle = 'Ada perubahan Deposit ' . ($latestChangedItem->server ?: '-');
@@ -120,12 +121,46 @@ class DepositFormController extends Controller
                 : 'Ada perubahan data oleh admin.';
         }
 
+        $changedItems = (clone $changedQuery)
+            ->orderByDesc('updated_at')
+            ->limit(20)
+            ->get([
+                'id',
+                'nama_supplier',
+                'nama_rekening',
+                'reply_tiket',
+                'reply_penambahan',
+                'bukti_transfer_admin_type',
+                'bukti_transfer_admin_text',
+                'bukti_transfer_admin_image',
+                'status',
+                'jam',
+                'updated_at',
+            ]);
+
+        foreach ($changedItems as $changedItem) {
+            $changedItemsPayload[] = [
+                'id' => $changedItem->id,
+                'nama_supplier' => $changedItem->nama_supplier,
+                'nama_rekening' => $changedItem->nama_rekening,
+                'reply_tiket' => $changedItem->reply_tiket,
+                'reply_penambahan' => $changedItem->reply_penambahan,
+                'bukti_transfer_admin_type' => $changedItem->bukti_transfer_admin_type,
+                'bukti_transfer_admin_text' => $changedItem->bukti_transfer_admin_text,
+                'has_bukti_transfer_admin_image' => !empty($changedItem->bukti_transfer_admin_image),
+                'status' => $changedItem->status,
+                'jam' => $changedItem->jam ? Carbon::parse($changedItem->jam)->format('H:i') : '-',
+                'updated_at' => $changedItem->updated_at,
+            ];
+        }
+
         return response()->json([
             'has_changes' => $changesCount > 0,
             'changes_count' => $changesCount,
             'latest_updated_at' => $latestUpdatedAt,
             'change_title' => $changeTitle,
             'change_description' => $changeDescription,
+            'changed_items' => $changedItemsPayload,
             'server_time' => now()->toDateTimeString(),
         ]);
     }
