@@ -14,6 +14,33 @@ use Illuminate\Support\Facades\Storage;
 
 class DepositFormController extends Controller
 {
+    private function buildStaffFilteredQuery(
+        string $tanggal,
+        string $searchSupplier,
+        string $server,
+        ?string $status,
+        string $normalizedNominalFilter
+    ) {
+        return Deposit::where('user_id', Auth::id())
+            ->where(function ($q) {
+                $q->where('is_deleted_by_staff', false)
+                    ->orWhereNull('is_deleted_by_staff');
+            })
+            ->whereDate('created_at', $tanggal)
+            ->when($server !== '', function ($q) use ($server) {
+                $q->where('server', 'like', '%' . $server . '%');
+            })
+            ->when($searchSupplier !== '', function ($q) use ($searchSupplier) {
+                $q->where('nama_supplier', 'like', '%' . $searchSupplier . '%');
+            })
+            ->when($status, function ($q) use ($status) {
+                $q->where('status', $status);
+            })
+            ->when($normalizedNominalFilter !== '', function ($q) use ($normalizedNominalFilter) {
+                $q->where('nominal', (float) $normalizedNominalFilter);
+            });
+    }
+
     private function normalizeNumericFields(Request $request): void
     {
         $rawNominal = (string) $request->input('nominal', '');
@@ -53,24 +80,15 @@ class DepositFormController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
-        $query = Deposit::where('user_id', Auth::id())
-            ->where(function ($q) {
-                $q->where('is_deleted_by_staff', false)
-                    ->orWhereNull('is_deleted_by_staff');
-            })
-            ->whereDate('created_at', $tanggal)
-            ->when($server !== '', function ($q) use ($server) {
-                $q->where('server', 'like', '%' . $server . '%');
-            })
-            ->when($searchSupplier !== '', function ($q) use ($searchSupplier) {
-                $q->where('nama_supplier', 'like', '%' . $searchSupplier . '%');
-            })
-            ->when($status, function ($q) use ($status) {
-                $q->where('status', $status);
-            })
-            ->when($normalizedNominalFilter !== '', function ($q) use ($normalizedNominalFilter) {
-                $q->where('nominal', (float) $normalizedNominalFilter);
-            })
+        $baseQuery = $this->buildStaffFilteredQuery(
+            $tanggal,
+            $searchSupplier,
+            $server,
+            $status,
+            $normalizedNominalFilter
+        );
+
+        $query = (clone $baseQuery)
             ->orderByDesc('created_at')
             ->orderByDesc('id')
             ;
@@ -82,12 +100,7 @@ class DepositFormController extends Controller
 
         $suppliers = Supplier::orderBy('nama_supplier')->pluck('nama_supplier');
         $servers = Server::orderBy('nama_server')->pluck('nama_server');
-        $todayDepositSummary = Deposit::where('user_id', Auth::id())
-            ->where(function ($q) {
-                $q->where('is_deleted_by_staff', false)
-                    ->orWhereNull('is_deleted_by_staff');
-            })
-            ->whereDate('created_at', now()->format('Y-m-d'))
+        $todayDepositSummary = (clone $baseQuery)
             ->where('jenis_transaksi', 'deposit')
             ->selectRaw('COUNT(*) as total_request, COALESCE(SUM(nominal), 0) as total_nominal')
             ->first();
@@ -129,24 +142,15 @@ class DepositFormController extends Controller
         $nominalFilter = trim((string) ($validated['nominal'] ?? ''));
         $normalizedNominalFilter = preg_replace('/[^0-9]/', '', $nominalFilter);
 
-        $query = Deposit::where('user_id', Auth::id())
-            ->where(function ($q) {
-                $q->where('is_deleted_by_staff', false)
-                    ->orWhereNull('is_deleted_by_staff');
-            })
-            ->whereDate('created_at', $tanggal)
-            ->when($server !== '', function ($q) use ($server) {
-                $q->where('server', 'like', '%' . $server . '%');
-            })
-            ->when($searchSupplier !== '', function ($q) use ($searchSupplier) {
-                $q->where('nama_supplier', 'like', '%' . $searchSupplier . '%');
-            })
-            ->when($status, function ($q) use ($status) {
-                $q->where('status', $status);
-            })
-            ->when($normalizedNominalFilter !== '', function ($q) use ($normalizedNominalFilter) {
-                $q->where('nominal', (float) $normalizedNominalFilter);
-            })
+        $baseQuery = $this->buildStaffFilteredQuery(
+            $tanggal,
+            $searchSupplier,
+            $server,
+            $status,
+            $normalizedNominalFilter
+        );
+
+        $query = (clone $baseQuery)
             ->orderByDesc('created_at')
             ->orderByDesc('id');
 
@@ -162,12 +166,7 @@ class DepositFormController extends Controller
 
         $latestUpdatedAt = (clone $query)->max('updated_at');
         $latestActivityItem = (clone $query)->first();
-        $todayDepositSummary = Deposit::where('user_id', Auth::id())
-            ->where(function ($q) {
-                $q->where('is_deleted_by_staff', false)
-                    ->orWhereNull('is_deleted_by_staff');
-            })
-            ->whereDate('created_at', now()->format('Y-m-d'))
+        $todayDepositSummary = (clone $baseQuery)
             ->where('jenis_transaksi', 'deposit')
             ->selectRaw('COUNT(*) as total_request, COALESCE(SUM(nominal), 0) as total_nominal')
             ->first();
