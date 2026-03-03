@@ -278,7 +278,7 @@
 <div class="modal fade" id="modalRequestDeposit" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
-            <form method="POST" action="{{ route('deposit.request.store') }}" enctype="multipart/form-data">
+            <form method="POST" action="{{ route('deposit.request.store') }}" enctype="multipart/form-data" id="staffRequestDepositForm">
                 @csrf
                 <div class="modal-header">
                     <h5 class="modal-title">Request Deposit</h5>
@@ -353,7 +353,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary">Submit</button>
+                    <button type="submit" class="btn btn-primary" id="staffRequestDepositSubmitBtn">Submit</button>
                 </div>
             </form>
         </div>
@@ -377,6 +377,8 @@
 
         const notifStatusEl = document.getElementById('browserNotifStatus');
         const enableNotifBtn = document.getElementById('btnEnableBrowserNotif');
+        const staffRequestDepositForm = document.getElementById('staffRequestDepositForm');
+        const staffRequestDepositSubmitBtn = document.getElementById('staffRequestDepositSubmitBtn');
         const replyTiketImageInput = document.getElementById('replyTiketImageInput');
         const replyTiketPasteZone = document.getElementById('replyTiketPasteZone');
         const replyTiketPreviewWrap = document.getElementById('replyTiketPreviewWrap');
@@ -766,6 +768,22 @@
 
         if (enableNotifBtn) {
             enableNotifBtn.addEventListener('click', requestBrowserNotificationPermission);
+        }
+
+        if (staffRequestDepositForm) {
+            staffRequestDepositForm.addEventListener('submit', function (event) {
+                if (staffRequestDepositForm.dataset.submitting === '1') {
+                    event.preventDefault();
+                    return;
+                }
+
+                staffRequestDepositForm.dataset.submitting = '1';
+
+                if (staffRequestDepositSubmitBtn) {
+                    staffRequestDepositSubmitBtn.disabled = true;
+                    staffRequestDepositSubmitBtn.textContent = 'Mengirim...';
+                }
+            });
         }
 
         updateNotifStatusText();
