@@ -38,6 +38,7 @@ class DepositFormController extends Controller
                 $q->where('nama_supplier', 'like', '%' . $searchSupplier . '%');
             })
             ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ;
 
         $latestUpdatedAt = (clone $query)->max('updated_at');
@@ -76,7 +77,9 @@ class DepositFormController extends Controller
             ->whereDate('created_at', $tanggal)
             ->when($searchSupplier !== '', function ($q) use ($searchSupplier) {
                 $q->where('nama_supplier', 'like', '%' . $searchSupplier . '%');
-            });
+            })
+            ->orderByDesc('created_at')
+            ->orderByDesc('id');
 
         $changedQuery = (clone $query)
             ->where('updated_at', '>', $since);
@@ -85,6 +88,7 @@ class DepositFormController extends Controller
 
         $latestChangedItem = (clone $changedQuery)
             ->orderByDesc('updated_at')
+            ->orderByDesc('id')
             ->first();
 
         $latestUpdatedAt = (clone $query)->max('updated_at');
@@ -123,6 +127,7 @@ class DepositFormController extends Controller
 
         $changedItems = (clone $changedQuery)
             ->orderByDesc('updated_at')
+            ->orderByDesc('id')
             ->limit(20)
             ->get([
                 'id',

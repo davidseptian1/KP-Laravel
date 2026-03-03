@@ -252,6 +252,8 @@ Route::middleware('checkLogin')->group(function () {
         Route::put('admin/deposit/forms/{id}/toggle', [AdminDepositFormController::class, 'toggle'])->name('admin.deposit.forms.toggle');
         Route::get('admin/deposit/monitoring', [AdminDepositController::class, 'monitoring'])->name('admin.deposit.monitoring');
         Route::get('admin/deposit/monitoring/changes', [AdminDepositController::class, 'changes'])->name('admin.deposit.monitoring.changes');
+        Route::get('admin/deposit/monitoring/export-excel', [AdminDepositController::class, 'exportExcel'])->name('admin.deposit.monitoring.export-excel');
+        Route::get('admin/deposit/monitoring/export-pdf', [AdminDepositController::class, 'exportPdf'])->name('admin.deposit.monitoring.export-pdf');
         Route::post('admin/deposit/import-manual', [AdminDepositController::class, 'importManual'])->name('admin.deposit.import-manual');
         Route::put('admin/deposit/{id}', [AdminDepositController::class, 'update'])->name('admin.deposit.update');
         Route::put('admin/deposit/{id}/details', [AdminDepositController::class, 'updateDetails'])->name('admin.deposit.update-details');

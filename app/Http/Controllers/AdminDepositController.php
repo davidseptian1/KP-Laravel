@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\DepositMonitoringExport;
 use App\Imports\DepositManualImport;
 use App\Models\Deposit;
 use App\Models\NotificationItem;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -56,11 +58,7 @@ class AdminDepositController extends Controller
 
     public function monitoring(Request $request)
     {
-        $filters = $request->validate([
-            'server' => 'nullable|string|max:100',
-            'start_date' => 'nullable|date_format:Y-m-d',
-            'end_date' => 'nullable|date_format:Y-m-d',
-        ]);
+        $filters = $this->normalizedMonitoringFilters($request);
 
         $query = $this->buildMonitoringQuery($filters);
 
@@ -103,6 +101,8 @@ class AdminDepositController extends Controller
             'since' => 'nullable|date',
             'page' => 'nullable|integer|min:1',
         ]);
+
+        $filters = $this->applyDefaultDateRange($filters);
 
         $query = $this->buildMonitoringQuery($filters);
 
@@ -179,7 +179,7 @@ class AdminDepositController extends Controller
 
     private function buildMonitoringQuery(array $filters)
     {
-        $query = Deposit::query()->orderByDesc('created_at');
+        $query = Deposit::query()->orderByDesc('created_at')->orderByDesc('id');
 
         $server = $filters['server'] ?? null;
         $startDate = $filters['start_date'] ?? null;
@@ -189,15 +189,75 @@ class AdminDepositController extends Controller
             $query->where('server', 'like', "%{$server}%");
         }
 
-        if ($startDate) {
-            $query->whereDate('created_at', '>=', $startDate);
+        if ($startDate && $endDate) {
+            $query->whereBetween('created_at', [
+                Carbon::parse($startDate)->startOfDay(),
+                Carbon::parse($endDate)->endOfDay(),
+            ]);
+        } elseif ($startDate) {
+            $query->where('created_at', '>=', Carbon::parse($startDate)->startOfDay());
+        } elseif ($endDate) {
+            $query->where('created_at', '<=', Carbon::parse($endDate)->endOfDay());
         }
 
-        if ($endDate) {
-            $query->whereDate('created_at', '<=', $endDate);
-        }
+        $query->whereTime('jam', '>=', '00:00:00')->whereTime('jam', '<=', '23:59:59');
 
         return $query;
+    }
+
+    private function normalizedMonitoringFilters(Request $request): array
+    {
+        $filters = $request->validate([
+            'server' => 'nullable|string|max:100',
+            'start_date' => 'nullable|date_format:Y-m-d',
+            'end_date' => 'nullable|date_format:Y-m-d',
+        ]);
+
+        return $this->applyDefaultDateRange($filters);
+    }
+
+    private function applyDefaultDateRange(array $filters): array
+    {
+        if (empty($filters['start_date']) && empty($filters['end_date'])) {
+            $today = now()->format('Y-m-d');
+            $filters['start_date'] = $today;
+            $filters['end_date'] = $today;
+        }
+
+        return $filters;
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $filters = $this->normalizedMonitoringFilters($request);
+        $items = $this->buildMonitoringQuery($filters)->get();
+
+        $startDate = $filters['start_date'];
+        $endDate = $filters['end_date'];
+        $rangeLabel = $startDate === $endDate ? $startDate : ($startDate . '_to_' . $endDate);
+
+        return Excel::download(
+            new DepositMonitoringExport($items),
+            'Monitoring-Deposit-' . $rangeLabel . '.xlsx'
+        );
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $filters = $this->normalizedMonitoringFilters($request);
+        $items = $this->buildMonitoringQuery($filters)->get();
+
+        $startDate = $filters['start_date'];
+        $endDate = $filters['end_date'];
+        $rangeLabel = $startDate === $endDate ? $startDate : ($startDate . ' s.d. ' . $endDate);
+
+        $pdf = Pdf::loadView('admin.deposit.pdf', [
+            'items' => $items,
+            'filters' => $filters,
+            'rangeLabel' => $rangeLabel,
+        ])->setPaper('a4', 'landscape');
+
+        return $pdf->stream('Monitoring-Deposit-' . str_replace(' ', '-', $rangeLabel) . '.pdf');
     }
 
     public function update(Request $request, int $id)

@@ -56,6 +56,27 @@
                     </div>
                 </form>
 
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                    <small class="text-muted">
+                        Default monitoring menampilkan data hari ini (jam 00:00 - 23:59).
+                    </small>
+                    <div class="d-flex gap-2">
+                        <a
+                            href="{{ route('admin.deposit.monitoring.export-excel', ['server' => $server, 'start_date' => $startDate, 'end_date' => $endDate]) }}"
+                            class="btn btn-success btn-sm"
+                        >
+                            Download Excel
+                        </a>
+                        <a
+                            href="{{ route('admin.deposit.monitoring.export-pdf', ['server' => $server, 'start_date' => $startDate, 'end_date' => $endDate]) }}"
+                            class="btn btn-danger btn-sm"
+                            target="_blank"
+                        >
+                            Download PDF
+                        </a>
+                    </div>
+                </div>
+
                 <div class="card border-0 bg-light mb-3">
                     <div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 py-2">
                         <div>

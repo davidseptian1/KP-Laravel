@@ -431,9 +431,14 @@
                 return;
             }
 
+            let hasMissingRow = false;
+
             items.forEach(function (item) {
                 const row = document.querySelector('tr[data-deposit-id="' + item.id + '"]');
-                if (!row) return;
+                if (!row) {
+                    hasMissingRow = true;
+                    return;
+                }
 
                 const supplierCell = row.querySelector('.cell-nama-supplier');
                 const rekeningCell = row.querySelector('.cell-nama-rekening');
@@ -456,6 +461,10 @@
                     row.classList.remove('table-info');
                 }, 2200);
             });
+
+            if (hasMissingRow) {
+                window.location.reload();
+            }
         }
 
         if (enableNotifBtn) {
