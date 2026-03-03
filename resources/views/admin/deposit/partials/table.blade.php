@@ -34,7 +34,16 @@
                             -
                         @endif
                     </td>
-                    <td>{{ $item->reply_penambahan ?? '-' }}</td>
+                    <td>
+                        @if (!empty($item->reply_penambahan))
+                            <div class="mb-1">{{ $item->reply_penambahan }}</div>
+                        @endif
+                        @if (!empty($item->reply_penambahan_image))
+                            <a href="{{ route('admin.deposit.reply-image', $item->id) }}" target="_blank" class="btn btn-outline-primary btn-sm">Lihat Gambar</a>
+                        @elseif (empty($item->reply_penambahan))
+                            -
+                        @endif
+                    </td>
                     <td>
                         @if (($item->bukti_transfer_admin_type ?? 'text') === 'image')
                             @if (!empty($item->bukti_transfer_admin_text))

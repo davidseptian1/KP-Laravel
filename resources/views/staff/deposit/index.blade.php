@@ -186,7 +186,7 @@
                                             <div class="modal fade" id="modalInputReply-{{ $item->id }}" tabindex="-1" aria-hidden="true">
                                                 <div class="modal-dialog modal-dialog-centered">
                                                     <div class="modal-content">
-                                                        <form method="POST" action="{{ route('deposit.request.reply.update', $item->id) }}">
+                                                        <form method="POST" action="{{ route('deposit.request.reply.update', $item->id) }}" enctype="multipart/form-data">
                                                             @csrf
                                                             @method('PUT')
                                                             <div class="modal-header">
@@ -194,8 +194,28 @@
                                                                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                                             </div>
                                                             <div class="modal-body">
-                                                                <label class="form-label">Reply Penambahan</label>
-                                                                <textarea name="reply_penambahan" class="form-control js-auto-resize-textarea" rows="4" required>{{ $item->reply_penambahan }}</textarea>
+                                                                <div class="mb-3">
+                                                                    <label class="form-label">Tipe Reply Penambahan</label>
+                                                                    <select name="reply_penambahan_type" class="form-select js-staff-reply-type" data-target="{{ $item->id }}" required>
+                                                                        <option value="text" {{ ($item->reply_penambahan_type ?? 'text') === 'text' ? 'selected' : '' }}>Text</option>
+                                                                        <option value="image" {{ ($item->reply_penambahan_type ?? 'text') === 'image' ? 'selected' : '' }}>Image</option>
+                                                                    </select>
+                                                                </div>
+                                                                <div class="mb-3 js-staff-reply-text-wrap" data-target="{{ $item->id }}" style="display: {{ ($item->reply_penambahan_type ?? 'text') === 'text' ? 'block' : 'none' }};">
+                                                                    <label class="form-label">Reply Penambahan</label>
+                                                                    <textarea name="reply_penambahan" class="form-control js-auto-resize-textarea" rows="4" placeholder="Masukkan reply penambahan">{{ $item->reply_penambahan }}</textarea>
+                                                                </div>
+                                                                <div class="mb-1 js-staff-reply-image-wrap" data-target="{{ $item->id }}" style="display: {{ ($item->reply_penambahan_type ?? 'text') === 'image' ? 'block' : 'none' }};">
+                                                                    <label class="form-label">Upload / Paste Gambar</label>
+                                                                    <input type="file" name="reply_penambahan_image" class="form-control js-staff-reply-image-input" data-target="{{ $item->id }}" accept="image/png,image/jpeg,image/jpg,image/webp">
+                                                                    <small class="text-muted d-block mt-1">Bisa Ctrl+V dari clipboard saat fokus di area paste.</small>
+                                                                    <div class="border rounded p-2 mt-2 js-staff-reply-paste-zone" data-target="{{ $item->id }}" tabindex="0" style="min-height:60px;">
+                                                                        Paste gambar di sini (Ctrl+V)
+                                                                    </div>
+                                                                    <div class="mt-2 js-staff-reply-preview-wrap" data-target="{{ $item->id }}" style="display:none;">
+                                                                        <img src="" alt="Preview Reply Penambahan" class="img-fluid rounded border js-staff-reply-preview" data-target="{{ $item->id }}" style="max-height:180px;">
+                                                                    </div>
+                                                                </div>
                                                             </div>
                                                             <div class="modal-footer">
                                                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
@@ -635,6 +655,86 @@
             });
         }
 
+        function initStaffReplyPenambahanControls() {
+            function setPreview(targetId, file) {
+                const wrap = document.querySelector('.js-staff-reply-preview-wrap[data-target="' + targetId + '"]');
+                const img = document.querySelector('.js-staff-reply-preview[data-target="' + targetId + '"]');
+
+                if (!wrap || !img || !file) return;
+
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    img.src = event.target.result;
+                    wrap.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+
+            document.querySelectorAll('.js-staff-reply-type').forEach(function (select) {
+                if (select.dataset.bound === '1') return;
+                select.dataset.bound = '1';
+
+                select.addEventListener('change', function () {
+                    const targetId = this.dataset.target;
+                    const textWrap = document.querySelector('.js-staff-reply-text-wrap[data-target="' + targetId + '"]');
+                    const imageWrap = document.querySelector('.js-staff-reply-image-wrap[data-target="' + targetId + '"]');
+
+                    if (!textWrap || !imageWrap) return;
+
+                    textWrap.style.display = this.value === 'text' ? 'block' : 'none';
+                    imageWrap.style.display = this.value === 'image' ? 'block' : 'none';
+                });
+
+                select.dispatchEvent(new Event('change'));
+            });
+
+            document.querySelectorAll('.js-staff-reply-image-input').forEach(function (input) {
+                if (input.dataset.bound === '1') return;
+                input.dataset.bound = '1';
+
+                input.addEventListener('change', function () {
+                    const targetId = this.dataset.target;
+                    const file = this.files && this.files[0] ? this.files[0] : null;
+                    if (file) setPreview(targetId, file);
+                });
+            });
+
+            document.querySelectorAll('.js-staff-reply-paste-zone').forEach(function (zone) {
+                if (zone.dataset.bound === '1') return;
+                zone.dataset.bound = '1';
+
+                zone.addEventListener('paste', function (event) {
+                    const targetId = this.dataset.target;
+                    const input = document.querySelector('.js-staff-reply-image-input[data-target="' + targetId + '"]');
+                    if (!input) return;
+
+                    const items = (event.clipboardData || window.clipboardData).items;
+                    if (!items) return;
+
+                    for (let i = 0; i < items.length; i++) {
+                        if (items[i].type.indexOf('image') !== -1) {
+                            const file = items[i].getAsFile();
+                            if (!file) continue;
+
+                            const dataTransfer = new DataTransfer();
+                            dataTransfer.items.add(file);
+                            input.files = dataTransfer.files;
+
+                            const typeSelect = document.querySelector('.js-staff-reply-type[data-target="' + targetId + '"]');
+                            if (typeSelect) {
+                                typeSelect.value = 'image';
+                                typeSelect.dispatchEvent(new Event('change'));
+                            }
+
+                            setPreview(targetId, file);
+                            event.preventDefault();
+                            break;
+                        }
+                    }
+                });
+            });
+        }
+
         if (replyTiketImageInput) {
             replyTiketImageInput.addEventListener('change', function () {
                 const file = this.files && this.files[0] ? this.files[0] : null;
@@ -670,6 +770,7 @@
 
         updateNotifStatusText();
         bindAutoResizeTextareas();
+        initStaffReplyPenambahanControls();
 
         document.addEventListener('visibilitychange', function () {
             if (!document.hidden) {
