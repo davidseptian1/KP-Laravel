@@ -131,6 +131,8 @@ Route::middleware('checkLogin')->group(function () {
     // Deposit Request (User)
     Route::get('deposit/request', [DepositFormController::class, 'index'])->name('deposit.request.index');
     Route::get('deposit/request/changes', [DepositFormController::class, 'changes'])->name('deposit.request.changes');
+    Route::get('deposit/request/export-excel', [DepositFormController::class, 'exportExcel'])->name('deposit.request.export-excel');
+    Route::get('deposit/request/export-pdf', [DepositFormController::class, 'exportPdf'])->name('deposit.request.export-pdf');
     Route::post('deposit/request', [DepositFormController::class, 'storeFromRequestPage'])->name('deposit.request.store');
     Route::put('deposit/request/{id}/delete', [DepositFormController::class, 'markDeleted'])->name('deposit.request.delete');
     Route::get('deposit/request/{id}/transfer-admin-image', [DepositFormController::class, 'viewTransferAdminImage'])->name('deposit.request.transfer-admin-image');

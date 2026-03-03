@@ -2,15 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\StaffDepositRequestExport;
 use App\Models\Deposit;
 use App\Models\DepositForm;
 use App\Models\NotificationItem;
 use App\Models\Server;
 use App\Models\Supplier;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Maatwebsite\Excel\Facades\Excel;
 
 class DepositFormController extends Controller
 {
@@ -53,6 +56,92 @@ class DepositFormController extends Controller
             'nominal' => $normalizedNominal,
             'no_rek' => $normalizedNoRek,
         ]);
+    }
+
+    private function buildExportContext(Request $request): array
+    {
+        $validated = $request->validate([
+            'tanggal' => 'nullable|date_format:Y-m-d',
+            'search_supplier' => 'nullable|string|max:255',
+            'server' => 'nullable|string|max:100',
+            'status' => 'nullable|in:pending,approved,rejected,selesai',
+            'nominal' => 'nullable|string|max:50',
+        ]);
+
+        $tanggal = $validated['tanggal'] ?? now()->format('Y-m-d');
+        $searchSupplier = trim((string) ($validated['search_supplier'] ?? ''));
+        $server = trim((string) ($validated['server'] ?? ''));
+        $status = $validated['status'] ?? null;
+        $nominalFilter = trim((string) ($validated['nominal'] ?? ''));
+        $normalizedNominalFilter = preg_replace('/[^0-9]/', '', $nominalFilter);
+
+        $baseQuery = $this->buildStaffFilteredQuery(
+            $tanggal,
+            $searchSupplier,
+            $server,
+            $status,
+            $normalizedNominalFilter
+        );
+
+        $items = (clone $baseQuery)
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->get();
+
+        $totalDeposit = (clone $baseQuery)
+            ->where('jenis_transaksi', 'deposit')
+            ->sum('nominal');
+
+        $user = Auth::user();
+        $staffEmail = strtolower((string) ($user->email ?? 'staff'));
+        $safeEmail = preg_replace('/[^a-z0-9\._-]/i', '_', $staffEmail);
+
+        return [
+            'filters' => [
+                'tanggal' => $tanggal,
+                'search_supplier' => $searchSupplier,
+                'server' => $server,
+                'status' => $status,
+                'nominal' => $nominalFilter,
+            ],
+            'items' => $items,
+            'total_deposit' => (float) $totalDeposit,
+            'downloaded_at' => now(),
+            'staff_email' => $staffEmail,
+            'safe_email' => $safeEmail,
+        ];
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $context = $this->buildExportContext($request);
+        $tanggal = $context['filters']['tanggal'];
+
+        return Excel::download(
+            new StaffDepositRequestExport(
+                $context['items'],
+                $context['total_deposit'],
+                $context['downloaded_at'],
+                $context['staff_email']
+            ),
+            'Request-Deposit-' . $context['safe_email'] . '-' . $tanggal . '.xlsx'
+        );
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $context = $this->buildExportContext($request);
+        $tanggal = $context['filters']['tanggal'];
+
+        $pdf = Pdf::loadView('staff.deposit.pdf', [
+            'items' => $context['items'],
+            'filters' => $context['filters'],
+            'totalDeposit' => $context['total_deposit'],
+            'downloadedAt' => $context['downloaded_at'],
+            'staffEmail' => $context['staff_email'],
+        ])->setPaper('a4', 'landscape');
+
+        return $pdf->stream('Request-Deposit-' . $context['safe_email'] . '-' . $tanggal . '.pdf');
     }
 
     public function index(Request $request)

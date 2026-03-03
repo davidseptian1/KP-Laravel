@@ -79,6 +79,30 @@
                 <div class="card border-0 bg-light mb-3">
                     <div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 py-2">
                         <div>
+                            <div class="fw-semibold mb-1"><i class="ti ti-download me-1"></i>Download Laporan Harian (00:00 - 23:59)</div>
+                            <small class="text-muted">Laporan mengikuti filter aktif dan nama file akan memakai email staff.</small>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a
+                                href="{{ route('deposit.request.export-excel', ['tanggal' => $tanggal, 'server' => $serverFilter, 'status' => $status, 'search_supplier' => $searchSupplier, 'nominal' => $nominalFilter]) }}"
+                                class="btn btn-success btn-sm"
+                            >
+                                <i class="ti ti-file-spreadsheet me-1"></i>Download Excel
+                            </a>
+                            <a
+                                href="{{ route('deposit.request.export-pdf', ['tanggal' => $tanggal, 'server' => $serverFilter, 'status' => $status, 'search_supplier' => $searchSupplier, 'nominal' => $nominalFilter]) }}"
+                                class="btn btn-danger btn-sm"
+                                target="_blank"
+                            >
+                                <i class="ti ti-file-type-pdf me-1"></i>Download PDF
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 bg-light mb-3">
+                    <div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 py-2">
+                        <div>
                             <div class="fw-semibold mb-1"><i class="ti ti-bell me-1"></i>Pengaturan Notifikasi</div>
                             <small class="text-muted" id="browserNotifStatus">Status browser notification: mengecek...</small>
                         </div>
