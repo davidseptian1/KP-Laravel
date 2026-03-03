@@ -34,11 +34,21 @@
                         <label class="form-label">Tanggal</label>
                         <input type="date" name="tanggal" class="form-control form-control-sm" value="{{ $tanggal ?? now()->format('Y-m-d') }}">
                     </div>
-                    <div class="col-md-5">
+                    <div class="col-md-3">
+                        <label class="form-label">Status</label>
+                        <select name="status" class="form-select form-select-sm">
+                            <option value="">Semua Status</option>
+                            <option value="pending" {{ ($status ?? '') === 'pending' ? 'selected' : '' }}>Pending</option>
+                            <option value="approved" {{ ($status ?? '') === 'approved' ? 'selected' : '' }}>Approved</option>
+                            <option value="selesai" {{ ($status ?? '') === 'selesai' ? 'selected' : '' }}>Selesai</option>
+                            <option value="rejected" {{ ($status ?? '') === 'rejected' ? 'selected' : '' }}>Rejected</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
                         <label class="form-label">Cari Nama Supplier</label>
                         <input type="text" name="search_supplier" class="form-control form-control-sm" value="{{ $searchSupplier ?? '' }}" placeholder="Contoh: DIGIFLAZZ">
                     </div>
-                    <div class="col-md-4 d-flex gap-2">
+                    <div class="col-md-3 d-flex gap-2">
                         <button type="submit" class="btn btn-primary btn-sm w-100">Filter</button>
                         <a href="{{ route('deposit.request.index') }}" class="btn btn-outline-secondary btn-sm w-100">Hari Ini</a>
                     </div>
@@ -56,6 +66,10 @@
                             </button>
                         </div>
                     </div>
+                </div>
+
+                <div id="latestActivityCardContainer">
+                    @include('staff.deposit.partials.latest-activity-card', ['latestActivityItem' => $latestActivityItem ?? null])
                 </div>
 
                 <div class="row g-2 mb-3">
@@ -271,6 +285,7 @@
         const transferImageBaseUrl = @json(url('deposit/request'));
         const tanggal = @json($tanggal ?? now()->format('Y-m-d'));
         const searchSupplier = @json($searchSupplier ?? '');
+        const status = @json($status ?? '');
         const pollIntervalMs = 1000;
 
         const notifStatusEl = document.getElementById('browserNotifStatus');
@@ -336,6 +351,10 @@
                     search_supplier: searchSupplier
                 });
 
+                if (status) {
+                    params.set('status', status);
+                }
+
                 if (latestUpdatedAt) {
                     params.set('since', latestUpdatedAt);
                 }
@@ -358,6 +377,13 @@
                 if (result.has_changes) {
                     const notifTitle = result.change_title || ('Ada perubahan data deposit (' + result.changes_count + ')');
                     const notifDescription = result.change_description || 'Ada perubahan data oleh admin.';
+
+                    if (result.latest_card_html) {
+                        const latestCardContainer = document.getElementById('latestActivityCardContainer');
+                        if (latestCardContainer) {
+                            latestCardContainer.innerHTML = result.latest_card_html;
+                        }
+                    }
 
                     applyChangedItems(result.changed_items || []);
 

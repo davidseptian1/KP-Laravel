@@ -33,10 +33,12 @@ class DepositFormController extends Controller
         $validated = $request->validate([
             'tanggal' => 'nullable|date_format:Y-m-d',
             'search_supplier' => 'nullable|string|max:255',
+            'status' => 'nullable|in:pending,approved,rejected,selesai',
         ]);
 
         $tanggal = $validated['tanggal'] ?? now()->format('Y-m-d');
         $searchSupplier = trim((string) ($validated['search_supplier'] ?? ''));
+        $status = $validated['status'] ?? null;
 
         $activeForms = DepositForm::where('is_active', true)
             ->where(function ($q) {
@@ -51,11 +53,15 @@ class DepositFormController extends Controller
             ->when($searchSupplier !== '', function ($q) use ($searchSupplier) {
                 $q->where('nama_supplier', 'like', '%' . $searchSupplier . '%');
             })
+            ->when($status, function ($q) use ($status) {
+                $q->where('status', $status);
+            })
             ->orderByDesc('created_at')
             ->orderByDesc('id')
             ;
 
         $latestUpdatedAt = (clone $query)->max('updated_at');
+        $latestActivityItem = (clone $query)->first();
 
         $items = $query->paginate(10)->withQueryString();
 
@@ -71,7 +77,9 @@ class DepositFormController extends Controller
             'servers' => $servers,
             'tanggal' => $tanggal,
             'searchSupplier' => $searchSupplier,
+            'status' => $status,
             'latestUpdatedAt' => $latestUpdatedAt,
+            'latestActivityItem' => $latestActivityItem,
         ]);
     }
 
@@ -81,16 +89,21 @@ class DepositFormController extends Controller
             'since' => 'nullable|date',
             'tanggal' => 'nullable|date_format:Y-m-d',
             'search_supplier' => 'nullable|string|max:255',
+            'status' => 'nullable|in:pending,approved,rejected,selesai',
         ]);
 
         $since = !empty($validated['since']) ? Carbon::parse($validated['since']) : now()->subMinutes(1);
         $tanggal = $validated['tanggal'] ?? now()->format('Y-m-d');
         $searchSupplier = trim((string) ($validated['search_supplier'] ?? ''));
+        $status = $validated['status'] ?? null;
 
         $query = Deposit::where('user_id', Auth::id())
             ->whereDate('created_at', $tanggal)
             ->when($searchSupplier !== '', function ($q) use ($searchSupplier) {
                 $q->where('nama_supplier', 'like', '%' . $searchSupplier . '%');
+            })
+            ->when($status, function ($q) use ($status) {
+                $q->where('status', $status);
             })
             ->orderByDesc('created_at')
             ->orderByDesc('id');
@@ -106,6 +119,7 @@ class DepositFormController extends Controller
             ->first();
 
         $latestUpdatedAt = (clone $query)->max('updated_at');
+        $latestActivityItem = (clone $query)->first();
 
         $changeTitle = null;
         $changeDescription = null;
@@ -177,6 +191,9 @@ class DepositFormController extends Controller
             'has_changes' => $changesCount > 0,
             'changes_count' => $changesCount,
             'latest_updated_at' => $latestUpdatedAt,
+            'latest_card_html' => view('staff.deposit.partials.latest-activity-card', [
+                'latestActivityItem' => $latestActivityItem,
+            ])->render(),
             'change_title' => $changeTitle,
             'change_description' => $changeDescription,
             'changed_items' => $changedItemsPayload,
