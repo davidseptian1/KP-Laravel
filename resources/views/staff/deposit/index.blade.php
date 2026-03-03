@@ -29,10 +29,26 @@
                 </button>
             </div>
             <div class="card-body">
+                <form method="GET" class="row g-2 align-items-end mb-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Tanggal</label>
+                        <input type="date" name="tanggal" class="form-control form-control-sm" value="{{ $tanggal ?? now()->format('Y-m-d') }}">
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label">Cari Nama Supplier</label>
+                        <input type="text" name="search_supplier" class="form-control form-control-sm" value="{{ $searchSupplier ?? '' }}" placeholder="Contoh: DIGIFLAZZ">
+                    </div>
+                    <div class="col-md-4 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-sm w-100">Filter</button>
+                        <a href="{{ route('deposit.request.index') }}" class="btn btn-outline-secondary btn-sm w-100">Hari Ini</a>
+                    </div>
+                </form>
+
                 <div class="table-responsive">
                     <table class="table table-hover align-middle">
                         <thead class="table-light">
                             <tr>
+                                <th>Tanggal</th>
                                 <th>NAMA SUPPLIER</th>
                                 <th>JENIS</th>
                                 <th class="text-end">NOMINAL</th>
@@ -42,13 +58,16 @@
                                 <th>NAMA REKENING</th>
                                 <th>Reply Tiket</th>
                                 <th>REPLY PENAMBAHAN</th>
+                                <th>Bukti Tranfers Admin</th>
                                 <th>STATUS</th>
+                                <th>JAM</th>
                                 <th>AKSI</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse ($items as $item)
                                 <tr>
+                                    <td>{{ $item->created_at?->format('d/m/Y') }}</td>
                                     <td>{{ $item->nama_supplier }}</td>
                                     <td>{{ strtoupper($item->jenis_transaksi ?? 'deposit') }}</td>
                                     <td class="text-end">{{ number_format($item->nominal, 0, ',', '.') }}</td>
@@ -59,10 +78,25 @@
                                     <td>{{ $item->reply_tiket ?? '-' }}</td>
                                     <td>{{ $item->reply_penambahan ?? 'Menunggu Konfirmasi Admin' }}</td>
                                     <td>
+                                        @if (($item->bukti_transfer_admin_type ?? 'text') === 'image')
+                                            @if (!empty($item->bukti_transfer_admin_text))
+                                                <div class="mb-1">{{ $item->bukti_transfer_admin_text }}</div>
+                                            @endif
+                                            @if (!empty($item->bukti_transfer_admin_image))
+                                                <a href="{{ route('deposit.request.transfer-admin-image', $item->id) }}" target="_blank" class="btn btn-outline-primary btn-sm">Lihat Gambar</a>
+                                            @else
+                                                -
+                                            @endif
+                                        @else
+                                            {{ $item->bukti_transfer_admin_text ?? '-' }}
+                                        @endif
+                                    </td>
+                                    <td>
                                         <span class="badge bg-{{ $item->status === 'approved' ? 'success' : ($item->status === 'rejected' ? 'danger' : ($item->status === 'selesai' ? 'primary' : 'warning')) }}">
                                             {{ ucfirst($item->status ?? 'pending') }}
                                         </span>
                                     </td>
+                                    <td>{{ $item->jam ? \Carbon\Carbon::parse($item->jam)->format('H:i') : '-' }}</td>
                                     <td>
                                         @if (($item->status ?? 'pending') === 'approved')
                                             <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalInputReply-{{ $item->id }}">Input</button>
@@ -96,7 +130,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="11" class="text-center text-muted py-4">Belum ada request deposit</td>
+                                    <td colspan="14" class="text-center text-muted py-4">Belum ada request deposit pada tanggal ini</td>
                                 </tr>
                             @endforelse
                         </tbody>

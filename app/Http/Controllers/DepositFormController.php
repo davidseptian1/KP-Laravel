@@ -9,11 +9,20 @@ use App\Models\Server;
 use App\Models\Supplier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class DepositFormController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $validated = $request->validate([
+            'tanggal' => 'nullable|date_format:Y-m-d',
+            'search_supplier' => 'nullable|string|max:255',
+        ]);
+
+        $tanggal = $validated['tanggal'] ?? now()->format('Y-m-d');
+        $searchSupplier = trim((string) ($validated['search_supplier'] ?? ''));
+
         $activeForms = DepositForm::where('is_active', true)
             ->where(function ($q) {
                 $q->whereNull('expires_at')
@@ -22,9 +31,15 @@ class DepositFormController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
-        $items = Deposit::where('user_id', Auth::id())
+        $query = Deposit::where('user_id', Auth::id())
+            ->whereDate('created_at', $tanggal)
+            ->when($searchSupplier !== '', function ($q) use ($searchSupplier) {
+                $q->where('nama_supplier', 'like', '%' . $searchSupplier . '%');
+            })
             ->orderByDesc('created_at')
-            ->paginate(10);
+            ;
+
+        $items = $query->paginate(10)->withQueryString();
 
         $suppliers = Supplier::orderBy('nama_supplier')->pluck('nama_supplier');
         $servers = Server::orderBy('nama_server')->pluck('nama_server');
@@ -36,7 +51,23 @@ class DepositFormController extends Controller
             'items' => $items,
             'suppliers' => $suppliers,
             'servers' => $servers,
+            'tanggal' => $tanggal,
+            'searchSupplier' => $searchSupplier,
         ]);
+    }
+
+    public function viewTransferAdminImage(int $id)
+    {
+        $item = Deposit::where('id', $id)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
+
+        $path = $item->bukti_transfer_admin_image;
+        if (!$path || !Storage::disk('local')->exists($path)) {
+            return redirect()->route('deposit.request.index')->with('error', 'Bukti transfer admin tidak ditemukan');
+        }
+
+        return Storage::disk('local')->response($path);
     }
 
     public function storeFromRequestPage(Request $request)
