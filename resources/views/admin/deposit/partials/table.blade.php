@@ -10,6 +10,7 @@
                 <th>Bukti Tiket</th>
                 <th>Bukti Penambahan</th>
                 <th>Bukti Transfers Admin</th>
+                <th>Info Staff</th>
                 <th>Status</th>
                 <th>Jam</th>
                 <th class="text-center">Aksi Admin</th>
@@ -33,6 +34,19 @@
                             <a href="{{ route('admin.deposit.transfer-admin-image', $item->id) }}" target="_blank" class="btn btn-outline-primary btn-sm">Lihat Gambar</a>
                         @else
                             {{ $item->bukti_transfer_admin_text ?? '-' }}
+                        @endif
+                    </td>
+                    <td>
+                        @if ($item->is_deleted_by_staff)
+                            <span class="badge bg-danger">Dihapus Staff</span>
+                            <div class="small text-muted mt-1">
+                                Alasan: {{ $item->staff_deleted_note ?? '-' }}
+                            </div>
+                            <div class="small text-muted">
+                                {{ optional($item->staff_deleted_at)->format('d/m/Y H:i') ?? '' }}
+                            </div>
+                        @else
+                            -
                         @endif
                     </td>
                     <td>
@@ -156,7 +170,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="11" class="text-center text-muted py-4">Belum ada deposit</td>
+                    <td colspan="12" class="text-center text-muted py-4">Belum ada deposit</td>
                 </tr>
             @endforelse
         </tbody>

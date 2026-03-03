@@ -118,6 +118,7 @@ class AdminDepositController extends Controller
             'startDate' => $filters['start_date'] ?? null,
             'endDate' => $filters['end_date'] ?? null,
             'status' => $filters['status'] ?? null,
+            'staffDeleted' => $filters['staff_deleted'] ?? null,
             'latestUpdatedAt' => $latestUpdatedAt,
             'latestIncomingAt' => $latestIncomingAt,
             'latestIncomingId' => $latestIncomingId,
@@ -136,6 +137,7 @@ class AdminDepositController extends Controller
             'start_date' => 'nullable|date_format:Y-m-d',
             'end_date' => 'nullable|date_format:Y-m-d',
             'status' => 'nullable|in:pending,approved,rejected,selesai',
+            'staff_deleted' => 'nullable|in:yes,no',
             'since' => 'nullable|date',
             'page' => 'nullable|integer|min:1',
         ]);
@@ -225,6 +227,7 @@ class AdminDepositController extends Controller
         $startDate = $filters['start_date'] ?? null;
         $endDate = $filters['end_date'] ?? null;
         $status = $filters['status'] ?? null;
+        $staffDeleted = $filters['staff_deleted'] ?? null;
 
         if ($server) {
             $query->where('server', 'like', "%{$server}%");
@@ -240,6 +243,12 @@ class AdminDepositController extends Controller
 
         if ($status) {
             $query->where('status', $status);
+        }
+
+        if ($staffDeleted === 'yes') {
+            $query->where('is_deleted_by_staff', true);
+        } elseif ($staffDeleted === 'no') {
+            $query->where('is_deleted_by_staff', false);
         }
 
         if ($startDate && $endDate) {
@@ -267,6 +276,7 @@ class AdminDepositController extends Controller
             'start_date' => 'nullable|date_format:Y-m-d',
             'end_date' => 'nullable|date_format:Y-m-d',
             'status' => 'nullable|in:pending,approved,rejected,selesai',
+            'staff_deleted' => 'nullable|in:yes,no',
         ]);
 
         return $this->applyDefaultDateRange($filters);

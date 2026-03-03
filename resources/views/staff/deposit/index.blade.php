@@ -192,6 +192,34 @@
                                                     </div>
                                                 </div>
                                             </div>
+                                        @elseif (($item->status ?? 'pending') === 'pending')
+                                            <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalDeletePending-{{ $item->id }}">Hapus</button>
+
+                                            <div class="modal fade" id="modalDeletePending-{{ $item->id }}" tabindex="-1" aria-hidden="true">
+                                                <div class="modal-dialog modal-dialog-centered">
+                                                    <div class="modal-content">
+                                                        <form method="POST" action="{{ route('deposit.request.delete', $item->id) }}">
+                                                            @csrf
+                                                            @method('PUT')
+                                                            <div class="modal-header">
+                                                                <h5 class="modal-title">Hapus Request Pending</h5>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <div class="alert alert-warning py-2 mb-3">
+                                                                    Request hanya dihapus dari daftar staff, data tetap tercatat dan terlihat di admin.
+                                                                </div>
+                                                                <label class="form-label">Alasan Penghapusan</label>
+                                                                <textarea name="delete_note" class="form-control js-auto-resize-textarea" rows="3" placeholder="Contoh: Dihapus karena salah input nominal / rekening" required></textarea>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                                                <button type="submit" class="btn btn-danger">Hapus Pending</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         @else
                                             -
                                         @endif

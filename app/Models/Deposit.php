@@ -30,12 +30,17 @@ class Deposit extends Model
         'bukti_transfer_admin_text',
         'bukti_transfer_admin_image',
         'status',
+        'is_deleted_by_staff',
+        'staff_deleted_note',
+        'staff_deleted_at',
         'jam',
     ];
 
     protected $casts = [
         'nominal' => 'decimal:2',
         'jam' => 'datetime:H:i',
+        'is_deleted_by_staff' => 'boolean',
+        'staff_deleted_at' => 'datetime',
     ];
 
     public function user()

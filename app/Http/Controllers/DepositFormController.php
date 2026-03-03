@@ -52,6 +52,7 @@ class DepositFormController extends Controller
             ->get();
 
         $query = Deposit::where('user_id', Auth::id())
+            ->where('is_deleted_by_staff', false)
             ->whereDate('created_at', $tanggal)
             ->when($searchSupplier !== '', function ($q) use ($searchSupplier) {
                 $q->where('nama_supplier', 'like', '%' . $searchSupplier . '%');
@@ -108,6 +109,7 @@ class DepositFormController extends Controller
         $normalizedNominalFilter = preg_replace('/[^0-9]/', '', $nominalFilter);
 
         $query = Deposit::where('user_id', Auth::id())
+            ->where('is_deleted_by_staff', false)
             ->whereDate('created_at', $tanggal)
             ->when($searchSupplier !== '', function ($q) use ($searchSupplier) {
                 $q->where('nama_supplier', 'like', '%' . $searchSupplier . '%');
@@ -377,5 +379,36 @@ class DepositFormController extends Controller
         $item->save();
 
         return redirect()->route('deposit.request.index')->with('success', 'Reply Penambahan berhasil diupdate');
+    }
+
+    public function markDeleted(Request $request, int $id)
+    {
+        $validated = $request->validate([
+            'delete_note' => 'required|string|max:500',
+        ], [
+            'delete_note.required' => 'Alasan penghapusan wajib diisi.',
+        ]);
+
+        $item = Deposit::where('id', $id)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
+
+        if (($item->status ?? 'pending') !== 'pending') {
+            return redirect()->route('deposit.request.index')->with('error', 'Hanya request dengan status pending yang bisa dihapus oleh staff.');
+        }
+
+        $item->is_deleted_by_staff = true;
+        $item->staff_deleted_note = trim((string) $validated['delete_note']);
+        $item->staff_deleted_at = now();
+        $item->save();
+
+        NotificationItem::create([
+            'type' => 'deposit_request_deleted_by_staff',
+            'reference_id' => $item->id,
+            'message' => 'Request deposit dihapus staff: ' . $item->nama_supplier,
+            'is_read' => false,
+        ]);
+
+        return redirect()->route('deposit.request.index')->with('success', 'Request pending berhasil dihapus dari daftar staff dan tetap tercatat untuk admin.');
     }
 }

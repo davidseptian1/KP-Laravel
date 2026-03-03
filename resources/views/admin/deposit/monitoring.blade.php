@@ -87,6 +87,14 @@
                         </select>
                     </div>
                     <div class="col-md-2">
+                        <label class="form-label">Dihapus Staff</label>
+                        <select name="staff_deleted" class="form-select form-select-sm">
+                            <option value="">Semua</option>
+                            <option value="yes" {{ ($staffDeleted ?? '') === 'yes' ? 'selected' : '' }}>Ya</option>
+                            <option value="no" {{ ($staffDeleted ?? '') === 'no' ? 'selected' : '' }}>Tidak</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
                         <label class="form-label">Start Date</label>
                         <input type="date" name="start_date" class="form-control form-control-sm" value="{{ $startDate ?? '' }}">
                     </div>
@@ -106,13 +114,13 @@
                     </small>
                     <div class="d-flex gap-2">
                         <a
-                            href="{{ route('admin.deposit.monitoring.export-excel', ['server' => $server, 'bank' => $bank, 'nama_supplier' => $namaSupplier, 'status' => $status, 'start_date' => $startDate, 'end_date' => $endDate]) }}"
+                            href="{{ route('admin.deposit.monitoring.export-excel', ['server' => $server, 'bank' => $bank, 'nama_supplier' => $namaSupplier, 'status' => $status, 'staff_deleted' => $staffDeleted, 'start_date' => $startDate, 'end_date' => $endDate]) }}"
                             class="btn btn-success btn-sm"
                         >
                             Download Excel
                         </a>
                         <a
-                            href="{{ route('admin.deposit.monitoring.export-pdf', ['server' => $server, 'bank' => $bank, 'nama_supplier' => $namaSupplier, 'status' => $status, 'start_date' => $startDate, 'end_date' => $endDate]) }}"
+                            href="{{ route('admin.deposit.monitoring.export-pdf', ['server' => $server, 'bank' => $bank, 'nama_supplier' => $namaSupplier, 'status' => $status, 'staff_deleted' => $staffDeleted, 'start_date' => $startDate, 'end_date' => $endDate]) }}"
                             class="btn btn-danger btn-sm"
                             target="_blank"
                         >
@@ -188,6 +196,7 @@
             bank: @json($bank ?? ''),
             nama_supplier: @json($namaSupplier ?? ''),
             status: @json($status ?? ''),
+            staff_deleted: @json($staffDeleted ?? ''),
             start_date: @json($startDate ?? ''),
             end_date: @json($endDate ?? ''),
             page: @json($items->currentPage()),
@@ -390,6 +399,7 @@
                 if (filters.bank) params.set('bank', filters.bank);
                 if (filters.nama_supplier) params.set('nama_supplier', filters.nama_supplier);
                 if (filters.status) params.set('status', filters.status);
+                if (filters.staff_deleted) params.set('staff_deleted', filters.staff_deleted);
                 if (filters.start_date) params.set('start_date', filters.start_date);
                 if (filters.end_date) params.set('end_date', filters.end_date);
                 if (filters.page) params.set('page', filters.page);
