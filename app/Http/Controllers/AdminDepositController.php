@@ -67,6 +67,10 @@ class AdminDepositController extends Controller
         $items = $query->paginate(15)->withQueryString();
         $latestUpdatedAt = (clone $query)->max('updated_at');
         $latestIncomingAt = (clone $query)->max('created_at');
+        $latestIncomingId = (clone $query)
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->value('id');
 
         $serverOptions = Deposit::query()
             ->whereNotNull('server')
@@ -85,6 +89,7 @@ class AdminDepositController extends Controller
             'endDate' => $filters['end_date'] ?? null,
             'latestUpdatedAt' => $latestUpdatedAt,
             'latestIncomingAt' => $latestIncomingAt,
+            'latestIncomingId' => $latestIncomingId,
             'serverOptions' => $serverOptions,
         ]);
     }
@@ -103,6 +108,10 @@ class AdminDepositController extends Controller
 
         $latestUpdatedAt = (clone $query)->max('updated_at');
         $latestIncomingAt = (clone $query)->max('created_at');
+        $latestIncomingId = (clone $query)
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->value('id');
 
         $since = !empty($filters['since']) ? Carbon::parse($filters['since']) : null;
         $changesCount = 0;
@@ -147,7 +156,10 @@ class AdminDepositController extends Controller
         if ($hasChanges) {
             $page = $filters['page'] ?? 1;
             $items = (clone $query)->paginate(15, ['*'], 'page', $page)->withQueryString();
-            $tableHtml = view('admin.deposit.partials.table', ['items' => $items])->render();
+            $tableHtml = view('admin.deposit.partials.table', [
+                'items' => $items,
+                'latestIncomingId' => $latestIncomingId,
+            ])->render();
             $latestCardHtml = view('admin.deposit.partials.latest-incoming-card', ['latestIncomingAt' => $latestIncomingAt])->render();
         }
 
@@ -156,6 +168,7 @@ class AdminDepositController extends Controller
             'changes_count' => $changesCount,
             'latest_updated_at' => $latestUpdatedAt,
             'latest_incoming_at' => $latestIncomingAt,
+            'latest_incoming_id' => $latestIncomingId,
             'change_title' => $changeTitle,
             'change_description' => $changeDescription,
             'table_html' => $tableHtml,

@@ -66,7 +66,7 @@
                 </div>
 
                 <div id="monitoringTableContainer">
-                    @include('admin.deposit.partials.table', ['items' => $items])
+                    @include('admin.deposit.partials.table', ['items' => $items, 'latestIncomingId' => $latestIncomingId ?? null])
                 </div>
             </div>
         </div>
@@ -110,6 +110,7 @@
     (function () {
         const changesUrl = @json(route('admin.deposit.monitoring.changes'));
         let latestUpdatedAt = @json($latestUpdatedAt);
+        let latestIncomingId = @json($latestIncomingId ?? null);
         const filters = {
             server: @json($server ?? ''),
             start_date: @json($startDate ?? ''),
@@ -235,6 +236,20 @@
             });
         }
 
+        function applyLatestRowHighlight(targetId) {
+            if (!targetId) return;
+
+            document.querySelectorAll('#monitoringTableContainer tr[data-deposit-id]').forEach(function (row) {
+                row.classList.remove('table-primary');
+            });
+
+            const targetRow = document.querySelector('#monitoringTableContainer tr[data-deposit-id="' + targetId + '"]');
+            if (!targetRow) return;
+
+            targetRow.classList.add('table-primary');
+            targetRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
         async function checkChanges() {
             try {
                 const params = new URLSearchParams();
@@ -258,6 +273,10 @@
                     latestUpdatedAt = result.latest_updated_at;
                 }
 
+                if (result.latest_incoming_id) {
+                    latestIncomingId = result.latest_incoming_id;
+                }
+
                 if (!result.has_changes) return;
 
                 if (result.latest_card_html) {
@@ -272,6 +291,7 @@
                     if (tableContainer) {
                         tableContainer.innerHTML = result.table_html;
                         initTransferFormControls();
+                        applyLatestRowHighlight(latestIncomingId);
                     }
                 }
 
@@ -299,6 +319,7 @@
 
         updateNotifStatusText();
         initTransferFormControls();
+        applyLatestRowHighlight(latestIncomingId);
 
         document.addEventListener('visibilitychange', function () {
             if (!document.hidden) {

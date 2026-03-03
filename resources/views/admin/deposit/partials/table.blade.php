@@ -14,7 +14,7 @@
         </thead>
         <tbody>
             @forelse ($items as $item)
-                <tr>
+                <tr data-deposit-id="{{ $item->id }}" class="{{ (int)($latestIncomingId ?? 0) === (int)$item->id ? 'table-primary' : '' }}">
                     <td>{{ $item->created_at?->format('d/m/Y H:i') }}</td>
                     <td>{{ $item->nama_rekening }}</td>
                     <td>{{ $item->reply_tiket ?? '-' }}</td>
