@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Imports\DepositManualImport;
 use App\Models\Deposit;
 use App\Models\NotificationItem;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -55,17 +56,121 @@ class AdminDepositController extends Controller
 
     public function monitoring(Request $request)
     {
-        $validated = $request->validate([
+        $filters = $request->validate([
             'server' => 'nullable|string|max:100',
             'start_date' => 'nullable|date_format:Y-m-d',
             'end_date' => 'nullable|date_format:Y-m-d',
         ]);
 
-        $server = $validated['server'] ?? null;
-        $startDate = $validated['start_date'] ?? null;
-        $endDate = $validated['end_date'] ?? null;
+        $query = $this->buildMonitoringQuery($filters);
 
+        $items = $query->paginate(15)->withQueryString();
+        $latestUpdatedAt = (clone $query)->max('updated_at');
+        $latestIncomingAt = (clone $query)->max('created_at');
+
+        $serverOptions = Deposit::query()
+            ->whereNotNull('server')
+            ->where('server', '!=', '')
+            ->select('server')
+            ->distinct()
+            ->orderBy('server')
+            ->pluck('server');
+
+        return view('admin.deposit.monitoring', [
+            'title' => 'Monitoring Deposit',
+            'menuAdminDepositMonitoring' => 'active',
+            'items' => $items,
+            'server' => $filters['server'] ?? null,
+            'startDate' => $filters['start_date'] ?? null,
+            'endDate' => $filters['end_date'] ?? null,
+            'latestUpdatedAt' => $latestUpdatedAt,
+            'latestIncomingAt' => $latestIncomingAt,
+            'serverOptions' => $serverOptions,
+        ]);
+    }
+
+    public function changes(Request $request)
+    {
+        $filters = $request->validate([
+            'server' => 'nullable|string|max:100',
+            'start_date' => 'nullable|date_format:Y-m-d',
+            'end_date' => 'nullable|date_format:Y-m-d',
+            'since' => 'nullable|date',
+            'page' => 'nullable|integer|min:1',
+        ]);
+
+        $query = $this->buildMonitoringQuery($filters);
+
+        $latestUpdatedAt = (clone $query)->max('updated_at');
+        $latestIncomingAt = (clone $query)->max('created_at');
+
+        $since = !empty($filters['since']) ? Carbon::parse($filters['since']) : null;
+        $changesCount = 0;
+        $latestChangedItem = null;
+
+        if ($since) {
+            $changedQuery = (clone $query)->where('updated_at', '>', $since);
+            $changesCount = (clone $changedQuery)->count();
+            $latestChangedItem = (clone $changedQuery)->orderByDesc('updated_at')->first();
+        }
+
+        $hasChanges = $since ? $changesCount > 0 : false;
+
+        $changeTitle = null;
+        $changeDescription = null;
+
+        if ($latestChangedItem) {
+            $changeTitle = 'Ada perubahan Deposit ' . ($latestChangedItem->server ?: '-');
+            $descriptions = [];
+
+            if (!empty($latestChangedItem->status)) {
+                $descriptions[] = 'Status: ' . ucfirst((string) $latestChangedItem->status);
+            }
+            if (!empty($latestChangedItem->reply_penambahan) && $latestChangedItem->reply_penambahan !== 'Menunggu Konfirmasi Admin') {
+                $descriptions[] = 'Bukti Penambahan: ' . mb_strimwidth(trim((string) $latestChangedItem->reply_penambahan), 0, 80, '...');
+            }
+            if (($latestChangedItem->bukti_transfer_admin_type ?? null) === 'text' && !empty($latestChangedItem->bukti_transfer_admin_text)) {
+                $descriptions[] = 'Bukti Transfer Admin: ' . mb_strimwidth(trim((string) $latestChangedItem->bukti_transfer_admin_text), 0, 80, '...');
+            }
+            if (($latestChangedItem->bukti_transfer_admin_type ?? null) === 'image' && !empty($latestChangedItem->bukti_transfer_admin_image)) {
+                $descriptions[] = 'Bukti Transfer Admin: gambar diperbarui';
+            }
+
+            $changeDescription = !empty($descriptions)
+                ? implode(' | ', $descriptions)
+                : 'Ada perubahan data oleh admin.';
+        }
+
+        $tableHtml = null;
+        $latestCardHtml = null;
+
+        if ($hasChanges) {
+            $page = $filters['page'] ?? 1;
+            $items = (clone $query)->paginate(15, ['*'], 'page', $page)->withQueryString();
+            $tableHtml = view('admin.deposit.partials.table', ['items' => $items])->render();
+            $latestCardHtml = view('admin.deposit.partials.latest-incoming-card', ['latestIncomingAt' => $latestIncomingAt])->render();
+        }
+
+        return response()->json([
+            'has_changes' => $hasChanges,
+            'changes_count' => $changesCount,
+            'latest_updated_at' => $latestUpdatedAt,
+            'latest_incoming_at' => $latestIncomingAt,
+            'change_title' => $changeTitle,
+            'change_description' => $changeDescription,
+            'table_html' => $tableHtml,
+            'latest_card_html' => $latestCardHtml,
+            'server_time' => now()->toDateTimeString(),
+        ]);
+    }
+
+    private function buildMonitoringQuery(array $filters)
+    {
         $query = Deposit::query()->orderByDesc('created_at');
+
+        $server = $filters['server'] ?? null;
+        $startDate = $filters['start_date'] ?? null;
+        $endDate = $filters['end_date'] ?? null;
 
         if ($server) {
             $query->where('server', 'like', "%{$server}%");
@@ -79,24 +184,7 @@ class AdminDepositController extends Controller
             $query->whereDate('created_at', '<=', $endDate);
         }
 
-        $items = $query->paginate(15)->withQueryString();
-        $serverOptions = Deposit::query()
-            ->whereNotNull('server')
-            ->where('server', '!=', '')
-            ->select('server')
-            ->distinct()
-            ->orderBy('server')
-            ->pluck('server');
-
-        return view('admin.deposit.monitoring', [
-            'title' => 'Monitoring Deposit',
-            'menuAdminDepositMonitoring' => 'active',
-            'items' => $items,
-            'server' => $server,
-            'startDate' => $startDate,
-            'endDate' => $endDate,
-            'serverOptions' => $serverOptions,
-        ]);
+        return $query;
     }
 
     public function update(Request $request, int $id)
