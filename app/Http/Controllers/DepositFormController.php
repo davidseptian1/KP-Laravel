@@ -82,7 +82,6 @@ class DepositFormController extends Controller
             'no_rek' => 'required|regex:/^[0-9]+$/|max:100',
             'nama_rekening' => 'required|string|max:255',
             'reply_tiket' => 'nullable|string',
-            'jam' => 'required|date_format:H:i',
         ]);
 
         $formId = $validated['form_id'] ?? DepositForm::where('is_active', true)
@@ -105,7 +104,7 @@ class DepositFormController extends Controller
             'reply_tiket' => $validated['reply_tiket'] ?? null,
             'reply_penambahan' => 'Menunggu Konfirmasi Admin',
             'status' => 'pending',
-            'jam' => $validated['jam'],
+            'jam' => now()->format('H:i'),
         ]);
 
         NotificationItem::create([
@@ -160,7 +159,6 @@ class DepositFormController extends Controller
             'no_rek' => 'required|regex:/^[0-9]+$/|max:100',
             'nama_rekening' => 'required|string|max:255',
             'reply_tiket' => 'nullable|string',
-            'jam' => 'required|date_format:H:i',
         ]);
 
         $deposit = Deposit::create([
@@ -176,7 +174,7 @@ class DepositFormController extends Controller
             'reply_tiket' => $validated['reply_tiket'] ?? null,
             'reply_penambahan' => 'Menunggu Konfirmasi Admin',
             'status' => 'pending',
-            'jam' => $validated['jam'],
+            'jam' => now()->format('H:i'),
         ]);
 
         $adminNumber = config('whatsapp.admin_numbers.0') ?: '-';

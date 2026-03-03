@@ -208,10 +208,6 @@
                             <label class="form-label">Reply Tiket</label>
                             <textarea name="reply_tiket" class="form-control" rows="2"></textarea>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Jam</label>
-                            <input type="time" name="jam" class="form-control" required>
-                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">

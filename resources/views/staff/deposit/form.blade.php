@@ -96,11 +96,6 @@
                         <label class="form-label">Reply Tiket</label>
                         <textarea name="reply_tiket" class="form-control" rows="3"></textarea>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Jam</label>
-                        <input type="time" name="jam" class="form-control" required />
-                    </div>
-
                     <div id="submitNoted" class="alert alert-info mt-2 d-none">
                         Noted: Anda telah melakukan pengajuan, jika anda ingin melakukan pengajuan ulang klik button "Pengajuan Ulang".
                     </div>
