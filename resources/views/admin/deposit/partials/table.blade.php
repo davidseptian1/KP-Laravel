@@ -159,6 +159,10 @@
                                                         <option value="selesai" {{ ($item->status ?? 'pending') === 'selesai' ? 'selected' : '' }}>Selesai</option>
                                                     </select>
                                                     <button type="submit" class="btn btn-success btn-sm">Simpan Data & Status</button>
+                                                    <div class="small text-muted mt-1">
+                                                        <strong>Note :</strong> jika mau merubah status menjadi ACC, input bukti tranfers nya dengan memilih tipe bukti text ataupun gambar.<br>
+                                                        Jika mau merubah status menjadi Selesai, pastikan semua data terisi.
+                                                    </div>
                                                 </div>
                                             </div>
                                         </form>
