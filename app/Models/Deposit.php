@@ -23,6 +23,7 @@ class Deposit extends Model
         'no_rek',
         'nama_rekening',
         'reply_tiket',
+        'reply_tiket_image',
         'reply_penambahan',
         'reply_penambahan_type',
         'reply_penambahan_image',

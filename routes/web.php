@@ -259,6 +259,7 @@ Route::middleware('checkLogin')->group(function () {
         Route::put('admin/deposit/{id}', [AdminDepositController::class, 'update'])->name('admin.deposit.update');
         Route::put('admin/deposit/{id}/details', [AdminDepositController::class, 'updateDetails'])->name('admin.deposit.update-details');
         Route::put('admin/deposit/{id}/status', [AdminDepositController::class, 'updateStatus'])->name('admin.deposit.update-status');
+        Route::get('admin/deposit/{id}/reply-tiket-image', [AdminDepositController::class, 'viewReplyTiketImage'])->name('admin.deposit.reply-tiket-image');
         Route::get('admin/deposit/{id}/reply-image', [AdminDepositController::class, 'viewReplyImage'])->name('admin.deposit.reply-image');
         Route::get('admin/deposit/{id}/transfer-admin-image', [AdminDepositController::class, 'viewTransferAdminImage'])->name('admin.deposit.transfer-admin-image');
         Route::delete('admin/deposit/{id}', [AdminDepositController::class, 'destroy'])->name('admin.deposit.destroy');

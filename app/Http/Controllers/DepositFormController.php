@@ -282,7 +282,12 @@ class DepositFormController extends Controller
             'no_rek' => 'required|regex:/^[0-9]+$/|max:100',
             'nama_rekening' => 'required|string|max:255',
             'reply_tiket' => 'nullable|string',
+            'reply_tiket_image' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:5120',
         ]);
+
+        $replyTiketImagePath = $request->hasFile('reply_tiket_image')
+            ? $request->file('reply_tiket_image')->store('deposit/reply-tiket', 'local')
+            : null;
 
         $formId = $validated['form_id'] ?? DepositForm::where('is_active', true)
             ->where(function ($q) {
@@ -302,6 +307,7 @@ class DepositFormController extends Controller
             'no_rek' => $validated['no_rek'],
             'nama_rekening' => $validated['nama_rekening'],
             'reply_tiket' => $validated['reply_tiket'] ?? null,
+            'reply_tiket_image' => $replyTiketImagePath,
             'reply_penambahan' => 'Menunggu Konfirmasi Admin',
             'status' => 'pending',
             'jam' => now()->format('H:i'),

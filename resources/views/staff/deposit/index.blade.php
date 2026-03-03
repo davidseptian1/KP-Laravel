@@ -258,7 +258,7 @@
 <div class="modal fade" id="modalRequestDeposit" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
-            <form method="POST" action="{{ route('deposit.request.store') }}">
+            <form method="POST" action="{{ route('deposit.request.store') }}" enctype="multipart/form-data">
                 @csrf
                 <div class="modal-header">
                     <h5 class="modal-title">Request Deposit</h5>
@@ -318,6 +318,17 @@
                             <label class="form-label">Reply Tiket</label>
                             <textarea name="reply_tiket" class="form-control js-auto-resize-textarea" rows="2"></textarea>
                         </div>
+                        <div class="col-12">
+                            <label class="form-label">Upload / Paste Gambar Reply Tiket</label>
+                            <input type="file" name="reply_tiket_image" id="replyTiketImageInput" class="form-control" accept="image/png,image/jpeg,image/jpg,image/webp">
+                            <small class="text-muted d-block mt-1">Bisa Ctrl+V dari clipboard saat fokus di area paste.</small>
+                            <div class="border rounded p-2 mt-2" id="replyTiketPasteZone" tabindex="0" style="min-height:60px;">
+                                Paste gambar di sini (Ctrl+V)
+                            </div>
+                            <div class="mt-2" id="replyTiketPreviewWrap" style="display:none;">
+                                <img src="" alt="Preview Reply Tiket" class="img-fluid rounded border" id="replyTiketPreview" style="max-height:180px;">
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -346,6 +357,21 @@
 
         const notifStatusEl = document.getElementById('browserNotifStatus');
         const enableNotifBtn = document.getElementById('btnEnableBrowserNotif');
+        const replyTiketImageInput = document.getElementById('replyTiketImageInput');
+        const replyTiketPasteZone = document.getElementById('replyTiketPasteZone');
+        const replyTiketPreviewWrap = document.getElementById('replyTiketPreviewWrap');
+        const replyTiketPreview = document.getElementById('replyTiketPreview');
+
+        function setReplyTiketPreview(file) {
+            if (!replyTiketPreview || !replyTiketPreviewWrap || !file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                replyTiketPreview.src = event.target.result;
+                replyTiketPreviewWrap.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
 
         function updateNotifStatusText() {
             if (!notifStatusEl) return;
@@ -606,6 +632,35 @@
                         textarea.style.overflowY = textarea.scrollHeight > maxHeight ? 'auto' : 'hidden';
                     });
                 });
+            });
+        }
+
+        if (replyTiketImageInput) {
+            replyTiketImageInput.addEventListener('change', function () {
+                const file = this.files && this.files[0] ? this.files[0] : null;
+                if (file) setReplyTiketPreview(file);
+            });
+        }
+
+        if (replyTiketPasteZone && replyTiketImageInput) {
+            replyTiketPasteZone.addEventListener('paste', function (event) {
+                const items = (event.clipboardData || window.clipboardData).items;
+                if (!items) return;
+
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i].type.indexOf('image') !== -1) {
+                        const file = items[i].getAsFile();
+                        if (!file) continue;
+
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(file);
+                        replyTiketImageInput.files = dataTransfer.files;
+
+                        setReplyTiketPreview(file);
+                        event.preventDefault();
+                        break;
+                    }
+                }
             });
         }
 

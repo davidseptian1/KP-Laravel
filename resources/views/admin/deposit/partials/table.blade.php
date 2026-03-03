@@ -24,7 +24,16 @@
                     <td>{{ $item->nama_rekening }}</td>
                     <td>{{ $item->bank ?? '-' }}</td>
                     <td>{{ $item->server ?? '-' }}</td>
-                    <td>{{ $item->reply_tiket ?? '-' }}</td>
+                    <td>
+                        @if (!empty($item->reply_tiket))
+                            <div class="mb-1">{{ $item->reply_tiket }}</div>
+                        @endif
+                        @if (!empty($item->reply_tiket_image))
+                            <a href="{{ route('admin.deposit.reply-tiket-image', $item->id) }}" target="_blank" class="btn btn-outline-primary btn-sm">Lihat Gambar</a>
+                        @elseif (empty($item->reply_tiket))
+                            -
+                        @endif
+                    </td>
                     <td>{{ $item->reply_penambahan ?? '-' }}</td>
                     <td>
                         @if (($item->bukti_transfer_admin_type ?? 'text') === 'image')

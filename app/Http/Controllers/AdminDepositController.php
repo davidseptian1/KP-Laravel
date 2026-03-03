@@ -420,6 +420,18 @@ class AdminDepositController extends Controller
         return Storage::disk('local')->response($path);
     }
 
+    public function viewReplyTiketImage(int $id)
+    {
+        $item = Deposit::findOrFail($id);
+        $path = $item->reply_tiket_image;
+
+        if (!$path || !Storage::disk('local')->exists($path)) {
+            return redirect()->route('admin.deposit.monitoring')->with('error', 'Gambar reply tiket tidak ditemukan');
+        }
+
+        return Storage::disk('local')->response($path);
+    }
+
     public function viewTransferAdminImage(int $id)
     {
         $item = Deposit::findOrFail($id);
@@ -438,6 +450,10 @@ class AdminDepositController extends Controller
 
         if ($item->reply_penambahan_image && Storage::disk('local')->exists($item->reply_penambahan_image)) {
             Storage::disk('local')->delete($item->reply_penambahan_image);
+        }
+
+        if ($item->reply_tiket_image && Storage::disk('local')->exists($item->reply_tiket_image)) {
+            Storage::disk('local')->delete($item->reply_tiket_image);
         }
 
         if ($item->bukti_transfer_admin_image && Storage::disk('local')->exists($item->bukti_transfer_admin_image)) {
