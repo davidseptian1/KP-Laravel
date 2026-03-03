@@ -7,6 +7,16 @@
         background-color: var(--bs-primary-bg-subtle, #cfe2ff) !important;
         color: var(--bs-body-color, #212529);
     }
+
+    #monitoringTableContainer .modal-super-xl {
+        max-width: min(1400px, 96vw);
+    }
+
+    #monitoringTableContainer textarea.js-auto-resize-textarea {
+        overflow-y: hidden;
+        resize: none;
+        min-height: 70px;
+    }
 </style>
 
 <div class="page-header" style="margin: 0; padding: 0;">
@@ -296,6 +306,21 @@
             });
         }
 
+        function initAutoResizeTextareas() {
+            document.querySelectorAll('#monitoringTableContainer textarea.js-auto-resize-textarea').forEach(function (textarea) {
+                if (textarea.dataset.boundAutosize === '1') return;
+                textarea.dataset.boundAutosize = '1';
+
+                const resize = function () {
+                    textarea.style.height = 'auto';
+                    textarea.style.height = textarea.scrollHeight + 'px';
+                };
+
+                textarea.addEventListener('input', resize);
+                resize();
+            });
+        }
+
         function applyLatestRowHighlight(targetId) {
             if (!targetId) return;
 
@@ -352,6 +377,7 @@
                     if (tableContainer) {
                         tableContainer.innerHTML = result.table_html;
                         initTransferFormControls();
+                        initAutoResizeTextareas();
                         applyLatestRowHighlight(latestIncomingId);
                     }
                 }
@@ -380,6 +406,7 @@
 
         updateNotifStatusText();
         initTransferFormControls();
+        initAutoResizeTextareas();
         applyLatestRowHighlight(latestIncomingId);
 
         document.addEventListener('visibilitychange', function () {

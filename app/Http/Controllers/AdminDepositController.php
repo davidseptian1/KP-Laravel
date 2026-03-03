@@ -328,6 +328,7 @@ class AdminDepositController extends Controller
             'bukti_transfer_admin_text' => 'nullable|string',
             'bukti_transfer_admin_image' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:5120',
             'jam' => 'required|date_format:H:i',
+            'status' => 'required|in:approved,rejected,selesai,pending',
         ]);
 
         $item = Deposit::findOrFail($id);
@@ -344,9 +345,10 @@ class AdminDepositController extends Controller
             : null;
         $this->applyBuktiTransferAdmin($request, $item, $validated);
         $item->jam = $validated['jam'];
+        $item->status = $validated['status'];
         $item->save();
 
-        return redirect()->route('admin.deposit.monitoring')->with('success', 'Data request deposit berhasil diedit');
+        return redirect()->route('admin.deposit.monitoring')->with('success', 'Data request deposit dan status berhasil diperbarui');
     }
 
     public function updateStatus(Request $request, int $id)

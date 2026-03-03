@@ -48,26 +48,26 @@
                         </div>
 
                         <div class="modal fade" id="detailDeposit-{{ $item->id }}" tabindex="-1" aria-hidden="true">
-                            <div class="modal-dialog modal-xl modal-dialog-centered">
+                            <div class="modal-dialog modal-xl modal-dialog-centered modal-super-xl">
                                 <div class="modal-content text-start">
                                     <div class="modal-header">
                                         <h5 class="modal-title">Detail Request Deposit</h5>
                                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                     </div>
                                     <div class="modal-body">
-                                        <div class="row g-4">
-                                            <div class="col-lg-8">
+                                        <form method="POST" action="{{ route('admin.deposit.update-details', $item->id) }}" class="row g-4" enctype="multipart/form-data">
+                                            @csrf
+                                            @method('PUT')
+                                            <div class="col-lg-9">
                                                 <h6 class="mb-3">Edit Detail</h6>
-                                                <form method="POST" action="{{ route('admin.deposit.update-details', $item->id) }}" class="row g-3" enctype="multipart/form-data">
-                                                    @csrf
-                                                    @method('PUT')
+                                                <div class="row g-3">
                                                     <div class="col-md-6">
                                                         <label class="form-label">Nama Supplier</label>
                                                         <input type="text" name="nama_supplier" class="form-control" value="{{ $item->nama_supplier }}" required>
                                                     </div>
                                                     <div class="col-md-6">
                                                         <label class="form-label">Nominal</label>
-                                                        <input type="number" name="nominal" class="form-control" value="{{ (int)$item->nominal }}" required>
+                                                        <input type="text" name="nominal" class="form-control" value="{{ (int)$item->nominal }}" required>
                                                     </div>
                                                     <div class="col-md-6">
                                                         <label class="form-label">Deposit / Hutang</label>
@@ -94,15 +94,15 @@
                                                     </div>
                                                     <div class="col-md-6">
                                                         <label class="form-label">Reply Tiket</label>
-                                                        <textarea name="reply_tiket" class="form-control" rows="2">{{ $item->reply_tiket }}</textarea>
+                                                        <textarea name="reply_tiket" class="form-control js-auto-resize-textarea" rows="2">{{ $item->reply_tiket }}</textarea>
                                                     </div>
                                                     <div class="col-md-6">
                                                         <label class="form-label">Bukti Penambahan</label>
-                                                        <textarea name="reply_penambahan" class="form-control" rows="2" placeholder="Masukkan bukti penambahan">{{ ($item->reply_penambahan ?? '') === 'Menunggu Konfirmasi Admin' ? '' : ($item->reply_penambahan ?? '') }}</textarea>
+                                                        <textarea name="reply_penambahan" class="form-control js-auto-resize-textarea" rows="2" placeholder="Masukkan bukti penambahan">{{ ($item->reply_penambahan ?? '') === 'Menunggu Konfirmasi Admin' ? '' : ($item->reply_penambahan ?? '') }}</textarea>
                                                     </div>
                                                     <div class="col-md-6 js-transfer-text-wrap" data-target="{{ $item->id }}" style="display: {{ ($item->bukti_transfer_admin_type ?? 'text') === 'text' ? 'block' : 'none' }};">
                                                         <label class="form-label">Input Bukti Transfer Admin</label>
-                                                        <textarea name="bukti_transfer_admin_text" class="form-control" rows="2" placeholder="Masukkan bukti transfer admin dalam bentuk teks">{{ $item->bukti_transfer_admin_text ?? '' }}</textarea>
+                                                        <textarea name="bukti_transfer_admin_text" class="form-control js-auto-resize-textarea" rows="2" placeholder="Masukkan bukti transfer admin dalam bentuk teks">{{ $item->bukti_transfer_admin_text ?? '' }}</textarea>
                                                     </div>
                                                     <div class="col-md-6">
                                                         <label class="form-label">Tipe Bukti Transfer Admin</label>
@@ -129,25 +129,21 @@
                                                         <label class="form-label">Jam</label>
                                                         <input type="time" name="jam" class="form-control" value="{{ $item->jam ? \Carbon\Carbon::parse($item->jam)->format('H:i') : '' }}" required>
                                                     </div>
-                                                    <div class="col-12 text-end">
-                                                        <button type="submit" class="btn btn-primary btn-sm">Simpan Edit</button>
-                                                    </div>
-                                                </form>
+                                                </div>
                                             </div>
-                                            <div class="col-lg-4">
+                                            <div class="col-lg-3">
                                                 <h6 class="mb-3">Update Status</h6>
-                                                <form method="POST" action="{{ route('admin.deposit.update-status', $item->id) }}" class="d-grid gap-2">
-                                                    @csrf
-                                                    @method('PUT')
+                                                <div class="d-grid gap-2">
                                                     <select name="status" class="form-select" required>
+                                                        <option value="pending" {{ ($item->status ?? 'pending') === 'pending' ? 'selected' : '' }}>Pending</option>
                                                         <option value="approved" {{ ($item->status ?? 'pending') === 'approved' ? 'selected' : '' }}>ACC</option>
                                                         <option value="rejected" {{ ($item->status ?? 'pending') === 'rejected' ? 'selected' : '' }}>Rejected</option>
                                                         <option value="selesai" {{ ($item->status ?? 'pending') === 'selesai' ? 'selected' : '' }}>Selesai</option>
                                                     </select>
-                                                    <button type="submit" class="btn btn-success btn-sm">Simpan Status</button>
-                                                </form>
+                                                    <button type="submit" class="btn btn-success btn-sm">Simpan Data & Status</button>
+                                                </div>
                                             </div>
-                                        </div>
+                                        </form>
                                     </div>
                                 </div>
                             </div>
