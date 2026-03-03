@@ -154,6 +154,7 @@ class DepositFormController extends Controller
             'server' => 'nullable|string|max:100',
             'status' => 'nullable|in:pending,approved,rejected,selesai',
             'nominal' => 'nullable|string|max:50',
+            'per_page' => 'nullable|integer|in:10,25,50,100',
         ]);
 
         $tanggal = $validated['tanggal'] ?? now()->format('Y-m-d');
@@ -162,6 +163,7 @@ class DepositFormController extends Controller
         $status = $validated['status'] ?? null;
         $nominalFilter = trim((string) ($validated['nominal'] ?? ''));
         $normalizedNominalFilter = preg_replace('/[^0-9]/', '', $nominalFilter);
+        $perPage = (int) ($validated['per_page'] ?? 10);
 
         $activeForms = DepositForm::where('is_active', true)
             ->where(function ($q) {
