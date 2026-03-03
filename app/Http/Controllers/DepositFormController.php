@@ -52,7 +52,10 @@ class DepositFormController extends Controller
             ->get();
 
         $query = Deposit::where('user_id', Auth::id())
-            ->where('is_deleted_by_staff', false)
+            ->where(function ($q) {
+                $q->where('is_deleted_by_staff', false)
+                    ->orWhereNull('is_deleted_by_staff');
+            })
             ->whereDate('created_at', $tanggal)
             ->when($searchSupplier !== '', function ($q) use ($searchSupplier) {
                 $q->where('nama_supplier', 'like', '%' . $searchSupplier . '%');
@@ -109,7 +112,10 @@ class DepositFormController extends Controller
         $normalizedNominalFilter = preg_replace('/[^0-9]/', '', $nominalFilter);
 
         $query = Deposit::where('user_id', Auth::id())
-            ->where('is_deleted_by_staff', false)
+            ->where(function ($q) {
+                $q->where('is_deleted_by_staff', false)
+                    ->orWhereNull('is_deleted_by_staff');
+            })
             ->whereDate('created_at', $tanggal)
             ->when($searchSupplier !== '', function ($q) use ($searchSupplier) {
                 $q->where('nama_supplier', 'like', '%' . $searchSupplier . '%');
