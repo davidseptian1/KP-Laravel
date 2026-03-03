@@ -319,12 +319,12 @@
             }
         }
 
-        function sendBrowserNotification(changesCount) {
+        function sendBrowserNotification(title, description, changesCount) {
             if (!('Notification' in window)) return;
             if (Notification.permission !== 'granted') return;
 
-            new Notification('Update Request Deposit', {
-                body: 'Ada ' + changesCount + ' perubahan data deposit.',
+            new Notification(title || 'Update Request Deposit', {
+                body: description || ('Ada ' + changesCount + ' perubahan data deposit.'),
                 tag: 'deposit-request-update',
             });
         }
@@ -359,14 +359,18 @@
 
                 if (result.has_changes) {
                     isReloading = true;
-                    sendBrowserNotification(result.changes_count);
+                    const notifTitle = result.change_title || ('Ada perubahan data deposit (' + result.changes_count + ')');
+                    const notifDescription = result.change_description || 'Ada perubahan data oleh admin.';
+
+                    sendBrowserNotification(notifTitle, notifDescription, result.changes_count);
                     Swal.fire({
                         toast: true,
                         position: 'top-end',
                         icon: 'info',
-                        title: 'Ada perubahan data deposit (' + result.changes_count + ')',
+                        title: notifTitle,
+                        text: notifDescription,
                         showConfirmButton: false,
-                        timer: 1800,
+                        timer: 2400,
                         timerProgressBar: true,
                     });
 

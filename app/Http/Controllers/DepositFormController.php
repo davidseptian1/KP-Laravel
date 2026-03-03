@@ -78,16 +78,54 @@ class DepositFormController extends Controller
                 $q->where('nama_supplier', 'like', '%' . $searchSupplier . '%');
             });
 
-        $changesCount = (clone $query)
-            ->where('updated_at', '>', $since)
-            ->count();
+        $changedQuery = (clone $query)
+            ->where('updated_at', '>', $since);
+
+        $changesCount = (clone $changedQuery)->count();
+
+        $latestChangedItem = (clone $changedQuery)
+            ->orderByDesc('updated_at')
+            ->first();
 
         $latestUpdatedAt = (clone $query)->max('updated_at');
+
+        $changeTitle = null;
+        $changeDescription = null;
+
+        if ($latestChangedItem) {
+            $changeTitle = 'Ada perubahan Deposit ' . ($latestChangedItem->server ?: '-');
+
+            $descriptions = [];
+
+            if (!empty($latestChangedItem->status)) {
+                $descriptions[] = 'Status: ' . ucfirst((string) $latestChangedItem->status);
+            }
+
+            if (!empty($latestChangedItem->reply_penambahan) && $latestChangedItem->reply_penambahan !== 'Menunggu Konfirmasi Admin') {
+                $replyText = trim((string) $latestChangedItem->reply_penambahan);
+                $descriptions[] = 'Bukti Penambahan: ' . mb_strimwidth($replyText, 0, 80, '...');
+            }
+
+            if (($latestChangedItem->bukti_transfer_admin_type ?? null) === 'text' && !empty($latestChangedItem->bukti_transfer_admin_text)) {
+                $buktiText = trim((string) $latestChangedItem->bukti_transfer_admin_text);
+                $descriptions[] = 'Bukti Transfer Admin: ' . mb_strimwidth($buktiText, 0, 80, '...');
+            }
+
+            if (($latestChangedItem->bukti_transfer_admin_type ?? null) === 'image' && !empty($latestChangedItem->bukti_transfer_admin_image)) {
+                $descriptions[] = 'Bukti Transfer Admin: gambar diperbarui';
+            }
+
+            $changeDescription = !empty($descriptions)
+                ? implode(' | ', $descriptions)
+                : 'Ada perubahan data oleh admin.';
+        }
 
         return response()->json([
             'has_changes' => $changesCount > 0,
             'changes_count' => $changesCount,
             'latest_updated_at' => $latestUpdatedAt,
+            'change_title' => $changeTitle,
+            'change_description' => $changeDescription,
             'server_time' => now()->toDateTimeString(),
         ]);
     }
