@@ -70,6 +70,17 @@
                         <label class="form-label">Nominal</label>
                         <input type="text" name="nominal" class="form-control form-control-sm" value="{{ $nominalFilter ?? '' }}" placeholder="Contoh: 2.500.000">
                     </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Data per halaman</label>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="small text-muted">Tampilkan</span>
+                            <select name="per_page" class="form-select form-select-sm">
+                                @foreach ([10, 25, 50, 100] as $limit)
+                                    <option value="{{ $limit }}" {{ (int)($perPage ?? 10) === $limit ? 'selected' : '' }}>{{ $limit }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
                     <div class="col-md-3 d-flex gap-2">
                         <button type="submit" class="btn btn-primary btn-sm w-100">Filter</button>
                         <a href="{{ route('deposit.request.index') }}" class="btn btn-outline-secondary btn-sm w-100">Hari Ini</a>

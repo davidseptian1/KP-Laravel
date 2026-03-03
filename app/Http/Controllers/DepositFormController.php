@@ -66,6 +66,7 @@ class DepositFormController extends Controller
             'server' => 'nullable|string|max:100',
             'status' => 'nullable|in:pending,approved,rejected,selesai',
             'nominal' => 'nullable|string|max:50',
+            'per_page' => 'nullable|integer|in:10,25,50,100',
         ]);
 
         $tanggal = $validated['tanggal'] ?? now()->format('Y-m-d');
@@ -74,6 +75,7 @@ class DepositFormController extends Controller
         $status = $validated['status'] ?? null;
         $nominalFilter = trim((string) ($validated['nominal'] ?? ''));
         $normalizedNominalFilter = preg_replace('/[^0-9]/', '', $nominalFilter);
+        $perPage = (int) ($validated['per_page'] ?? 10);
 
         $baseQuery = $this->buildStaffFilteredQuery(
             $tanggal,
@@ -185,7 +187,7 @@ class DepositFormController extends Controller
         $latestUpdatedAt = (clone $query)->max('updated_at');
         $latestActivityItem = (clone $query)->first();
 
-        $items = $query->paginate(10)->withQueryString();
+        $items = $query->paginate($perPage)->withQueryString();
 
         $suppliers = Supplier::orderBy('nama_supplier')->pluck('nama_supplier');
         $servers = Server::orderBy('nama_server')->pluck('nama_server');
@@ -206,6 +208,7 @@ class DepositFormController extends Controller
             'serverFilter' => $server,
             'status' => $status,
             'nominalFilter' => $nominalFilter,
+            'perPage' => $perPage,
             'latestUpdatedAt' => $latestUpdatedAt,
             'latestActivityItem' => $latestActivityItem,
             'todayDepositSummary' => $todayDepositSummary,
