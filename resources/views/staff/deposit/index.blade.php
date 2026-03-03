@@ -44,33 +44,60 @@
                     </div>
                 </form>
 
+                <div class="row g-2 mb-3">
+                    <div class="col-md-6">
+                        <div class="card border-0 bg-success-subtle h-100">
+                            <div class="card-body py-2">
+                                <div class="fw-semibold text-success"><i class="ti ti-trending-up me-1"></i>Nominal Tinggi (≥ Rp 10.000.000)</div>
+                                <small class="text-muted">Ditampilkan dengan card hijau dan teks tebal.</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card border-0 bg-primary-subtle h-100">
+                            <div class="card-body py-2">
+                                <div class="fw-semibold text-primary"><i class="ti ti-cash-banknote me-1"></i>Nominal Reguler (&lt; Rp 10.000.000)</div>
+                                <small class="text-muted">Ditampilkan dengan card biru.</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="table-responsive">
                     <table class="table table-hover align-middle">
                         <thead class="table-light">
                             <tr>
-                                <th>Tanggal</th>
-                                <th>NAMA SUPPLIER</th>
-                                <th>JENIS</th>
-                                <th class="text-end">NOMINAL</th>
-                                <th>BANK</th>
-                                <th>SERVER</th>
-                                <th>NOREK</th>
-                                <th>NAMA REKENING</th>
-                                <th>Reply Tiket</th>
-                                <th>REPLY PENAMBAHAN</th>
-                                <th>Bukti Tranfers Admin</th>
-                                <th>STATUS</th>
-                                <th>JAM</th>
-                                <th>AKSI</th>
+                                <th><i class="ti ti-calendar-event me-1"></i>Tanggal</th>
+                                <th><i class="ti ti-building-store me-1"></i>NAMA SUPPLIER</th>
+                                <th><i class="ti ti-category me-1"></i>JENIS</th>
+                                <th class="text-end"><i class="ti ti-currency-dollar me-1"></i>NOMINAL</th>
+                                <th><i class="ti ti-building-bank me-1"></i>BANK</th>
+                                <th><i class="ti ti-server me-1"></i>SERVER</th>
+                                <th><i class="ti ti-credit-card me-1"></i>NOREK</th>
+                                <th><i class="ti ti-user me-1"></i>NAMA REKENING</th>
+                                <th><i class="ti ti-ticket me-1"></i>Reply Tiket</th>
+                                <th><i class="ti ti-file-text me-1"></i>REPLY PENAMBAHAN</th>
+                                <th><i class="ti ti-photo me-1"></i>Bukti Tranfers Admin</th>
+                                <th><i class="ti ti-list-check me-1"></i>STATUS</th>
+                                <th><i class="ti ti-clock me-1"></i>JAM</th>
+                                <th><i class="ti ti-settings me-1"></i>AKSI</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse ($items as $item)
+                                @php
+                                    $isHighNominal = (float) $item->nominal >= 10000000;
+                                @endphp
                                 <tr>
                                     <td>{{ $item->created_at?->format('d/m/Y') }}</td>
                                     <td>{{ $item->nama_supplier }}</td>
                                     <td>{{ strtoupper($item->jenis_transaksi ?? 'deposit') }}</td>
-                                    <td class="text-end">{{ number_format($item->nominal, 0, ',', '.') }}</td>
+                                    <td class="text-end">
+                                        <div class="d-inline-block rounded px-2 py-1 {{ $isHighNominal ? 'bg-success-subtle text-success fw-bold' : 'bg-primary-subtle text-primary fw-semibold' }}">
+                                            <i class="ti {{ $isHighNominal ? 'ti-trending-up' : 'ti-cash-banknote' }} me-1"></i>
+                                            Rp {{ number_format($item->nominal, 0, ',', '.') }}
+                                        </div>
+                                    </td>
                                     <td>{{ $item->bank }}</td>
                                     <td>{{ $item->server }}</td>
                                     <td>{{ $item->no_rek }}</td>
@@ -93,6 +120,7 @@
                                     </td>
                                     <td>
                                         <span class="badge bg-{{ $item->status === 'approved' ? 'success' : ($item->status === 'rejected' ? 'danger' : ($item->status === 'selesai' ? 'primary' : 'warning')) }}">
+                                            <i class="ti {{ $item->status === 'approved' ? 'ti-circle-check' : ($item->status === 'rejected' ? 'ti-circle-x' : ($item->status === 'selesai' ? 'ti-checks' : 'ti-hourglass')) }} me-1"></i>
                                             {{ ucfirst($item->status ?? 'pending') }}
                                         </span>
                                     </td>
