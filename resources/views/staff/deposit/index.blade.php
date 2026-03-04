@@ -54,6 +54,10 @@
         min-height: 70px;
         max-height: 260px;
     }
+
+    .staff-deposit-page .searchable-select-wrap .js-select-search {
+        margin-bottom: 6px;
+    }
 </style>
 
 <div class="page-header" style="margin: 0; padding: 0;">
@@ -367,12 +371,15 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label">Nama Supplier</label>
-                            <select name="nama_supplier" class="form-select" required>
-                                <option value="">Pilih Supplier</option>
-                                @foreach (($suppliers ?? collect()) as $supplier)
-                                    <option value="{{ $supplier }}">{{ $supplier }}</option>
-                                @endforeach
-                            </select>
+                            <div class="searchable-select-wrap">
+                                <input type="text" class="form-control js-select-search" data-target="supplierRequestSelect" placeholder="Cari supplier...">
+                                <select name="nama_supplier" id="supplierRequestSelect" class="form-select js-searchable-select" required>
+                                    <option value="">Pilih Supplier</option>
+                                    @foreach (($suppliers ?? collect()) as $supplier)
+                                        <option value="{{ $supplier }}">{{ $supplier }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
                             @if (($suppliers ?? collect())->isEmpty())
                                 <small class="text-danger">Belum ada supplier. Minta admin tambah supplier di menu Supplier Manajemen.</small>
                             @endif
@@ -383,23 +390,37 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Deposit / Hutang</label>
-                            <select name="jenis_transaksi" class="form-select" required>
-                                <option value="deposit">Deposit</option>
-                                <option value="hutang">Hutang</option>
-                            </select>
+                            <div class="searchable-select-wrap">
+                                <input type="text" class="form-control js-select-search" data-target="jenisRequestSelect" placeholder="Cari jenis...">
+                                <select name="jenis_transaksi" id="jenisRequestSelect" class="form-select js-searchable-select" required>
+                                    <option value="deposit">Deposit</option>
+                                    <option value="hutang">Hutang</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Bank</label>
-                            <input type="text" name="bank" class="form-control" required>
+                            <div class="searchable-select-wrap">
+                                <input type="text" class="form-control js-select-search" data-target="bankRequestSelect" placeholder="Cari bank...">
+                                <select name="bank" id="bankRequestSelect" class="form-select js-searchable-select" required>
+                                    <option value="">Pilih Bank</option>
+                                    @foreach (($banks ?? collect()) as $bank)
+                                        <option value="{{ $bank }}">{{ $bank }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Server</label>
-                            <select name="server" class="form-select" required>
-                                <option value="">Pilih Server</option>
-                                @foreach (($servers ?? collect()) as $server)
-                                    <option value="{{ $server }}">{{ $server }}</option>
-                                @endforeach
-                            </select>
+                            <div class="searchable-select-wrap">
+                                <input type="text" class="form-control js-select-search" data-target="serverRequestSelect" placeholder="Cari server...">
+                                <select name="server" id="serverRequestSelect" class="form-select js-searchable-select" required>
+                                    <option value="">Pilih Server</option>
+                                    @foreach (($servers ?? collect()) as $server)
+                                        <option value="{{ $server }}">{{ $server }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
                             @if (($servers ?? collect())->isEmpty())
                                 <small class="text-danger">Belum ada server. Minta admin tambah server di menu Server Manajemen.</small>
                             @endif
@@ -461,6 +482,47 @@
         const replyTiketPasteZone = document.getElementById('replyTiketPasteZone');
         const replyTiketPreviewWrap = document.getElementById('replyTiketPreviewWrap');
         const replyTiketPreview = document.getElementById('replyTiketPreview');
+
+        function initSearchableSelects() {
+            document.querySelectorAll('.js-searchable-select').forEach(function (select) {
+                if (select.dataset.searchBound === '1') return;
+                select.dataset.searchBound = '1';
+
+                const originalOptions = Array.from(select.options).map(function (opt) {
+                    return { value: opt.value, text: opt.text, selected: opt.selected };
+                });
+
+                const searchInput = document.querySelector('.js-select-search[data-target="' + select.id + '"]');
+                if (!searchInput) return;
+
+                const renderOptions = function (query) {
+                    const q = String(query || '').toLowerCase().trim();
+                    const currentValue = select.value;
+
+                    const filtered = originalOptions.filter(function (opt, idx) {
+                        if (idx === 0) return true;
+                        return opt.text.toLowerCase().includes(q);
+                    });
+
+                    select.innerHTML = '';
+                    filtered.forEach(function (opt) {
+                        const option = document.createElement('option');
+                        option.value = opt.value;
+                        option.textContent = opt.text;
+                        if (opt.value === currentValue) option.selected = true;
+                        select.appendChild(option);
+                    });
+
+                    if (!Array.from(select.options).some(function (opt) { return opt.value === currentValue; })) {
+                        select.selectedIndex = 0;
+                    }
+                };
+
+                searchInput.addEventListener('input', function () {
+                    renderOptions(this.value);
+                });
+            });
+        }
 
         function setReplyTiketPreview(file) {
             if (!replyTiketPreview || !replyTiketPreviewWrap || !file) return;
@@ -867,6 +929,7 @@
         updateNotifStatusText();
         bindAutoResizeTextareas();
         initStaffReplyPenambahanControls();
+        initSearchableSelects();
 
         document.addEventListener('visibilitychange', function () {
             if (!document.hidden) {

@@ -17,6 +17,27 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class DepositFormController extends Controller
 {
+    private function getBankOptions()
+    {
+        $commonBanks = collect(['BCA', 'BNI', 'BRI', 'MANDIRI', 'CIMB', 'PERMATA', 'BSI', 'DANAMON']);
+
+        $existingBanks = Deposit::query()
+            ->whereNotNull('bank')
+            ->where('bank', '!=', '')
+            ->select('bank')
+            ->distinct()
+            ->orderBy('bank')
+            ->pluck('bank');
+
+        return $commonBanks
+            ->merge($existingBanks)
+            ->map(fn ($bank) => trim((string) $bank))
+            ->filter(fn ($bank) => $bank !== '')
+            ->unique()
+            ->sort()
+            ->values();
+    }
+
     private function buildStaffFilteredQuery(
         string $tanggal,
         string $searchSupplier,
@@ -193,6 +214,7 @@ class DepositFormController extends Controller
 
         $suppliers = Supplier::orderBy('nama_supplier')->pluck('nama_supplier');
         $servers = Server::orderBy('nama_server')->pluck('nama_server');
+        $banks = $this->getBankOptions();
         $todayDepositSummary = (clone $baseQuery)
             ->where('jenis_transaksi', 'deposit')
             ->selectRaw('COUNT(*) as total_request, COALESCE(SUM(nominal), 0) as total_nominal')
@@ -205,6 +227,7 @@ class DepositFormController extends Controller
             'items' => $items,
             'suppliers' => $suppliers,
             'servers' => $servers,
+            'banks' => $banks,
             'tanggal' => $tanggal,
             'searchSupplier' => $searchSupplier,
             'serverFilter' => $server,
@@ -435,6 +458,7 @@ class DepositFormController extends Controller
             'form' => $form,
             'suppliers' => Supplier::orderBy('nama_supplier')->pluck('nama_supplier'),
             'servers' => Server::orderBy('nama_server')->pluck('nama_server'),
+            'banks' => $this->getBankOptions(),
         ]);
     }
 
