@@ -406,6 +406,12 @@
                             @endif
                         </div>
                         <div class="col-md-6">
+                            <label class="form-label">Bank Tujuan</label>
+                            <input type="text" name="bank_tujuan" class="form-control" list="bankTujuanRequestList" placeholder="Otomatis dari Reply Tiket" autocomplete="off">
+                            <select id="bankTujuanParsedSelectRequest" class="form-select form-select-sm mt-2 d-none"></select>
+                            <datalist id="bankTujuanRequestList"></datalist>
+                        </div>
+                        <div class="col-md-6">
                             <label class="form-label">Server</label>
                             <input type="text" name="server" class="form-control" list="serverRequestList" placeholder="Ketik server..." autocomplete="off" required>
                             <datalist id="serverRequestList">
@@ -419,11 +425,15 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">No Rekening</label>
-                            <input type="text" name="no_rek" class="form-control" required>
+                            <input type="text" name="no_rek" class="form-control" list="noRekeningRequestList" autocomplete="off" required>
+                            <select id="noRekParsedSelectRequest" class="form-select form-select-sm mt-2 d-none"></select>
+                            <datalist id="noRekeningRequestList"></datalist>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Nama Rekening</label>
-                            <input type="text" name="nama_rekening" class="form-control" required>
+                            <input type="text" name="nama_rekening" class="form-control" list="namaRekeningRequestList" autocomplete="off" required>
+                            <select id="namaRekParsedSelectRequest" class="form-select form-select-sm mt-2 d-none"></select>
+                            <datalist id="namaRekeningRequestList"></datalist>
                         </div>
                         <div class="col-12">
                             <label class="form-label">Reply Tiket</label>
@@ -443,6 +453,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" id="staffRequestDepositResetBtn">Reset</button>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
                     <button type="submit" class="btn btn-primary" id="staffRequestDepositSubmitBtn">Submit</button>
                 </div>
@@ -469,6 +480,7 @@
         const notifStatusEl = document.getElementById('browserNotifStatus');
         const enableNotifBtn = document.getElementById('btnEnableBrowserNotif');
         const staffRequestDepositForm = document.getElementById('staffRequestDepositForm');
+        const staffRequestDepositResetBtn = document.getElementById('staffRequestDepositResetBtn');
         const staffRequestDepositSubmitBtn = document.getElementById('staffRequestDepositSubmitBtn');
         const replyTiketImageInput = document.getElementById('replyTiketImageInput');
         const replyTiketPasteZone = document.getElementById('replyTiketPasteZone');
@@ -888,6 +900,313 @@
         });
 
         setInterval(checkChanges, pollIntervalMs);
+
+        // Auto parse Reply Tiket
+        const parserScope = staffRequestDepositForm || document;
+        const replyTiketInput = parserScope.querySelector('textarea[name="reply_tiket"]');
+        const nominalInput = parserScope.querySelector('input[name="nominal"]');
+        const bankTujuanInput = parserScope.querySelector('input[name="bank_tujuan"]');
+        const noRekInput = parserScope.querySelector('input[name="no_rek"]');
+        const namaRekeningInput = parserScope.querySelector('input[name="nama_rekening"]');
+        const bankTujuanList = document.getElementById('bankTujuanRequestList');
+        const noRekList = document.getElementById('noRekeningRequestList');
+        const namaRekList = document.getElementById('namaRekeningRequestList');
+        const bankTujuanParsedSelect = document.getElementById('bankTujuanParsedSelectRequest');
+        const noRekParsedSelect = document.getElementById('noRekParsedSelectRequest');
+        const namaRekParsedSelect = document.getElementById('namaRekParsedSelectRequest');
+        let parsedBankRekPairs = [];
+
+        function resetStaffRequestDepositFormFields() {
+            if (!staffRequestDepositForm) return;
+
+            staffRequestDepositForm.querySelectorAll('input, textarea, select').forEach(function (el) {
+                if (el.type === 'hidden') return;
+                if (el.type === 'file') {
+                    el.value = '';
+                    return;
+                }
+                if (el.tagName === 'SELECT') {
+                    el.selectedIndex = 0;
+                    return;
+                }
+                el.value = '';
+            });
+
+            const jenisInput = staffRequestDepositForm.querySelector('input[name="jenis_transaksi"]');
+            if (jenisInput) {
+                jenisInput.value = 'deposit';
+            }
+
+            if (bankTujuanList) bankTujuanList.innerHTML = '';
+            if (noRekList) noRekList.innerHTML = '';
+            if (namaRekList) namaRekList.innerHTML = '';
+
+            [bankTujuanParsedSelect, noRekParsedSelect, namaRekParsedSelect].forEach(function (selectEl) {
+                if (!selectEl) return;
+                selectEl.innerHTML = '';
+                selectEl.classList.add('d-none');
+            });
+
+            parsedBankRekPairs = [];
+
+            if (replyTiketPreview) {
+                replyTiketPreview.src = '';
+            }
+            if (replyTiketPreviewWrap) {
+                replyTiketPreviewWrap.style.display = 'none';
+            }
+
+            if (staffRequestDepositForm.dataset.submitting) {
+                delete staffRequestDepositForm.dataset.submitting;
+            }
+            if (staffRequestDepositSubmitBtn) {
+                staffRequestDepositSubmitBtn.disabled = false;
+                staffRequestDepositSubmitBtn.textContent = 'Submit';
+            }
+        }
+
+        if (staffRequestDepositResetBtn) {
+            staffRequestDepositResetBtn.addEventListener('click', resetStaffRequestDepositFormFields);
+        }
+
+        function bindParsedSelect(selectEl, inputEl, options, placeholderLabel) {
+            if (!selectEl || !inputEl) return;
+
+            if (!Array.isArray(options) || options.length <= 1) {
+                selectEl.innerHTML = '';
+                selectEl.classList.add('d-none');
+                return;
+            }
+
+            selectEl.innerHTML = '';
+
+            const placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = placeholderLabel;
+            placeholder.selected = true;
+            selectEl.appendChild(placeholder);
+
+            options.forEach(function (value) {
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = value;
+                selectEl.appendChild(option);
+            });
+
+            selectEl.onchange = function () {
+                if (this.value) {
+                    inputEl.value = this.value;
+                }
+            };
+
+            selectEl.classList.remove('d-none');
+        }
+
+        function syncNoRekFromBank(selectedBank) {
+            const normalizedBank = String(selectedBank || '').toUpperCase().trim();
+            if (!normalizedBank) return;
+
+            const filteredNoreks = parsedBankRekPairs
+                .filter(pair => pair.bank === normalizedBank)
+                .map(pair => pair.norek)
+                .filter((value, index, arr) => arr.indexOf(value) === index);
+
+            if (filteredNoreks.length === 0) return;
+
+            if (noRekList) {
+                noRekList.innerHTML = '';
+                filteredNoreks.forEach(num => {
+                    const opt = document.createElement('option');
+                    opt.value = num;
+                    noRekList.appendChild(opt);
+                });
+            }
+
+            bindParsedSelect(noRekParsedSelect, noRekInput, filteredNoreks, 'Pilih No Rekening hasil parse...');
+
+            if (noRekInput) {
+                noRekInput.value = filteredNoreks[0];
+            }
+        }
+
+        if (bankTujuanInput) {
+            bankTujuanInput.addEventListener('change', function () {
+                syncNoRekFromBank(this.value);
+            });
+            bankTujuanInput.addEventListener('input', function () {
+                syncNoRekFromBank(this.value);
+            });
+        }
+
+        if (replyTiketInput) {
+            replyTiketInput.addEventListener('input', function() {
+                const text = this.value;
+                if (!text) return;
+
+                // Parse Nominal
+                const nominalMatch =
+                    text.match(/(?:Rp\s*\.?|IDR)\s*([0-9][\d\.,]{2,})/i) ||
+                    text.match(/(?:(?:Nominal|Total|Jumlah|Transfer|Sebesar|Senilai|Bayar|Total Pembayaran)[^\d]*?)\s*([\d\.\,]{4,})/i) ||
+                    text.match(/\b(\d{1,3}(?:\.\d{3}){1,3})\b/);
+                if (nominalMatch && nominalInput) {
+                    let nom = nominalMatch[1].replace(/[^0-9]/g, '');
+                    if (nom && !nominalInput.value) {
+                        nominalInput.value = nom;
+                    }
+                }
+
+                        // Parse Nama Rekening Multiple (tangkap nama sesudah a.n. sampai tanda baca terdekat, nama bank, dsb.)
+                        const namaRegex = /(?:a\/n|a\.n\.?|atas\s+nama\s*:?|\bAN\.?\b)\s*[:\-]?\s*(.*?)(?=\s*(?:BCA|BNI|BRI|MANDIRI|BSI|CIMB|MAYBANK|PERMATA|JENIUS|SEABANK|NEO|BNC|BJB|DANAMON|MEGA|JAGO|ALADIN)\b|\s*no\s*rek\b|\s*rekening\b|\s*berita\b|\s*edc|\s*cntr|\s*\||\s*deposit\b|\s*harap\b|\s*konfirmasi\b|\s*batas\b|\s*transfer\b|\(|!+|\.\s*tiket|\.\s*$|,|\.\s[A-Z]|\n|\r|$)/gi;
+                        let parsedNamas = [];
+                        let nMatch;
+                        while ((nMatch = namaRegex.exec(text)) !== null) {
+                            let extracted = nMatch[1]
+                                .trim()
+                                .replace(/^[\s:;,\-|()\[\]]+|[\s:;,\-|()\[\]]+$/g, '')
+                                .replace(/\s{2,}/g, ' ');
+                            if (extracted && extracted.length > 2 && !parsedNamas.includes(extracted)) {
+                                parsedNamas.push(extracted);
+                            }
+                        }
+
+                if (parsedNamas.length > 0) {
+                    if (namaRekeningInput && !namaRekeningInput.value) {
+                        namaRekeningInput.value = parsedNamas[0];
+                    }
+                    if (namaRekList) {
+                        namaRekList.innerHTML = '';
+                        parsedNamas.forEach(ns => {
+                            const opt = document.createElement('option');
+                            opt.value = ns;
+                            namaRekList.appendChild(opt);
+                        });
+                    }
+                }
+                bindParsedSelect(namaRekParsedSelect, namaRekeningInput, parsedNamas, 'Pilih Nama Rekening hasil parse...');
+
+                // Parse Bank and Norek directly without limiting to "Ke Rek:"
+                const bankRegexes = [
+                    /\[(BCA|BNI|BRI|MANDIRI|MNDR|BSI|CIMB|MAYBANK|PERMATA|JENIUS|SEABANK|NEO|BNC|BJB|DANAMON|MEGA|JAGO|ALADIN|OVO|DANA|GOPAY|SHOPEEPAY|LINKAJA|MUAMALAT|BTN|PANIN)(?:\s+\d+)?[^\]]*\]\s*[-:=]?\s*([0-9][0-9\-\s]{4,30})/gi,
+                    /\b(BCA|BNI|BRI|MANDIRI|MNDR|BSI|CIMB|MAYBANK|PERMATA|JENIUS|SEABANK|NEO|BNC|BJB|DANAMON|MEGA|JAGO|ALADIN|OVO|DANA|GOPAY|SHOPEEPAY|LINKAJA|MUAMALAT|BTN|PANIN)\b\s*(?:-|:|=)?\s*([0-9][0-9\-\s]{4,30})/gi,
+                    /\b(BCA|BNI|BRI|MANDIRI|MNDR|BSI|CIMB|MAYBANK|PERMATA|JENIUS|SEABANK|NEO|BNC|BJB|DANAMON|MEGA|JAGO|ALADIN|OVO|DANA|GOPAY|SHOPEEPAY|LINKAJA|MUAMALAT|BTN|PANIN)\b\s*(?:-|:|=)\s*[A-Z]{2,20}\s*(?:-|:|=)\s*([0-9][0-9\-\s]{4,30})/gi,
+                ];
+                const banks = [];
+                const noreks = [];
+                const bankRekPairs = [];
+                bankRegexes.forEach(function (bankRegex) {
+                    let bMatch;
+                    while ((bMatch = bankRegex.exec(text)) !== null) {
+                        let b = bMatch[1].toUpperCase();
+                        if (b === 'MNDR') b = 'MANDIRI';
+                        let r = bMatch[2].replace(/[^0-9]/g, '');
+                        if (r.length >= 5) {
+                            if (!banks.includes(b)) banks.push(b);
+                            if (!noreks.includes(r)) noreks.push(r);
+                            const pairKey = b + '|' + r;
+                            if (!bankRekPairs.some(pair => (pair.bank + '|' + pair.norek) === pairKey)) {
+                                bankRekPairs.push({ bank: b, norek: r });
+                            }
+                        }
+                    }
+                });
+
+                if (banks.length === 0) {
+                    const bankOnlyRegex = /\b(BCA|BNI|BRI|MANDIRI|MNDR|BSI|CIMB|MAYBANK|PERMATA|JENIUS|SEABANK|NEO|BNC|BJB|DANAMON|MEGA|JAGO|ALADIN|MUAMALAT|BTN|PANIN)\b/gi;
+                    let boMatch;
+                    while ((boMatch = bankOnlyRegex.exec(text)) !== null) {
+                        let b = boMatch[1].toUpperCase();
+                        if (b === 'MNDR') b = 'MANDIRI';
+                        if (!banks.includes(b)) banks.push(b);
+                    }
+                }
+
+                if (noreks.length === 0) {
+                    const noRekLabelMatch = text.match(/no\s*rek(?:ening)?\s*[:=\-]?\s*([0-9\-\s]{5,40})/i);
+                    if (noRekLabelMatch) {
+                        const noRekNumber = noRekLabelMatch[1].replace(/[^0-9]/g, '');
+                        if (noRekNumber.length >= 5) {
+                            noreks.push(noRekNumber);
+
+                            const preferredPairBank = banks.includes('BCA')
+                                ? 'BCA'
+                                : (banks[0] || 'BCA');
+
+                            if (!banks.includes(preferredPairBank)) {
+                                banks.push(preferredPairBank);
+                            }
+
+                            bankRekPairs.push({
+                                bank: preferredPairBank,
+                                norek: noRekNumber,
+                            });
+                        }
+                    }
+                }
+
+                if (noreks.length === 0) {
+                    const vaMatch = text.match(/nomor\s*(?:virtual\s*account|va|rekening)\s*[:\-]?\s*([0-9]{8,40})/i);
+                    if (vaMatch) {
+                        const vaNumber = vaMatch[1].replace(/[^0-9]/g, '');
+                        if (vaNumber.length >= 8) {
+                            noreks.push(vaNumber);
+
+                            const preferredPairBank = banks.includes('BCA')
+                                ? 'BCA'
+                                : (banks[0] || 'BCA');
+
+                            if (!banks.includes(preferredPairBank)) {
+                                banks.push(preferredPairBank);
+                            }
+
+                            bankRekPairs.push({
+                                bank: preferredPairBank,
+                                norek: vaNumber,
+                            });
+                        }
+                    }
+                }
+
+                parsedBankRekPairs = bankRekPairs;
+
+                if (banks.length > 0) {
+                    if (bankTujuanList) {
+                        bankTujuanList.innerHTML = '';
+                        banks.forEach(bank => {
+                            const opt = document.createElement('option');
+                            opt.value = bank;
+                            bankTujuanList.appendChild(opt);
+                        });
+                    }
+
+                    if (noRekList) {
+                        noRekList.innerHTML = '';
+                        noreks.forEach(num => {
+                            const opt = document.createElement('option');
+                            opt.value = num;
+                            noRekList.appendChild(opt);
+                        });
+                    }
+
+                    const preferredBank = banks.includes('BCA') ? 'BCA' : banks[0];
+
+                    if (bankTujuanInput) bankTujuanInput.value = preferredBank;
+                    syncNoRekFromBank(preferredBank);
+                }
+
+                bindParsedSelect(bankTujuanParsedSelect, bankTujuanInput, banks, 'Pilih Bank Tujuan hasil parse...');
+
+                if (bankTujuanParsedSelect && !bankTujuanParsedSelect.classList.contains('d-none')) {
+                    const preferredBank = banks.includes('BCA') ? 'BCA' : banks[0];
+                    bankTujuanParsedSelect.value = preferredBank || '';
+                    bankTujuanParsedSelect.onchange = function () {
+                        if (this.value) {
+                            bankTujuanInput.value = this.value;
+                            syncNoRekFromBank(this.value);
+                        }
+                    };
+                }
+            });
+        }
     })();
 </script>
 @endpush

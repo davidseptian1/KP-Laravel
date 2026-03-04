@@ -31,6 +31,7 @@ class StaffDepositRequestExport implements FromArray, WithHeadings, ShouldAutoSi
             'JENIS',
             'NOMINAL',
             'BANK',
+            'BANK TUJUAN',
             'SERVER',
             'NOREK',
             'NAMA REKENING',
@@ -76,6 +77,7 @@ class StaffDepositRequestExport implements FromArray, WithHeadings, ShouldAutoSi
                 strtoupper((string) ($item->jenis_transaksi ?? 'deposit')),
                 'Rp ' . number_format((float) ($item->nominal ?? 0), 0, ',', '.'),
                 $item->bank,
+                $item->bank_tujuan ?? '-',
                 $item->server,
                 $item->no_rek,
                 $item->nama_rekening,
@@ -87,10 +89,10 @@ class StaffDepositRequestExport implements FromArray, WithHeadings, ShouldAutoSi
             ];
         }
 
-        $rows[] = array_fill(0, 13, '');
-        $rows[] = ['Total Keseluruhan Deposit', '', '', 'Rp ' . number_format($this->totalDeposit, 0, ',', '.'), '', '', '', '', '', '', '', '', ''];
-        $rows[] = ['Jam Laporan Download', '', '', $this->downloadedAt->format('d/m/Y H:i:s'), '', '', '', '', '', '', '', '', ''];
-        $rows[] = ['Email Staff', '', '', $this->staffEmail, '', '', '', '', '', '', '', '', ''];
+        $rows[] = array_fill(0, 14, '');
+        $rows[] = ['Total Keseluruhan Deposit', '', '', 'Rp ' . number_format($this->totalDeposit, 0, ',', '.'), '', '', '', '', '', '', '', '', '', ''];
+        $rows[] = ['Jam Laporan Download', '', '', $this->downloadedAt->format('d/m/Y H:i:s'), '', '', '', '', '', '', '', '', '', ''];
+        $rows[] = ['Email Staff', '', '', $this->staffEmail, '', '', '', '', '', '', '', '', '', ''];
 
         return $rows;
     }

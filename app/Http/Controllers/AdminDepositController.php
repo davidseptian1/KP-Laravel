@@ -312,7 +312,8 @@ class AdminDepositController extends Controller
                   ->orWhere('no_rek', 'like', "%{$globalSearch}%")
                   ->orWhere('nama_rekening', 'like', "%{$globalSearch}%")
                   ->orWhere('server', 'like', "%{$globalSearch}%")
-                  ->orWhere('bank', 'like', "%{$globalSearch}%");
+                                    ->orWhere('bank', 'like', "%{$globalSearch}%")
+                                    ->orWhere('bank_tujuan', 'like', "%{$globalSearch}%");
             });
         }
 
@@ -430,6 +431,7 @@ class AdminDepositController extends Controller
             'jenis_transaksi' => 'required|in:deposit,hutang',
             'nominal' => 'required|numeric|min:1',
             'bank' => 'required|string|max:100',
+            'bank_tujuan' => 'nullable|string|max:100',
             'server' => 'required|string|max:100',
             'no_rek' => 'required|regex:/^[0-9]+$/|max:100',
             'nama_rekening' => 'required|string|max:255',
@@ -447,6 +449,11 @@ class AdminDepositController extends Controller
         $item->jenis_transaksi = $validated['jenis_transaksi'];
         $item->nominal = $validated['nominal'];
         $item->bank = $validated['bank'];
+        if (array_key_exists('bank_tujuan', $validated)) {
+            $item->bank_tujuan = trim((string) ($validated['bank_tujuan'] ?? '')) !== ''
+                ? trim((string) $validated['bank_tujuan'])
+                : null;
+        }
         $item->server = $validated['server'];
         $item->no_rek = $validated['no_rek'];
         $item->nama_rekening = $validated['nama_rekening'];

@@ -131,12 +131,10 @@ Route::middleware('checkLogin')->group(function () {
 
     // Deposit Request (User)
     Route::get('deposit/request', [DepositFormController::class, 'index'])->name('deposit.request.index');
-    Route::get('deposit/request/changes', [DepositFormController::class, 'changes'])->name('deposit.request.changes');
+    Route::post('deposit/request', [DepositFormController::class, 'storeFromRequestPage'])->name('deposit.request.store');
     Route::get('deposit/request/export-excel', [DepositFormController::class, 'exportExcel'])->name('deposit.request.export-excel');
     Route::get('deposit/request/export-pdf', [DepositFormController::class, 'exportPdf'])->name('deposit.request.export-pdf');
-    Route::post('deposit/request', [DepositFormController::class, 'storeFromRequestPage'])->name('deposit.request.store');
-    Route::put('deposit/request/{id}/delete', [DepositFormController::class, 'markDeleted'])->name('deposit.request.delete');
-    Route::get('deposit/request/{id}/transfer-admin-image', [DepositFormController::class, 'viewTransferAdminImage'])->name('deposit.request.transfer-admin-image');
+    Route::get('deposit/request/changes', [DepositFormController::class, 'changes'])->name('deposit.request.changes');
     Route::put('deposit/request/{id}/reply-penambahan', [DepositFormController::class, 'updateReplyPenambahan'])->name('deposit.request.reply.update');
     
     // Import status polling
@@ -261,16 +259,9 @@ Route::middleware('checkLogin')->group(function () {
         Route::post('admin/deposit/forms', [AdminDepositFormController::class, 'store'])->name('admin.deposit.forms.store');
         Route::put('admin/deposit/forms/{id}/toggle', [AdminDepositFormController::class, 'toggle'])->name('admin.deposit.forms.toggle');
         Route::get('admin/deposit/monitoring', [AdminDepositController::class, 'monitoring'])->name('admin.deposit.monitoring');
-        Route::get('admin/deposit/monitoring/changes', [AdminDepositController::class, 'changes'])->name('admin.deposit.monitoring.changes');
-        Route::get('admin/deposit/monitoring/export-excel', [AdminDepositController::class, 'exportExcel'])->name('admin.deposit.monitoring.export-excel');
-        Route::get('admin/deposit/monitoring/export-pdf', [AdminDepositController::class, 'exportPdf'])->name('admin.deposit.monitoring.export-pdf');
-        Route::post('admin/deposit/import-manual', [AdminDepositController::class, 'importManual'])->name('admin.deposit.import-manual');
         Route::put('admin/deposit/{id}', [AdminDepositController::class, 'update'])->name('admin.deposit.update');
         Route::put('admin/deposit/{id}/details', [AdminDepositController::class, 'updateDetails'])->name('admin.deposit.update-details');
         Route::put('admin/deposit/{id}/status', [AdminDepositController::class, 'updateStatus'])->name('admin.deposit.update-status');
-        Route::get('admin/deposit/{id}/reply-tiket-image', [AdminDepositController::class, 'viewReplyTiketImage'])->name('admin.deposit.reply-tiket-image');
-        Route::get('admin/deposit/{id}/reply-image', [AdminDepositController::class, 'viewReplyImage'])->name('admin.deposit.reply-image');
-        Route::get('admin/deposit/{id}/transfer-admin-image', [AdminDepositController::class, 'viewTransferAdminImage'])->name('admin.deposit.transfer-admin-image');
         Route::delete('admin/deposit/{id}', [AdminDepositController::class, 'destroy'])->name('admin.deposit.destroy');
 
         // Create Minusan

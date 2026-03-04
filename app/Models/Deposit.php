@@ -19,6 +19,7 @@ class Deposit extends Model
         'jenis_transaksi',
         'nominal',
         'bank',
+        'bank_tujuan',
         'server',
         'no_rek',
         'nama_rekening',

@@ -2,182 +2,65 @@
 
 namespace App\Http\Controllers;
 
-use App\Exports\StaffDepositRequestExport;
+use App\Exports\DepositMonitoringExport;
 use App\Models\Bank;
 use App\Models\Deposit;
 use App\Models\DepositForm;
 use App\Models\NotificationItem;
 use App\Models\Server;
 use App\Models\Supplier;
-use Barryvdh\DomPDF\Facade\Pdf;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
+use Carbon\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class DepositFormController extends Controller
 {
-    private function getBankOptions()
+    private function buildStaffDepositQuery(Request $request)
     {
-        return Bank::query()
-            ->select('nama_bank')
-            ->orderBy('nama_bank')
-            ->pluck('nama_bank')
-            ->map(fn ($bank) => trim((string) $bank))
-            ->filter(fn ($bank) => $bank !== '')
-            ->unique()
-            ->sort()
-            ->values();
-    }
+        $tanggal = $request->input('tanggal', now()->format('Y-m-d'));
+        $serverFilter = (string) $request->input('server', '');
+        $status = (string) $request->input('status', '');
+        $searchSupplier = (string) $request->input('search_supplier', '');
+        $nominalFilter = (string) $request->input('nominal', '');
 
-    private function buildStaffFilteredQuery(
-        string $tanggal,
-        string $searchSupplier,
-        string $server,
-        ?string $status,
-        string $normalizedNominalFilter
-    ) {
-        return Deposit::where('user_id', Auth::id())
-            ->where(function ($q) {
-                $q->where('is_deleted_by_staff', false)
-                    ->orWhereNull('is_deleted_by_staff');
-            })
-            ->whereDate('created_at', $tanggal)
-            ->when($server !== '', function ($q) use ($server) {
-                $q->where('server', 'like', '%' . $server . '%');
-            })
-            ->when($searchSupplier !== '', function ($q) use ($searchSupplier) {
-                $q->where('nama_supplier', 'like', '%' . $searchSupplier . '%');
-            })
-            ->when($status, function ($q) use ($status) {
-                $q->where('status', $status);
-            })
-            ->when($normalizedNominalFilter !== '', function ($q) use ($normalizedNominalFilter) {
-                $q->where('nominal', (float) $normalizedNominalFilter);
-            });
-    }
+        $query = Deposit::where('user_id', Auth::id())
+            ->whereDate('created_at', $tanggal);
 
-    private function normalizeNumericFields(Request $request): void
-    {
-        $rawNominal = (string) $request->input('nominal', '');
-        $rawNoRek = (string) $request->input('no_rek', '');
+        if ($serverFilter !== '') {
+            $query->where('server', $serverFilter);
+        }
 
-        $normalizedNominal = preg_replace('/[^0-9]/', '', $rawNominal);
-        $normalizedNoRek = preg_replace('/[^0-9]/', '', $rawNoRek);
+        if ($status !== '') {
+            $query->where('status', $status);
+        }
 
-        $request->merge([
-            'nominal' => $normalizedNominal,
-            'no_rek' => $normalizedNoRek,
-        ]);
-    }
+        if ($searchSupplier !== '') {
+            $query->where('nama_supplier', 'like', '%' . $searchSupplier . '%');
+        }
 
-    private function buildExportContext(Request $request): array
-    {
-        $validated = $request->validate([
-            'tanggal' => 'nullable|date_format:Y-m-d',
-            'search_supplier' => 'nullable|string|max:255',
-            'server' => 'nullable|string|max:100',
-            'status' => 'nullable|in:pending,approved,rejected,selesai',
-            'nominal' => 'nullable|string|max:50',
-            'per_page' => 'nullable|integer|in:10,25,50,100',
-        ]);
+        if ($nominalFilter !== '') {
+            $normalizedNominal = preg_replace('/[^0-9]/', '', $nominalFilter);
+            if ($normalizedNominal !== '') {
+                $query->where('nominal', (float) $normalizedNominal);
+            }
+        }
 
-        $tanggal = $validated['tanggal'] ?? now()->format('Y-m-d');
-        $searchSupplier = trim((string) ($validated['search_supplier'] ?? ''));
-        $server = trim((string) ($validated['server'] ?? ''));
-        $status = $validated['status'] ?? null;
-        $nominalFilter = trim((string) ($validated['nominal'] ?? ''));
-        $normalizedNominalFilter = preg_replace('/[^0-9]/', '', $nominalFilter);
-        $perPage = (int) ($validated['per_page'] ?? 10);
-
-        $baseQuery = $this->buildStaffFilteredQuery(
-            $tanggal,
-            $searchSupplier,
-            $server,
-            $status,
-            $normalizedNominalFilter
-        );
-
-        $items = (clone $baseQuery)
-            ->orderByDesc('created_at')
-            ->orderByDesc('id')
-            ->get();
-
-        $totalDeposit = (clone $baseQuery)
-            ->where('jenis_transaksi', 'deposit')
-            ->sum('nominal');
-
-        $user = Auth::user();
-        $staffEmail = strtolower((string) ($user->email ?? 'staff'));
-        $safeEmail = preg_replace('/[^a-z0-9\._-]/i', '_', $staffEmail);
-
-        return [
-            'filters' => [
-                'tanggal' => $tanggal,
-                'search_supplier' => $searchSupplier,
-                'server' => $server,
-                'status' => $status,
-                'nominal' => $nominalFilter,
-            ],
-            'items' => $items,
-            'total_deposit' => (float) $totalDeposit,
-            'downloaded_at' => now(),
-            'staff_email' => $staffEmail,
-            'safe_email' => $safeEmail,
-        ];
-    }
-
-    public function exportExcel(Request $request)
-    {
-        $context = $this->buildExportContext($request);
-        $tanggal = $context['filters']['tanggal'];
-
-        return Excel::download(
-            new StaffDepositRequestExport(
-                $context['items'],
-                $context['total_deposit'],
-                $context['downloaded_at'],
-                $context['staff_email']
-            ),
-            'Request-Deposit-' . $context['safe_email'] . '-' . $tanggal . '.xlsx'
-        );
-    }
-
-    public function exportPdf(Request $request)
-    {
-        $context = $this->buildExportContext($request);
-        $tanggal = $context['filters']['tanggal'];
-
-        $pdf = Pdf::loadView('staff.deposit.pdf', [
-            'items' => $context['items'],
-            'filters' => $context['filters'],
-            'totalDeposit' => $context['total_deposit'],
-            'downloadedAt' => $context['downloaded_at'],
-            'staffEmail' => $context['staff_email'],
-        ])->setPaper('a4', 'landscape');
-
-        return $pdf->stream('Request-Deposit-' . $context['safe_email'] . '-' . $tanggal . '.pdf');
+        return $query;
     }
 
     public function index(Request $request)
     {
-        $validated = $request->validate([
-            'tanggal' => 'nullable|date_format:Y-m-d',
-            'search_supplier' => 'nullable|string|max:255',
-            'server' => 'nullable|string|max:100',
-            'status' => 'nullable|in:pending,approved,rejected,selesai',
-            'nominal' => 'nullable|string|max:50',
-            'per_page' => 'nullable|integer|in:10,25,50,100',
-        ]);
-
-        $tanggal = $validated['tanggal'] ?? now()->format('Y-m-d');
-        $searchSupplier = trim((string) ($validated['search_supplier'] ?? ''));
-        $server = trim((string) ($validated['server'] ?? ''));
-        $status = $validated['status'] ?? null;
-        $nominalFilter = trim((string) ($validated['nominal'] ?? ''));
-        $normalizedNominalFilter = preg_replace('/[^0-9]/', '', $nominalFilter);
-        $perPage = (int) ($validated['per_page'] ?? 10);
+        $tanggal = $request->input('tanggal', now()->format('Y-m-d'));
+        $serverFilter = $request->input('server', '');
+        $status = $request->input('status', '');
+        $searchSupplier = $request->input('search_supplier', '');
+        $nominalFilter = $request->input('nominal', '');
+        $perPage = (int) $request->input('per_page', 10);
+        if (!in_array($perPage, [10, 25, 50, 100], true)) {
+            $perPage = 10;
+        }
 
         $activeForms = DepositForm::where('is_active', true)
             ->where(function ($q) {
@@ -187,31 +70,18 @@ class DepositFormController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
-        $baseQuery = $this->buildStaffFilteredQuery(
-            $tanggal,
-            $searchSupplier,
-            $server,
-            $status,
-            $normalizedNominalFilter
-        );
+        $itemsQuery = $this->buildStaffDepositQuery($request);
 
-        $query = (clone $baseQuery)
+        $latestUpdatedAt = (clone $itemsQuery)->max('updated_at');
+
+        $items = $itemsQuery
             ->orderByDesc('created_at')
-            ->orderByDesc('id')
-            ;
-
-        $latestUpdatedAt = (clone $query)->max('updated_at');
-        $latestActivityItem = (clone $query)->first();
-
-        $items = $query->paginate($perPage)->withQueryString();
+            ->paginate($perPage)
+            ->withQueryString();
 
         $suppliers = Supplier::orderBy('nama_supplier')->pluck('nama_supplier');
+        $banks = Bank::orderBy('nama_bank')->pluck('nama_bank');
         $servers = Server::orderBy('nama_server')->pluck('nama_server');
-        $banks = $this->getBankOptions();
-        $todayDepositSummary = (clone $baseQuery)
-            ->where('jenis_transaksi', 'deposit')
-            ->selectRaw('COUNT(*) as total_request, COALESCE(SUM(nominal), 0) as total_nominal')
-            ->first();
 
         return view('staff.deposit.index', [
             'title' => 'Request Deposit',
@@ -219,91 +89,98 @@ class DepositFormController extends Controller
             'activeForms' => $activeForms,
             'items' => $items,
             'suppliers' => $suppliers,
-            'servers' => $servers,
             'banks' => $banks,
+            'servers' => $servers,
             'tanggal' => $tanggal,
-            'searchSupplier' => $searchSupplier,
-            'serverFilter' => $server,
+            'serverFilter' => $serverFilter,
             'status' => $status,
+            'searchSupplier' => $searchSupplier,
             'nominalFilter' => $nominalFilter,
             'perPage' => $perPage,
             'latestUpdatedAt' => $latestUpdatedAt,
-            'latestActivityItem' => $latestActivityItem,
-            'todayDepositSummary' => $todayDepositSummary,
         ]);
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $items = $this->buildStaffDepositQuery($request)
+            ->orderByDesc('created_at')
+            ->get();
+
+        $tanggal = $request->input('tanggal', now()->format('Y-m-d'));
+
+        return Excel::download(
+            new DepositMonitoringExport($items),
+            'Request-Deposit-' . $tanggal . '.xlsx'
+        );
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $items = $this->buildStaffDepositQuery($request)
+            ->orderByDesc('created_at')
+            ->get();
+
+        $tanggal = $request->input('tanggal', now()->format('Y-m-d'));
+        $rangeLabel = $tanggal;
+
+        $pdf = Pdf::loadView('admin.deposit.pdf', [
+            'items' => $items,
+            'rangeLabel' => $rangeLabel,
+        ])->setPaper('a4', 'landscape');
+
+        return $pdf->stream('Request-Deposit-' . $tanggal . '.pdf');
     }
 
     public function changes(Request $request)
     {
-        $validated = $request->validate([
-            'since' => 'nullable|date',
+        $request->validate([
             'tanggal' => 'nullable|date_format:Y-m-d',
-            'search_supplier' => 'nullable|string|max:255',
             'server' => 'nullable|string|max:100',
             'status' => 'nullable|in:pending,approved,rejected,selesai',
+            'search_supplier' => 'nullable|string|max:255',
             'nominal' => 'nullable|string|max:50',
+            'since' => 'nullable|date',
         ]);
 
-        $since = !empty($validated['since']) ? Carbon::parse($validated['since']) : now()->subMinutes(1);
-        $tanggal = $validated['tanggal'] ?? now()->format('Y-m-d');
-        $searchSupplier = trim((string) ($validated['search_supplier'] ?? ''));
-        $server = trim((string) ($validated['server'] ?? ''));
-        $status = $validated['status'] ?? null;
-        $nominalFilter = trim((string) ($validated['nominal'] ?? ''));
-        $normalizedNominalFilter = preg_replace('/[^0-9]/', '', $nominalFilter);
-
-        $baseQuery = $this->buildStaffFilteredQuery(
-            $tanggal,
-            $searchSupplier,
-            $server,
-            $status,
-            $normalizedNominalFilter
-        );
-
-        $query = (clone $baseQuery)
-            ->orderByDesc('created_at')
-            ->orderByDesc('id');
-
-        $changedQuery = (clone $query)
-            ->where('updated_at', '>', $since);
-
-        $changesCount = (clone $changedQuery)->count();
-
-        $latestChangedItem = (clone $changedQuery)
-            ->orderByDesc('updated_at')
-            ->orderByDesc('id')
-            ->first();
+        $query = $this->buildStaffDepositQuery($request);
 
         $latestUpdatedAt = (clone $query)->max('updated_at');
-        $latestActivityItem = (clone $query)->first();
-        $todayDepositSummary = (clone $baseQuery)
-            ->where('jenis_transaksi', 'deposit')
+        $latestActivityItem = (clone $query)->orderByDesc('updated_at')->orderByDesc('id')->first();
+        $todayDepositSummary = (clone $query)
             ->selectRaw('COUNT(*) as total_request, COALESCE(SUM(nominal), 0) as total_nominal')
             ->first();
 
+        $since = $request->filled('since') ? Carbon::parse((string) $request->input('since')) : null;
+        $changedItems = collect();
+
+        if ($since) {
+            $changedItems = (clone $query)
+                ->where('updated_at', '>', $since)
+                ->orderByDesc('updated_at')
+                ->limit(50)
+                ->get();
+        }
+
+        $hasChanges = $since ? $changedItems->isNotEmpty() : false;
+
+        $latestChangedItem = $changedItems->first();
         $changeTitle = null;
         $changeDescription = null;
-        $changedItemsPayload = [];
 
         if ($latestChangedItem) {
             $changeTitle = 'Ada perubahan Deposit ' . ($latestChangedItem->server ?: '-');
-
             $descriptions = [];
 
             if (!empty($latestChangedItem->status)) {
                 $descriptions[] = 'Status: ' . ucfirst((string) $latestChangedItem->status);
             }
-
             if (!empty($latestChangedItem->reply_penambahan) && $latestChangedItem->reply_penambahan !== 'Menunggu Konfirmasi Admin') {
-                $replyText = trim((string) $latestChangedItem->reply_penambahan);
-                $descriptions[] = 'Bukti Penambahan: ' . mb_strimwidth($replyText, 0, 80, '...');
+                $descriptions[] = 'Bukti Penambahan: ' . mb_strimwidth(trim((string) $latestChangedItem->reply_penambahan), 0, 80, '...');
             }
-
             if (($latestChangedItem->bukti_transfer_admin_type ?? null) === 'text' && !empty($latestChangedItem->bukti_transfer_admin_text)) {
-                $buktiText = trim((string) $latestChangedItem->bukti_transfer_admin_text);
-                $descriptions[] = 'Bukti Transfer Admin: ' . mb_strimwidth($buktiText, 0, 80, '...');
+                $descriptions[] = 'Bukti Transfer Admin: ' . mb_strimwidth(trim((string) $latestChangedItem->bukti_transfer_admin_text), 0, 80, '...');
             }
-
             if (($latestChangedItem->bukti_transfer_admin_type ?? null) === 'image' && !empty($latestChangedItem->bukti_transfer_admin_image)) {
                 $descriptions[] = 'Bukti Transfer Admin: gambar diperbarui';
             }
@@ -313,91 +190,60 @@ class DepositFormController extends Controller
                 : 'Ada perubahan data oleh admin.';
         }
 
-        $changedItems = (clone $changedQuery)
-            ->orderByDesc('updated_at')
-            ->orderByDesc('id')
-            ->limit(20)
-            ->get([
-                'id',
-                'nama_supplier',
-                'nama_rekening',
-                'reply_tiket',
-                'reply_penambahan',
-                'bukti_transfer_admin_type',
-                'bukti_transfer_admin_text',
-                'bukti_transfer_admin_image',
-                'status',
-                'jam',
-                'updated_at',
-            ]);
+        $latestCardHtml = null;
+        $todayTotalCardHtml = null;
 
-        foreach ($changedItems as $changedItem) {
-            $changedItemsPayload[] = [
-                'id' => $changedItem->id,
-                'nama_supplier' => $changedItem->nama_supplier,
-                'nama_rekening' => $changedItem->nama_rekening,
-                'reply_tiket' => $changedItem->reply_tiket,
-                'reply_penambahan' => $changedItem->reply_penambahan,
-                'bukti_transfer_admin_type' => $changedItem->bukti_transfer_admin_type,
-                'bukti_transfer_admin_text' => $changedItem->bukti_transfer_admin_text,
-                'has_bukti_transfer_admin_image' => !empty($changedItem->bukti_transfer_admin_image),
-                'status' => $changedItem->status,
-                'jam' => $changedItem->jam ? Carbon::parse($changedItem->jam)->format('H:i') : '-',
-                'updated_at' => $changedItem->updated_at,
-            ];
+        if ($hasChanges) {
+            $latestCardHtml = view('staff.deposit.partials.latest-activity-card', [
+                'latestActivityItem' => $latestActivityItem,
+            ])->render();
+
+            $todayTotalCardHtml = view('staff.deposit.partials.today-total-card', [
+                'todayDepositSummary' => $todayDepositSummary,
+            ])->render();
         }
 
         return response()->json([
-            'has_changes' => $changesCount > 0,
-            'changes_count' => $changesCount,
+            'has_changes' => $hasChanges,
+            'changes_count' => $changedItems->count(),
             'latest_updated_at' => $latestUpdatedAt,
-            'latest_card_html' => view('staff.deposit.partials.latest-activity-card', [
-                'latestActivityItem' => $latestActivityItem,
-            ])->render(),
-            'today_total_card_html' => view('staff.deposit.partials.today-total-card', [
-                'todayDepositSummary' => $todayDepositSummary,
-            ])->render(),
             'change_title' => $changeTitle,
             'change_description' => $changeDescription,
-            'changed_items' => $changedItemsPayload,
+            'latest_card_html' => $latestCardHtml,
+            'today_total_card_html' => $todayTotalCardHtml,
+            'changed_items' => $changedItems->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'nama_supplier' => $item->nama_supplier,
+                    'nama_rekening' => $item->nama_rekening,
+                    'reply_tiket' => $item->reply_tiket,
+                    'reply_penambahan' => $item->reply_penambahan,
+                    'bukti_transfer_admin_type' => $item->bukti_transfer_admin_type,
+                    'bukti_transfer_admin_text' => $item->bukti_transfer_admin_text,
+                    'has_bukti_transfer_admin_image' => !empty($item->bukti_transfer_admin_image),
+                    'status' => $item->status,
+                    'jam' => $item->jam,
+                ];
+            })->values(),
             'server_time' => now()->toDateTimeString(),
         ]);
     }
 
-    public function viewTransferAdminImage(int $id)
-    {
-        $item = Deposit::where('id', $id)
-            ->where('user_id', Auth::id())
-            ->firstOrFail();
-
-        $path = $item->bukti_transfer_admin_image;
-        if (!$path || !Storage::disk('local')->exists($path)) {
-            return redirect()->route('deposit.request.index')->with('error', 'Bukti transfer admin tidak ditemukan');
-        }
-
-        return Storage::disk('local')->response($path);
-    }
-
     public function storeFromRequestPage(Request $request)
     {
-        $this->normalizeNumericFields($request);
-
         $validated = $request->validate([
             'form_id' => 'nullable|exists:deposit_forms,id',
             'nama_supplier' => 'required|string|max:255|exists:suppliers,nama_supplier',
             'jenis_transaksi' => 'required|in:deposit,hutang',
             'nominal' => 'required|numeric|min:1',
             'bank' => 'required|string|max:100|exists:banks,nama_bank',
+            'bank_tujuan' => 'nullable|string|max:100',
             'server' => 'required|string|max:100|exists:servers,nama_server',
             'no_rek' => 'required|regex:/^[0-9]+$/|max:100',
             'nama_rekening' => 'required|string|max:255',
             'reply_tiket' => 'nullable|string',
-            'reply_tiket_image' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:5120',
+            'jam' => 'required|date_format:H:i',
         ]);
-
-        $replyTiketImagePath = $request->hasFile('reply_tiket_image')
-            ? $request->file('reply_tiket_image')->store('deposit/reply-tiket', 'local')
-            : null;
 
         $formId = $validated['form_id'] ?? DepositForm::where('is_active', true)
             ->where(function ($q) {
@@ -413,14 +259,14 @@ class DepositFormController extends Controller
             'jenis_transaksi' => $validated['jenis_transaksi'],
             'nominal' => $validated['nominal'],
             'bank' => $validated['bank'],
+            'bank_tujuan' => trim((string) ($validated['bank_tujuan'] ?? '')) !== '' ? trim((string) $validated['bank_tujuan']) : null,
             'server' => $validated['server'],
             'no_rek' => $validated['no_rek'],
             'nama_rekening' => $validated['nama_rekening'],
             'reply_tiket' => $validated['reply_tiket'] ?? null,
-            'reply_tiket_image' => $replyTiketImagePath,
             'reply_penambahan' => 'Menunggu Konfirmasi Admin',
             'status' => 'pending',
-            'jam' => now()->format('H:i'),
+            'jam' => $validated['jam'],
         ]);
 
         NotificationItem::create([
@@ -450,8 +296,8 @@ class DepositFormController extends Controller
             'menuDeposit' => 'active',
             'form' => $form,
             'suppliers' => Supplier::orderBy('nama_supplier')->pluck('nama_supplier'),
+            'banks' => Bank::orderBy('nama_bank')->pluck('nama_bank'),
             'servers' => Server::orderBy('nama_server')->pluck('nama_server'),
-            'banks' => $this->getBankOptions(),
         ]);
     }
 
@@ -467,17 +313,17 @@ class DepositFormController extends Controller
             abort(404, 'Form sudah kedaluwarsa');
         }
 
-        $this->normalizeNumericFields($request);
-
         $validated = $request->validate([
             'nama_supplier' => 'required|string|max:255|exists:suppliers,nama_supplier',
             'jenis_transaksi' => 'required|in:deposit,hutang',
             'nominal' => 'required|numeric|min:0',
             'bank' => 'required|string|max:100|exists:banks,nama_bank',
+            'bank_tujuan' => 'nullable|string|max:100',
             'server' => 'required|string|max:100|exists:servers,nama_server',
             'no_rek' => 'required|regex:/^[0-9]+$/|max:100',
             'nama_rekening' => 'required|string|max:255',
             'reply_tiket' => 'nullable|string',
+            'jam' => 'required|date_format:H:i',
         ]);
 
         $deposit = Deposit::create([
@@ -487,13 +333,14 @@ class DepositFormController extends Controller
             'jenis_transaksi' => $validated['jenis_transaksi'],
             'nominal' => $validated['nominal'],
             'bank' => $validated['bank'],
+            'bank_tujuan' => trim((string) ($validated['bank_tujuan'] ?? '')) !== '' ? trim((string) $validated['bank_tujuan']) : null,
             'server' => $validated['server'],
             'no_rek' => $validated['no_rek'],
             'nama_rekening' => $validated['nama_rekening'],
             'reply_tiket' => $validated['reply_tiket'] ?? null,
             'reply_penambahan' => 'Menunggu Konfirmasi Admin',
             'status' => 'pending',
-            'jam' => now()->format('H:i'),
+            'jam' => $validated['jam'],
         ]);
 
         $adminNumber = config('whatsapp.admin_numbers.0') ?: '-';
@@ -502,6 +349,7 @@ class DepositFormController extends Controller
             "Jenis        : " . strtoupper($deposit->jenis_transaksi) . "\n" .
             "Nominal      : " . number_format((float) $deposit->nominal, 0, ',', '.') . "\n" .
             "BANK         : {$deposit->bank}\n" .
+            "BANK TUJUAN  : " . ($deposit->bank_tujuan ?: '-') . "\n" .
             "SERVER       : {$deposit->server}\n" .
             "No. Rek      : {$deposit->no_rek}\n" .
             "Nama Rek     : {$deposit->nama_rekening}\n" .
@@ -519,9 +367,7 @@ class DepositFormController extends Controller
     public function updateReplyPenambahan(Request $request, int $id)
     {
         $validated = $request->validate([
-            'reply_penambahan_type' => 'required|in:text,image',
-            'reply_penambahan' => 'nullable|string',
-            'reply_penambahan_image' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:5120',
+            'reply_penambahan' => 'required|string',
         ]);
 
         $item = Deposit::where('id', $id)
@@ -532,72 +378,9 @@ class DepositFormController extends Controller
             return redirect()->route('deposit.request.index')->with('error', 'Request belum approved oleh admin');
         }
 
-        $type = $validated['reply_penambahan_type'];
-        $textReply = trim((string) ($validated['reply_penambahan'] ?? ''));
-
-        if ($type === 'image') {
-            if ($request->hasFile('reply_penambahan_image')) {
-                if ($item->reply_penambahan_image && Storage::disk('local')->exists($item->reply_penambahan_image)) {
-                    Storage::disk('local')->delete($item->reply_penambahan_image);
-                }
-
-                $path = $request->file('reply_penambahan_image')->store('deposit/reply-penambahan', 'local');
-                $item->reply_penambahan_image = $path;
-            }
-
-            if (!$item->reply_penambahan_image) {
-                return redirect()->route('deposit.request.index')->with('error', 'Upload atau paste gambar reply penambahan terlebih dahulu.');
-            }
-
-            $item->reply_penambahan_type = 'image';
-            $item->reply_penambahan = $textReply !== '' ? $textReply : 'Reply penambahan berupa gambar';
-        } else {
-            if ($textReply === '') {
-                return redirect()->route('deposit.request.index')->with('error', 'Reply penambahan wajib diisi untuk tipe text.');
-            }
-
-            if ($item->reply_penambahan_image && Storage::disk('local')->exists($item->reply_penambahan_image)) {
-                Storage::disk('local')->delete($item->reply_penambahan_image);
-            }
-
-            $item->reply_penambahan_type = 'text';
-            $item->reply_penambahan_image = null;
-            $item->reply_penambahan = $textReply;
-        }
-
+        $item->reply_penambahan = $validated['reply_penambahan'];
         $item->save();
 
         return redirect()->route('deposit.request.index')->with('success', 'Reply Penambahan berhasil diupdate');
-    }
-
-    public function markDeleted(Request $request, int $id)
-    {
-        $validated = $request->validate([
-            'delete_note' => 'required|string|max:500',
-        ], [
-            'delete_note.required' => 'Alasan penghapusan wajib diisi.',
-        ]);
-
-        $item = Deposit::where('id', $id)
-            ->where('user_id', Auth::id())
-            ->firstOrFail();
-
-        if (($item->status ?? 'pending') !== 'pending') {
-            return redirect()->route('deposit.request.index')->with('error', 'Hanya request dengan status pending yang bisa dihapus oleh staff.');
-        }
-
-        $item->is_deleted_by_staff = true;
-        $item->staff_deleted_note = trim((string) $validated['delete_note']);
-        $item->staff_deleted_at = now();
-        $item->save();
-
-        NotificationItem::create([
-            'type' => 'deposit_request_deleted_by_staff',
-            'reference_id' => $item->id,
-            'message' => 'Request deposit dihapus staff: ' . $item->nama_supplier,
-            'is_read' => false,
-        ]);
-
-        return redirect()->route('deposit.request.index')->with('success', 'Request pending berhasil dihapus dari daftar staff dan tetap tercatat untuk admin.');
     }
 }
