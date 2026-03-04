@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Exports\StaffDepositRequestExport;
+use App\Models\Bank;
 use App\Models\Deposit;
 use App\Models\DepositForm;
 use App\Models\NotificationItem;
@@ -19,18 +20,10 @@ class DepositFormController extends Controller
 {
     private function getBankOptions()
     {
-        $commonBanks = collect(['BCA', 'BNI', 'BRI', 'MANDIRI', 'CIMB', 'PERMATA', 'BSI', 'DANAMON']);
-
-        $existingBanks = Deposit::query()
-            ->whereNotNull('bank')
-            ->where('bank', '!=', '')
-            ->select('bank')
-            ->distinct()
-            ->orderBy('bank')
-            ->pluck('bank');
-
-        return $commonBanks
-            ->merge($existingBanks)
+        return Bank::query()
+            ->select('nama_bank')
+            ->orderBy('nama_bank')
+            ->pluck('nama_bank')
             ->map(fn ($bank) => trim((string) $bank))
             ->filter(fn ($bank) => $bank !== '')
             ->unique()
@@ -394,7 +387,7 @@ class DepositFormController extends Controller
             'nama_supplier' => 'required|string|max:255|exists:suppliers,nama_supplier',
             'jenis_transaksi' => 'required|in:deposit,hutang',
             'nominal' => 'required|numeric|min:1',
-            'bank' => 'required|string|max:100',
+            'bank' => 'required|string|max:100|exists:banks,nama_bank',
             'server' => 'required|string|max:100|exists:servers,nama_server',
             'no_rek' => 'required|regex:/^[0-9]+$/|max:100',
             'nama_rekening' => 'required|string|max:255',
@@ -480,7 +473,7 @@ class DepositFormController extends Controller
             'nama_supplier' => 'required|string|max:255|exists:suppliers,nama_supplier',
             'jenis_transaksi' => 'required|in:deposit,hutang',
             'nominal' => 'required|numeric|min:0',
-            'bank' => 'required|string|max:100',
+            'bank' => 'required|string|max:100|exists:banks,nama_bank',
             'server' => 'required|string|max:100|exists:servers,nama_server',
             'no_rek' => 'required|regex:/^[0-9]+$/|max:100',
             'nama_rekening' => 'required|string|max:255',

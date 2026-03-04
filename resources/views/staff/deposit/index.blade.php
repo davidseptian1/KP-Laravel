@@ -398,6 +398,9 @@
                                     <option value="{{ $bank }}"></option>
                                 @endforeach
                             </datalist>
+                            @if (($banks ?? collect())->isEmpty())
+                                <small class="text-danger">Belum ada bank. Minta admin tambah bank di menu Bank Manajemen.</small>
+                            @endif
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Server</label>
