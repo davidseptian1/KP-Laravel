@@ -12,11 +12,24 @@ use App\Models\Supplier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class DepositFormController extends Controller
 {
+    private function bankValidationRules(): array
+    {
+        $rules = ['required', 'string', 'max:100'];
+
+        if (Bank::query()->exists()) {
+            $rules[] = 'exists:banks,nama_bank';
+        }
+
+        return $rules;
+    }
+
     private function buildStaffDepositQuery(Request $request)
     {
         $tanggal = $request->input('tanggal', now()->format('Y-m-d'));
@@ -241,12 +254,14 @@ class DepositFormController extends Controller
 
     public function storeFromRequestPage(Request $request)
     {
+        $bankRules = $this->bankValidationRules();
+
         $validated = $request->validate([
             'form_id' => 'nullable|exists:deposit_forms,id',
             'nama_supplier' => 'required|string|max:255|exists:suppliers,nama_supplier',
             'jenis_transaksi' => 'required|in:deposit,hutang',
             'nominal' => 'required|numeric|min:1',
-            'bank' => 'required|string|max:100|exists:banks,nama_bank',
+            'bank' => $bankRules,
             'bank_tujuan' => 'nullable|string|max:100',
             'server' => 'required|string|max:100|exists:servers,nama_server',
             'no_rek' => 'required|regex:/^[0-9]+$/|max:100',
@@ -262,14 +277,13 @@ class DepositFormController extends Controller
             })
             ->value('id');
 
-        $deposit = Deposit::create([
+        $depositPayload = [
             'user_id' => Auth::id(),
             'form_id' => $formId,
             'nama_supplier' => $validated['nama_supplier'],
             'jenis_transaksi' => $validated['jenis_transaksi'],
             'nominal' => $validated['nominal'],
             'bank' => $validated['bank'],
-            'bank_tujuan' => trim((string) ($validated['bank_tujuan'] ?? '')) !== '' ? trim((string) $validated['bank_tujuan']) : null,
             'server' => $validated['server'],
             'no_rek' => $validated['no_rek'],
             'nama_rekening' => $validated['nama_rekening'],
@@ -277,7 +291,15 @@ class DepositFormController extends Controller
             'reply_penambahan' => 'Menunggu Konfirmasi Admin',
             'status' => 'pending',
             'jam' => $validated['jam'],
-        ]);
+        ];
+
+        if (Schema::hasColumn('deposits', 'bank_tujuan')) {
+            $depositPayload['bank_tujuan'] = trim((string) ($validated['bank_tujuan'] ?? '')) !== ''
+                ? trim((string) $validated['bank_tujuan'])
+                : null;
+        }
+
+        $deposit = Deposit::create($depositPayload);
 
         NotificationItem::create([
             'type' => 'deposit_request_submitted',
@@ -313,6 +335,8 @@ class DepositFormController extends Controller
 
     public function submit(Request $request, string $token)
     {
+        $bankRules = $this->bankValidationRules();
+
         $form = DepositForm::where('token', $token)->firstOrFail();
 
         if (!$form->is_active) {
@@ -327,7 +351,7 @@ class DepositFormController extends Controller
             'nama_supplier' => 'required|string|max:255|exists:suppliers,nama_supplier',
             'jenis_transaksi' => 'required|in:deposit,hutang',
             'nominal' => 'required|numeric|min:0',
-            'bank' => 'required|string|max:100|exists:banks,nama_bank',
+            'bank' => $bankRules,
             'bank_tujuan' => 'nullable|string|max:100',
             'server' => 'required|string|max:100|exists:servers,nama_server',
             'no_rek' => 'required|regex:/^[0-9]+$/|max:100',
@@ -336,14 +360,13 @@ class DepositFormController extends Controller
             'jam' => 'required|date_format:H:i',
         ]);
 
-        $deposit = Deposit::create([
+        $depositPayload = [
             'user_id' => Auth::id(),
             'form_id' => $form->id,
             'nama_supplier' => $validated['nama_supplier'],
             'jenis_transaksi' => $validated['jenis_transaksi'],
             'nominal' => $validated['nominal'],
             'bank' => $validated['bank'],
-            'bank_tujuan' => trim((string) ($validated['bank_tujuan'] ?? '')) !== '' ? trim((string) $validated['bank_tujuan']) : null,
             'server' => $validated['server'],
             'no_rek' => $validated['no_rek'],
             'nama_rekening' => $validated['nama_rekening'],
@@ -351,7 +374,15 @@ class DepositFormController extends Controller
             'reply_penambahan' => 'Menunggu Konfirmasi Admin',
             'status' => 'pending',
             'jam' => $validated['jam'],
-        ]);
+        ];
+
+        if (Schema::hasColumn('deposits', 'bank_tujuan')) {
+            $depositPayload['bank_tujuan'] = trim((string) ($validated['bank_tujuan'] ?? '')) !== ''
+                ? trim((string) $validated['bank_tujuan'])
+                : null;
+        }
+
+        $deposit = Deposit::create($depositPayload);
 
         $adminNumber = config('whatsapp.admin_numbers.0') ?: '-';
         $replyText = "FORM ORDER H2H\n" .
@@ -416,5 +447,21 @@ class DepositFormController extends Controller
 
         return redirect()->route('deposit.request.index')
             ->with('success', 'Request pending berhasil dihapus dari daftar staff');
+    }
+
+    public function viewTransferAdminImage(int $id)
+    {
+        $item = Deposit::where('id', $id)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
+
+        $path = $item->bukti_transfer_admin_image;
+
+        if (!$path || !Storage::disk('local')->exists($path)) {
+            return redirect()->route('deposit.request.index')
+                ->with('error', 'Gambar bukti transfer admin tidak ditemukan');
+        }
+
+        return Storage::disk('local')->response($path);
     }
 }

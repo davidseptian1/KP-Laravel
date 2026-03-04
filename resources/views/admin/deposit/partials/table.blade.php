@@ -68,7 +68,7 @@
                             @if (!empty($item->bukti_transfer_admin_text))
                                 <div class="mb-1">{{ $item->bukti_transfer_admin_text }}</div>
                             @endif
-                            <a href="{{ route('admin.deposit.transfer-admin-image', $item->id) }}" target="_blank" class="btn btn-outline-primary btn-sm">Lihat Gambar</a>
+                            <a href="{{ url('admin/deposit/' . $item->id . '/transfer-admin-image') }}" target="_blank" class="btn btn-outline-primary btn-sm">Lihat Gambar</a>
                         @else
                             {{ $item->bukti_transfer_admin_text ?? '-' }}
                         @endif
@@ -174,7 +174,7 @@
                                                             <img src="" alt="Preview" class="img-fluid rounded border js-image-preview" data-target="{{ $item->id }}" style="max-height:180px;">
                                                         </div>
                                                         @if (!empty($item->bukti_transfer_admin_image))
-                                                            <a href="{{ route('admin.deposit.transfer-admin-image', $item->id) }}" target="_blank" class="btn btn-outline-primary btn-sm mt-2">Lihat Gambar Tersimpan</a>
+                                                            <a href="{{ url('admin/deposit/' . $item->id . '/transfer-admin-image') }}" target="_blank" class="btn btn-outline-primary btn-sm mt-2">Lihat Gambar Tersimpan</a>
                                                         @endif
                                                     </div>
                                                     <div class="col-md-6">
