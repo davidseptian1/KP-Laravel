@@ -25,64 +25,37 @@ class AdminDepositController extends Controller
         $serverOptions = Server::query()
             ->select('nama_server')
             ->orderBy('nama_server')
-            ->pluck('nama_server');
-
-        $serverFromDeposit = Deposit::query()
-            ->whereNotNull('server')
-            ->where('server', '!=', '')
-            ->select('server')
-            ->distinct()
-            ->orderBy('server')
-            ->pluck('server');
+            ->pluck('nama_server')
+            ->map(fn ($item) => trim((string) $item))
+            ->filter(fn ($item) => $item !== '')
+            ->unique()
+            ->sort()
+            ->values();
 
         $bankOptions = Bank::query()
             ->select('nama_bank')
             ->orderBy('nama_bank')
-            ->pluck('nama_bank');
-
-        $bankFromDeposit = Deposit::query()
-            ->whereNotNull('bank')
-            ->where('bank', '!=', '')
-            ->select('bank')
-            ->distinct()
-            ->orderBy('bank')
-            ->pluck('bank');
+            ->pluck('nama_bank')
+            ->map(fn ($item) => trim((string) $item))
+            ->filter(fn ($item) => $item !== '')
+            ->unique()
+            ->sort()
+            ->values();
 
         $supplierOptions = Supplier::query()
             ->select('nama_supplier')
             ->orderBy('nama_supplier')
-            ->pluck('nama_supplier');
-
-        $supplierFromDeposit = Deposit::query()
-            ->whereNotNull('nama_supplier')
-            ->where('nama_supplier', '!=', '')
-            ->select('nama_supplier')
-            ->distinct()
-            ->orderBy('nama_supplier')
-            ->pluck('nama_supplier');
+            ->pluck('nama_supplier')
+            ->map(fn ($item) => trim((string) $item))
+            ->filter(fn ($item) => $item !== '')
+            ->unique()
+            ->sort()
+            ->values();
 
         return [
-            'serverOptions' => $serverOptions
-                ->merge($serverFromDeposit)
-                ->map(fn ($item) => trim((string) $item))
-                ->filter(fn ($item) => $item !== '')
-                ->unique()
-                ->sort()
-                ->values(),
-            'bankOptions' => $bankOptions
-                ->merge($bankFromDeposit)
-                ->map(fn ($item) => trim((string) $item))
-                ->filter(fn ($item) => $item !== '')
-                ->unique()
-                ->sort()
-                ->values(),
-            'supplierOptions' => $supplierOptions
-                ->merge($supplierFromDeposit)
-                ->map(fn ($item) => trim((string) $item))
-                ->filter(fn ($item) => $item !== '')
-                ->unique()
-                ->sort()
-                ->values(),
+            'serverOptions' => $serverOptions,
+            'bankOptions' => $bankOptions,
+            'supplierOptions' => $supplierOptions,
         ];
     }
 
