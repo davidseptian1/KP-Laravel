@@ -261,6 +261,7 @@ Route::middleware('checkLogin')->group(function () {
         Route::post('admin/deposit/forms', [AdminDepositFormController::class, 'store'])->name('admin.deposit.forms.store');
         Route::put('admin/deposit/forms/{id}/toggle', [AdminDepositFormController::class, 'toggle'])->name('admin.deposit.forms.toggle');
         Route::get('admin/deposit/monitoring', [AdminDepositController::class, 'monitoring'])->name('admin.deposit.monitoring');
+        Route::post('admin/deposit/import-manual', [AdminDepositController::class, 'importManual'])->name('admin.deposit.import-manual');
         Route::get('admin/deposit/monitoring/export-excel', [AdminDepositController::class, 'exportExcel'])->name('admin.deposit.monitoring.export-excel');
         Route::get('admin/deposit/monitoring/export-pdf', [AdminDepositController::class, 'exportPdf'])->name('admin.deposit.monitoring.export-pdf');
         Route::get('admin/deposit/{id}/reply-tiket-image', [AdminDepositController::class, 'viewReplyTiketImage'])->name('admin.deposit.reply-tiket-image');
