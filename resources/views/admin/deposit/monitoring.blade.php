@@ -146,7 +146,13 @@
                 </div>
 
                 <div id="monitoringTableContainer">
-                    @include('admin.deposit.partials.table', ['items' => $items, 'latestIncomingId' => $latestIncomingId ?? null])
+                    @include('admin.deposit.partials.table', [
+                        'items' => $items,
+                        'latestIncomingId' => $latestIncomingId ?? null,
+                        'serverOptions' => $serverOptions ?? collect(),
+                        'bankOptions' => $bankOptions ?? collect(),
+                        'supplierOptions' => $supplierOptions ?? collect(),
+                    ])
                 </div>
             </div>
         </div>

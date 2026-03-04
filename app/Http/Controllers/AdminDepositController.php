@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Exports\DepositMonitoringExport;
 use App\Imports\DepositManualImport;
+use App\Models\Bank;
 use App\Models\Deposit;
 use App\Models\NotificationItem;
+use App\Models\Server;
+use App\Models\Supplier;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -17,6 +20,72 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class AdminDepositController extends Controller
 {
+    private function getMonitoringOptionLists(): array
+    {
+        $serverOptions = Server::query()
+            ->select('nama_server')
+            ->orderBy('nama_server')
+            ->pluck('nama_server');
+
+        $serverFromDeposit = Deposit::query()
+            ->whereNotNull('server')
+            ->where('server', '!=', '')
+            ->select('server')
+            ->distinct()
+            ->orderBy('server')
+            ->pluck('server');
+
+        $bankOptions = Bank::query()
+            ->select('nama_bank')
+            ->orderBy('nama_bank')
+            ->pluck('nama_bank');
+
+        $bankFromDeposit = Deposit::query()
+            ->whereNotNull('bank')
+            ->where('bank', '!=', '')
+            ->select('bank')
+            ->distinct()
+            ->orderBy('bank')
+            ->pluck('bank');
+
+        $supplierOptions = Supplier::query()
+            ->select('nama_supplier')
+            ->orderBy('nama_supplier')
+            ->pluck('nama_supplier');
+
+        $supplierFromDeposit = Deposit::query()
+            ->whereNotNull('nama_supplier')
+            ->where('nama_supplier', '!=', '')
+            ->select('nama_supplier')
+            ->distinct()
+            ->orderBy('nama_supplier')
+            ->pluck('nama_supplier');
+
+        return [
+            'serverOptions' => $serverOptions
+                ->merge($serverFromDeposit)
+                ->map(fn ($item) => trim((string) $item))
+                ->filter(fn ($item) => $item !== '')
+                ->unique()
+                ->sort()
+                ->values(),
+            'bankOptions' => $bankOptions
+                ->merge($bankFromDeposit)
+                ->map(fn ($item) => trim((string) $item))
+                ->filter(fn ($item) => $item !== '')
+                ->unique()
+                ->sort()
+                ->values(),
+            'supplierOptions' => $supplierOptions
+                ->merge($supplierFromDeposit)
+                ->map(fn ($item) => trim((string) $item))
+                ->filter(fn ($item) => $item !== '')
+                ->unique()
+                ->sort()
+                ->values(),
+        ];
+    }
+
     private function normalizeNumericFields(Request $request): void
     {
         $rawNominal = (string) $request->input('nominal', '');
@@ -75,6 +144,7 @@ class AdminDepositController extends Controller
         $filters = $this->normalizedMonitoringFilters($request);
 
         $query = $this->buildMonitoringQuery($filters);
+        $optionLists = $this->getMonitoringOptionLists();
 
         $items = $query->paginate(15)->withQueryString();
         $latestUpdatedAt = (clone $query)->max('updated_at');
@@ -83,30 +153,6 @@ class AdminDepositController extends Controller
             ->orderByDesc('created_at')
             ->orderByDesc('id')
             ->value('id');
-
-        $serverOptions = Deposit::query()
-            ->whereNotNull('server')
-            ->where('server', '!=', '')
-            ->select('server')
-            ->distinct()
-            ->orderBy('server')
-            ->pluck('server');
-
-        $bankOptions = Deposit::query()
-            ->whereNotNull('bank')
-            ->where('bank', '!=', '')
-            ->select('bank')
-            ->distinct()
-            ->orderBy('bank')
-            ->pluck('bank');
-
-        $supplierOptions = Deposit::query()
-            ->whereNotNull('nama_supplier')
-            ->where('nama_supplier', '!=', '')
-            ->select('nama_supplier')
-            ->distinct()
-            ->orderBy('nama_supplier')
-            ->pluck('nama_supplier');
 
         return view('admin.deposit.monitoring', [
             'title' => 'Monitoring Deposit',
@@ -122,9 +168,9 @@ class AdminDepositController extends Controller
             'latestUpdatedAt' => $latestUpdatedAt,
             'latestIncomingAt' => $latestIncomingAt,
             'latestIncomingId' => $latestIncomingId,
-            'serverOptions' => $serverOptions,
-            'bankOptions' => $bankOptions,
-            'supplierOptions' => $supplierOptions,
+            'serverOptions' => $optionLists['serverOptions'],
+            'bankOptions' => $optionLists['bankOptions'],
+            'supplierOptions' => $optionLists['supplierOptions'],
         ]);
     }
 
@@ -194,11 +240,15 @@ class AdminDepositController extends Controller
         $latestCardHtml = null;
 
         if ($hasChanges) {
+            $optionLists = $this->getMonitoringOptionLists();
             $page = $filters['page'] ?? 1;
             $items = (clone $query)->paginate(15, ['*'], 'page', $page)->withQueryString();
             $tableHtml = view('admin.deposit.partials.table', [
                 'items' => $items,
                 'latestIncomingId' => $latestIncomingId,
+                'serverOptions' => $optionLists['serverOptions'],
+                'bankOptions' => $optionLists['bankOptions'],
+                'supplierOptions' => $optionLists['supplierOptions'],
             ])->render();
             $latestCardHtml = view('admin.deposit.partials.latest-incoming-card', ['latestIncomingAt' => $latestIncomingAt])->render();
         }

@@ -99,7 +99,7 @@
                                                 <div class="row g-3">
                                                     <div class="col-md-6">
                                                         <label class="form-label">Nama Supplier</label>
-                                                        <input type="text" name="nama_supplier" class="form-control" value="{{ $item->nama_supplier }}" required>
+                                                        <input type="text" name="nama_supplier" class="form-control" value="{{ $item->nama_supplier }}" list="adminSupplierList" placeholder="Ketik nama supplier..." required>
                                                     </div>
                                                     <div class="col-md-6">
                                                         <label class="form-label">Nominal</label>
@@ -107,18 +107,15 @@
                                                     </div>
                                                     <div class="col-md-6">
                                                         <label class="form-label">Deposit / Hutang</label>
-                                                        <select name="jenis_transaksi" class="form-select" required>
-                                                            <option value="deposit" {{ ($item->jenis_transaksi ?? 'deposit') === 'deposit' ? 'selected' : '' }}>Deposit</option>
-                                                            <option value="hutang" {{ ($item->jenis_transaksi ?? 'deposit') === 'hutang' ? 'selected' : '' }}>Hutang</option>
-                                                        </select>
+                                                        <input type="text" name="jenis_transaksi" class="form-control" value="{{ $item->jenis_transaksi ?? 'deposit' }}" list="adminJenisTransaksiList" required>
                                                     </div>
                                                     <div class="col-md-6">
                                                         <label class="form-label">BANK</label>
-                                                        <input type="text" name="bank" class="form-control" value="{{ $item->bank }}" required>
+                                                        <input type="text" name="bank" class="form-control" value="{{ $item->bank }}" list="adminBankList" placeholder="Ketik nama bank..." required>
                                                     </div>
                                                     <div class="col-md-6">
                                                         <label class="form-label">Server</label>
-                                                        <input type="text" name="server" class="form-control" value="{{ $item->server }}" required>
+                                                        <input type="text" name="server" class="form-control" value="{{ $item->server }}" list="adminServerList" placeholder="Ketik server..." required>
                                                     </div>
                                                     <div class="col-md-6">
                                                         <label class="form-label">No-Rek</label>
@@ -198,6 +195,29 @@
         </tbody>
     </table>
 </div>
+
+<datalist id="adminSupplierList">
+    @foreach (($supplierOptions ?? collect()) as $supplierOption)
+        <option value="{{ $supplierOption }}"></option>
+    @endforeach
+</datalist>
+
+<datalist id="adminBankList">
+    @foreach (($bankOptions ?? collect()) as $bankOption)
+        <option value="{{ $bankOption }}"></option>
+    @endforeach
+</datalist>
+
+<datalist id="adminServerList">
+    @foreach (($serverOptions ?? collect()) as $serverOption)
+        <option value="{{ $serverOption }}"></option>
+    @endforeach
+</datalist>
+
+<datalist id="adminJenisTransaksiList">
+    <option value="deposit"></option>
+    <option value="hutang"></option>
+</datalist>
 
 <div class="mt-3">
     {{ $items->links() }}
