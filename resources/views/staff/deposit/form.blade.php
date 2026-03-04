@@ -55,6 +55,9 @@
 
                 <form method="POST" action="{{ route('deposit.form.submit', $form->token) }}" id="depositRequestForm" autocomplete="off">
                     @csrf
+                    <div class="alert alert-warning py-2 mb-3">
+                        <strong>Note:</strong> Untuk <strong>Nama Supplier</strong>, <strong>Deposit/Hutang</strong>, <strong>Bank</strong>, dan <strong>Server</strong> gunakan data yang muncul. Jika data tidak ada, request tidak akan tersimpan.
+                    </div>
                     <div class="mb-3">
                         <label class="form-label">Nama Supplier</label>
                         <input type="text" name="nama_supplier" class="form-control" list="supplierPublicList" value="{{ old('nama_supplier') }}" placeholder="Ketik nama supplier..." autocomplete="off" required>

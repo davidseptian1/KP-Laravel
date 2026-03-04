@@ -365,6 +365,9 @@
                 </div>
                 <div class="modal-body">
                     <input type="hidden" name="form_id" value="{{ $activeForms->first()->id ?? '' }}">
+                    <div class="alert alert-warning py-2 mb-3">
+                        <strong>Note:</strong> Untuk <strong>Nama Supplier</strong>, <strong>Deposit/Hutang</strong>, <strong>Bank</strong>, dan <strong>Server</strong> gunakan data yang muncul. Jika data tidak ada, request tidak akan tersimpan.
+                    </div>
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label">Nama Supplier</label>
