@@ -34,7 +34,12 @@
     .staff-deposit-page .table-wrap {
         border: 1px solid var(--bs-border-color, #dee2e6);
         border-radius: 10px;
-        overflow: hidden;
+        overflow-x: auto;
+        overflow-y: hidden;
+    }
+
+    .staff-deposit-page .table-wrap table {
+        min-width: 1500px;
     }
 
     .staff-deposit-page .table thead th {
