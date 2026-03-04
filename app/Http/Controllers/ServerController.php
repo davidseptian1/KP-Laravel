@@ -9,7 +9,14 @@ class ServerController extends Controller
 {
     private function cardColorOptions(): array
     {
-        return ['primary', 'success', 'info', 'warning', 'danger', 'secondary'];
+        return [
+            'primary' => 'Biru',
+            'success' => 'Hijau',
+            'info' => 'Biru Muda (Cyan)',
+            'warning' => 'Kuning',
+            'danger' => 'Merah',
+            'secondary' => 'Abu-abu'
+        ];
     }
 
     public function index()
@@ -26,7 +33,7 @@ class ServerController extends Controller
     {
         $validated = $request->validate([
             'nama_server' => 'required|string|max:255|unique:servers,nama_server',
-            'card_color' => 'required|in:' . implode(',', $this->cardColorOptions()),
+            'card_color' => 'required|in:' . implode(',', array_keys($this->cardColorOptions())),
         ]);
 
         Server::create($validated);
@@ -38,7 +45,7 @@ class ServerController extends Controller
     {
         $validated = $request->validate([
             'nama_server' => 'required|string|max:255|unique:servers,nama_server,' . $id,
-            'card_color' => 'required|in:' . implode(',', $this->cardColorOptions()),
+            'card_color' => 'required|in:' . implode(',', array_keys($this->cardColorOptions())),
         ]);
 
         $item = Server::findOrFail($id);

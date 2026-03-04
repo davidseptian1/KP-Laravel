@@ -18,7 +18,17 @@
         </thead>
         <tbody>
             @forelse ($items as $item)
-                <tr data-deposit-id="{{ $item->id }}" class="{{ (int)($latestIncomingId ?? 0) === (int)$item->id ? 'latest-row-highlight' : '' }}">
+                @php
+                    $rowColorClass = '';
+                    if ((int)($latestIncomingId ?? 0) === (int)$item->id) {
+                        $defaultColor = 'primary';
+                        if (isset($latestIncomingServerColor) && !empty($latestIncomingServerColor)) {
+                            $defaultColor = $latestIncomingServerColor;
+                        }
+                        $rowColorClass = 'table-' . $defaultColor;
+                    }
+                @endphp
+                <tr data-deposit-id="{{ $item->id }}" class="{{ $rowColorClass }}">
                     <td>{{ $item->created_at?->format('d/m/Y H:i') }}</td>
                     <td>{{ $item->nama_supplier ?? '-' }}</td>
                     <td>{{ $item->nama_rekening }}</td>

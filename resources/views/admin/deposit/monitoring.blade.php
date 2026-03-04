@@ -4,7 +4,7 @@
 
 <style>
     #monitoringTableContainer tr.latest-row-highlight > td {
-        background-color: var(--bs-primary-bg-subtle, #cfe2ff) !important;
+        background-color: var(--bs-{{ $latestIncomingServerColor ?? 'primary' }}-bg-subtle, #cfe2ff) !important;
         color: var(--bs-body-color, #212529);
     }
 

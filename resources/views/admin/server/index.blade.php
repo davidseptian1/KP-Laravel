@@ -44,7 +44,20 @@
                                     <td>{{ $index + 1 }}</td>
                                     <td>{{ $item->nama_server }}</td>
                                     <td>
-                                        <span class="badge bg-{{ $item->card_color ?? 'primary' }}">{{ strtoupper($item->card_color ?? 'primary') }}</span>
+                                        <span class="badge bg-{{ $item->card_color ?? 'primary' }}">
+                                            @php
+                                                $colorLabels = [
+                                                    'primary' => 'Biru',
+                                                    'success' => 'Hijau',
+                                                    'info' => 'Biru Muda (Cyan)',
+                                                    'warning' => 'Kuning',
+                                                    'danger' => 'Merah',
+                                                    'secondary' => 'Abu-abu'
+                                                ];
+                                                $colorValue = $item->card_color ?? 'primary';
+                                            @endphp
+                                            {{ $colorLabels[$colorValue] ?? strtoupper($colorValue) }}
+                                        </span>
                                     </td>
                                     <td>{{ $item->created_at?->format('d/m/Y H:i') }}</td>
                                     <td class="text-center">
@@ -83,8 +96,8 @@
                                         <input type="text" name="nama_server" class="form-control" value="{{ $item->nama_server }}" required>
                                         <label class="form-label mt-3">Warna Card Monitoring</label>
                                         <select name="card_color" class="form-select" required>
-                                            @foreach (($cardColorOptions ?? []) as $color)
-                                                <option value="{{ $color }}" {{ ($item->card_color ?? 'primary') === $color ? 'selected' : '' }}>{{ strtoupper($color) }}</option>
+                                            @foreach (($cardColorOptions ?? []) as $colorValue => $colorLabel)
+                                                <option value="{{ $colorValue }}" {{ ($item->card_color ?? 'primary') === $colorValue ? 'selected' : '' }}>{{ $colorLabel }}</option>
                                             @endforeach
                                         </select>
                                     </div>
@@ -116,8 +129,8 @@
                     <input type="text" name="nama_server" class="form-control" placeholder="Masukkan nama server" required>
                     <label class="form-label mt-3">Warna Card Monitoring</label>
                     <select name="card_color" class="form-select" required>
-                        @foreach (($cardColorOptions ?? []) as $color)
-                            <option value="{{ $color }}" {{ $color === 'primary' ? 'selected' : '' }}>{{ strtoupper($color) }}</option>
+                        @foreach (($cardColorOptions ?? []) as $colorValue => $colorLabel)
+                            <option value="{{ $colorValue }}" {{ $colorValue === 'primary' ? 'selected' : '' }}>{{ $colorLabel }}</option>
                         @endforeach
                     </select>
                 </div>
