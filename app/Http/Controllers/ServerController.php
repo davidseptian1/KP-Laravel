@@ -7,12 +7,18 @@ use Illuminate\Http\Request;
 
 class ServerController extends Controller
 {
+    private function cardColorOptions(): array
+    {
+        return ['primary', 'success', 'info', 'warning', 'danger', 'secondary'];
+    }
+
     public function index()
     {
         return view('admin.server.index', [
             'title' => 'Server Manajemen',
             'menuAdminServer' => 'active',
             'items' => Server::orderByDesc('created_at')->get(),
+            'cardColorOptions' => $this->cardColorOptions(),
         ]);
     }
 
@@ -20,6 +26,7 @@ class ServerController extends Controller
     {
         $validated = $request->validate([
             'nama_server' => 'required|string|max:255|unique:servers,nama_server',
+            'card_color' => 'required|in:' . implode(',', $this->cardColorOptions()),
         ]);
 
         Server::create($validated);
@@ -31,6 +38,7 @@ class ServerController extends Controller
     {
         $validated = $request->validate([
             'nama_server' => 'required|string|max:255|unique:servers,nama_server,' . $id,
+            'card_color' => 'required|in:' . implode(',', $this->cardColorOptions()),
         ]);
 
         $item = Server::findOrFail($id);

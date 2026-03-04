@@ -149,10 +149,19 @@ class AdminDepositController extends Controller
         $items = $query->paginate(15)->withQueryString();
         $latestUpdatedAt = (clone $query)->max('updated_at');
         $latestIncomingAt = (clone $query)->max('created_at');
-        $latestIncomingId = (clone $query)
+        $latestIncomingItem = (clone $query)
             ->orderByDesc('created_at')
             ->orderByDesc('id')
-            ->value('id');
+            ->first();
+        $latestIncomingId = $latestIncomingItem?->id;
+
+        $latestIncomingServer = trim((string) ($latestIncomingItem->server ?? ''));
+        $latestIncomingServerColor = 'primary';
+        if ($latestIncomingServer !== '') {
+            $latestIncomingServerColor = Server::query()
+                ->where('nama_server', $latestIncomingServer)
+                ->value('card_color') ?: 'primary';
+        }
 
         return view('admin.deposit.monitoring', [
             'title' => 'Monitoring Deposit',
@@ -168,6 +177,8 @@ class AdminDepositController extends Controller
             'latestUpdatedAt' => $latestUpdatedAt,
             'latestIncomingAt' => $latestIncomingAt,
             'latestIncomingId' => $latestIncomingId,
+            'latestIncomingServer' => $latestIncomingServer,
+            'latestIncomingServerColor' => $latestIncomingServerColor,
             'serverOptions' => $optionLists['serverOptions'],
             'bankOptions' => $optionLists['bankOptions'],
             'supplierOptions' => $optionLists['supplierOptions'],
@@ -194,10 +205,19 @@ class AdminDepositController extends Controller
 
         $latestUpdatedAt = (clone $query)->max('updated_at');
         $latestIncomingAt = (clone $query)->max('created_at');
-        $latestIncomingId = (clone $query)
+        $latestIncomingItem = (clone $query)
             ->orderByDesc('created_at')
             ->orderByDesc('id')
-            ->value('id');
+            ->first();
+        $latestIncomingId = $latestIncomingItem?->id;
+
+        $latestIncomingServer = trim((string) ($latestIncomingItem->server ?? ''));
+        $latestIncomingServerColor = 'primary';
+        if ($latestIncomingServer !== '') {
+            $latestIncomingServerColor = Server::query()
+                ->where('nama_server', $latestIncomingServer)
+                ->value('card_color') ?: 'primary';
+        }
 
         $since = !empty($filters['since']) ? Carbon::parse($filters['since']) : null;
         $changesCount = 0;
@@ -250,7 +270,11 @@ class AdminDepositController extends Controller
                 'bankOptions' => $optionLists['bankOptions'],
                 'supplierOptions' => $optionLists['supplierOptions'],
             ])->render();
-            $latestCardHtml = view('admin.deposit.partials.latest-incoming-card', ['latestIncomingAt' => $latestIncomingAt])->render();
+            $latestCardHtml = view('admin.deposit.partials.latest-incoming-card', [
+                'latestIncomingAt' => $latestIncomingAt,
+                'latestIncomingServer' => $latestIncomingServer,
+                'latestIncomingServerColor' => $latestIncomingServerColor,
+            ])->render();
         }
 
         return response()->json([

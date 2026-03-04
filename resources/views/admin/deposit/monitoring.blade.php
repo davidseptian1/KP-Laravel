@@ -142,7 +142,11 @@
                 </div>
 
                 <div id="latestIncomingCardContainer">
-                    @include('admin.deposit.partials.latest-incoming-card', ['latestIncomingAt' => $latestIncomingAt ?? null])
+                    @include('admin.deposit.partials.latest-incoming-card', [
+                        'latestIncomingAt' => $latestIncomingAt ?? null,
+                        'latestIncomingServer' => $latestIncomingServer ?? null,
+                        'latestIncomingServerColor' => $latestIncomingServerColor ?? 'primary',
+                    ])
                 </div>
 
                 <div id="monitoringTableContainer">

@@ -33,6 +33,7 @@
                             <tr>
                                 <th style="width:80px;">No</th>
                                 <th>Nama Server</th>
+                                <th>Warna Card</th>
                                 <th>Dibuat</th>
                                 <th class="text-center" style="width:220px;">Aksi</th>
                             </tr>
@@ -42,6 +43,9 @@
                                 <tr>
                                     <td>{{ $index + 1 }}</td>
                                     <td>{{ $item->nama_server }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ $item->card_color ?? 'primary' }}">{{ strtoupper($item->card_color ?? 'primary') }}</span>
+                                    </td>
                                     <td>{{ $item->created_at?->format('d/m/Y H:i') }}</td>
                                     <td class="text-center">
                                         <div class="d-flex justify-content-center gap-2">
@@ -56,7 +60,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="4" class="text-center text-muted py-4">Belum ada riwayat server</td>
+                                    <td colspan="5" class="text-center text-muted py-4">Belum ada riwayat server</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -77,6 +81,12 @@
                                     <div class="modal-body">
                                         <label class="form-label">Nama Server</label>
                                         <input type="text" name="nama_server" class="form-control" value="{{ $item->nama_server }}" required>
+                                        <label class="form-label mt-3">Warna Card Monitoring</label>
+                                        <select name="card_color" class="form-select" required>
+                                            @foreach (($cardColorOptions ?? []) as $color)
+                                                <option value="{{ $color }}" {{ ($item->card_color ?? 'primary') === $color ? 'selected' : '' }}>{{ strtoupper($color) }}</option>
+                                            @endforeach
+                                        </select>
                                     </div>
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
@@ -104,6 +114,12 @@
                 <div class="modal-body">
                     <label class="form-label">Nama Server</label>
                     <input type="text" name="nama_server" class="form-control" placeholder="Masukkan nama server" required>
+                    <label class="form-label mt-3">Warna Card Monitoring</label>
+                    <select name="card_color" class="form-select" required>
+                        @foreach (($cardColorOptions ?? []) as $color)
+                            <option value="{{ $color }}" {{ $color === 'primary' ? 'selected' : '' }}>{{ strtoupper($color) }}</option>
+                        @endforeach
+                    </select>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>

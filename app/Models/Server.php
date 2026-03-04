@@ -11,5 +11,6 @@ class Server extends Model
 
     protected $fillable = [
         'nama_server',
+        'card_color',
     ];
 }
