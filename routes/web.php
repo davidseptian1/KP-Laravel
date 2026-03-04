@@ -25,6 +25,7 @@ use App\Http\Controllers\AdminDepositFormController;
 use App\Http\Controllers\DepositFormController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\ServerController;
+use App\Http\Controllers\BankController;
 use App\Http\Controllers\DataMatrixController;
 use App\Http\Controllers\ApiManagementController;
 
@@ -178,6 +179,12 @@ Route::middleware('checkLogin')->group(function () {
         Route::post('admin/server', [ServerController::class, 'store'])->name('admin.server.store');
         Route::put('admin/server/{id}', [ServerController::class, 'update'])->name('admin.server.update');
         Route::delete('admin/server/{id}', [ServerController::class, 'destroy'])->name('admin.server.destroy');
+
+        // Bank Management
+        Route::get('admin/bank', [BankController::class, 'index'])->name('admin.bank.index');
+        Route::post('admin/bank', [BankController::class, 'store'])->name('admin.bank.store');
+        Route::put('admin/bank/{id}', [BankController::class, 'update'])->name('admin.bank.update');
+        Route::delete('admin/bank/{id}', [BankController::class, 'destroy'])->name('admin.bank.destroy');
 
         // API Management
         Route::get('admin/api-management', [ApiManagementController::class, 'index'])->name('admin.api-management.index');

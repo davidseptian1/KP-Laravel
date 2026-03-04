@@ -256,6 +256,14 @@
                     </a>
                 </li>
 
+                <!-- Bank Management -->
+                <li class="pc-item {{ $menuAdminBank ?? '' }}">
+                    <a href="{{ route('admin.bank.index') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-building-bank"></i></span>
+                        <span class="pc-mtext">Bank Manajemen</span>
+                    </a>
+                </li>
+
                 <li class="pc-item pc-caption">
                     <label>API Manajement</label>
                 </li>
