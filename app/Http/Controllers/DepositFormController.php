@@ -26,6 +26,10 @@ class DepositFormController extends Controller
         $nominalFilter = (string) $request->input('nominal', '');
 
         $query = Deposit::where('user_id', Auth::id())
+            ->where(function ($q) {
+                $q->whereNull('is_deleted_by_staff')
+                    ->orWhere('is_deleted_by_staff', false);
+            })
             ->whereDate('created_at', $tanggal);
 
         if ($serverFilter !== '') {
@@ -382,5 +386,29 @@ class DepositFormController extends Controller
         $item->save();
 
         return redirect()->route('deposit.request.index')->with('success', 'Reply Penambahan berhasil diupdate');
+    }
+
+    public function deletePending(Request $request, int $id)
+    {
+        $validated = $request->validate([
+            'delete_note' => 'required|string|max:1000',
+        ]);
+
+        $item = Deposit::where('id', $id)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
+
+        if (($item->status ?? 'pending') !== 'pending') {
+            return redirect()->route('deposit.request.index')
+                ->with('error', 'Hanya request dengan status pending yang bisa dihapus dari daftar staff');
+        }
+
+        $item->is_deleted_by_staff = true;
+        $item->staff_deleted_note = trim((string) $validated['delete_note']);
+        $item->staff_deleted_at = now();
+        $item->save();
+
+        return redirect()->route('deposit.request.index')
+            ->with('success', 'Request pending berhasil dihapus dari daftar staff');
     }
 }

@@ -136,6 +136,7 @@ Route::middleware('checkLogin')->group(function () {
     Route::get('deposit/request/export-pdf', [DepositFormController::class, 'exportPdf'])->name('deposit.request.export-pdf');
     Route::get('deposit/request/changes', [DepositFormController::class, 'changes'])->name('deposit.request.changes');
     Route::put('deposit/request/{id}/reply-penambahan', [DepositFormController::class, 'updateReplyPenambahan'])->name('deposit.request.reply.update');
+    Route::put('deposit/request/{id}/delete', [DepositFormController::class, 'deletePending'])->name('deposit.request.delete');
     
     // Import status polling
     Route::get('imports/status', [ImportStatusController::class, 'status'])->name('imports.status');
