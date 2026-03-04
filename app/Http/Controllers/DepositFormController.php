@@ -77,6 +77,10 @@ class DepositFormController extends Controller
         $itemsQuery = $this->buildStaffDepositQuery($request);
 
         $latestUpdatedAt = (clone $itemsQuery)->max('updated_at');
+        $latestActivityItem = (clone $itemsQuery)->orderByDesc('updated_at')->orderByDesc('id')->first();
+        $todayDepositSummary = (clone $itemsQuery)
+            ->selectRaw('COUNT(*) as total_request, COALESCE(SUM(nominal), 0) as total_nominal')
+            ->first();
 
         $items = $itemsQuery
             ->orderByDesc('created_at')
@@ -102,6 +106,8 @@ class DepositFormController extends Controller
             'nominalFilter' => $nominalFilter,
             'perPage' => $perPage,
             'latestUpdatedAt' => $latestUpdatedAt,
+            'latestActivityItem' => $latestActivityItem,
+            'todayDepositSummary' => $todayDepositSummary,
         ]);
     }
 
