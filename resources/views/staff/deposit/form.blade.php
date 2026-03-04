@@ -53,11 +53,11 @@
                     <hr class="my-3">
                 @endif
 
-                <form method="POST" action="{{ route('deposit.form.submit', $form->token) }}" id="depositRequestForm">
+                <form method="POST" action="{{ route('deposit.form.submit', $form->token) }}" id="depositRequestForm" autocomplete="off">
                     @csrf
                     <div class="mb-3">
                         <label class="form-label">Nama Supplier</label>
-                        <input type="text" name="nama_supplier" class="form-control" list="supplierPublicList" value="{{ old('nama_supplier') }}" placeholder="Ketik nama supplier..." required>
+                        <input type="text" name="nama_supplier" class="form-control" list="supplierPublicList" value="{{ old('nama_supplier') }}" placeholder="Ketik nama supplier..." autocomplete="off" required>
                         <datalist id="supplierPublicList">
                             @foreach (($suppliers ?? collect()) as $supplier)
                                 <option value="{{ $supplier }}"></option>
@@ -73,7 +73,7 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Deposit / Hutang</label>
-                        <input type="text" name="jenis_transaksi" class="form-control" list="jenisPublicList" value="{{ old('jenis_transaksi', 'deposit') }}" required>
+                        <input type="text" name="jenis_transaksi" class="form-control" list="jenisPublicList" value="{{ old('jenis_transaksi', 'deposit') }}" autocomplete="off" required>
                         <datalist id="jenisPublicList">
                             <option value="deposit"></option>
                             <option value="hutang"></option>
@@ -81,7 +81,7 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">BANK</label>
-                        <input type="text" name="bank" class="form-control" list="bankPublicList" value="{{ old('bank') }}" placeholder="Ketik nama bank..." required>
+                        <input type="text" name="bank" class="form-control" list="bankPublicList" value="{{ old('bank') }}" placeholder="Ketik nama bank..." autocomplete="off" required>
                         <datalist id="bankPublicList">
                             @foreach (($banks ?? collect()) as $bank)
                                 <option value="{{ $bank }}"></option>
@@ -93,7 +93,7 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Server</label>
-                        <input type="text" name="server" class="form-control" list="serverPublicList" value="{{ old('server') }}" placeholder="Ketik server..." required>
+                        <input type="text" name="server" class="form-control" list="serverPublicList" value="{{ old('server') }}" placeholder="Ketik server..." autocomplete="off" required>
                         <datalist id="serverPublicList">
                             @foreach (($servers ?? collect()) as $server)
                                 <option value="{{ $server }}"></option>

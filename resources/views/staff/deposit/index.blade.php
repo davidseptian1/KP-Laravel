@@ -357,7 +357,7 @@
 <div class="modal fade" id="modalRequestDeposit" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
-            <form method="POST" action="{{ route('deposit.request.store') }}" enctype="multipart/form-data" id="staffRequestDepositForm">
+            <form method="POST" action="{{ route('deposit.request.store') }}" enctype="multipart/form-data" id="staffRequestDepositForm" autocomplete="off">
                 @csrf
                 <div class="modal-header">
                     <h5 class="modal-title">Request Deposit</h5>
@@ -368,7 +368,7 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label">Nama Supplier</label>
-                            <input type="text" name="nama_supplier" class="form-control" list="supplierRequestList" placeholder="Ketik nama supplier..." required>
+                            <input type="text" name="nama_supplier" class="form-control" list="supplierRequestList" placeholder="Ketik nama supplier..." autocomplete="off" required>
                             <datalist id="supplierRequestList">
                                 @foreach (($suppliers ?? collect()) as $supplier)
                                     <option value="{{ $supplier }}"></option>
@@ -384,7 +384,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Deposit / Hutang</label>
-                            <input type="text" name="jenis_transaksi" class="form-control" list="jenisRequestList" value="deposit" required>
+                            <input type="text" name="jenis_transaksi" class="form-control" list="jenisRequestList" value="deposit" autocomplete="off" required>
                             <datalist id="jenisRequestList">
                                 <option value="deposit"></option>
                                 <option value="hutang"></option>
@@ -392,7 +392,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Bank</label>
-                            <input type="text" name="bank" class="form-control" list="bankRequestList" placeholder="Ketik nama bank..." required>
+                            <input type="text" name="bank" class="form-control" list="bankRequestList" placeholder="Ketik nama bank..." autocomplete="off" required>
                             <datalist id="bankRequestList">
                                 @foreach (($banks ?? collect()) as $bank)
                                     <option value="{{ $bank }}"></option>
@@ -404,7 +404,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Server</label>
-                            <input type="text" name="server" class="form-control" list="serverRequestList" placeholder="Ketik server..." required>
+                            <input type="text" name="server" class="form-control" list="serverRequestList" placeholder="Ketik server..." autocomplete="off" required>
                             <datalist id="serverRequestList">
                                 @foreach (($servers ?? collect()) as $server)
                                     <option value="{{ $server }}"></option>
