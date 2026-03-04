@@ -174,7 +174,7 @@
 <div class="modal fade" id="modalUploadManualDeposit" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <form method="POST" action="{{ route('admin.deposit.import-manual') }}" enctype="multipart/form-data">
+            <form method="POST" action="{{ url('admin/deposit/import-manual') }}" enctype="multipart/form-data">
                 @csrf
                 <div class="modal-header">
                     <h5 class="modal-title">Upload Manual Deposit</h5>
