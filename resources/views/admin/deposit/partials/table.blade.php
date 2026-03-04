@@ -14,6 +14,7 @@
                 <th>Nama SPL</th>
                 <th>Nama Rekening</th>
                 <th>Nama Bank</th>
+                <th>Bank Tujuan</th>
                 <th>Nama Server</th>
                 <th>Bukti Tiket</th>
                 <th>Bukti Penambahan</th>
@@ -42,6 +43,7 @@
                     <td>{{ $item->nama_supplier ?? '-' }}</td>
                     <td>{{ $item->nama_rekening }}</td>
                     <td>{{ $item->bank ?? '-' }}</td>
+                    <td>{{ $item->bank_tujuan ?? '-' }}</td>
                     <td>{{ $item->server ?? '-' }}</td>
                     <td>
                         @if (!empty($item->reply_tiket))
@@ -208,7 +210,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="12" class="text-center text-muted py-4">Belum ada deposit</td>
+                    <td colspan="13" class="text-center text-muted py-4">Belum ada deposit</td>
                 </tr>
             @endforelse
         </tbody>
