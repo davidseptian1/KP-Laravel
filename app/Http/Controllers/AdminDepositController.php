@@ -266,6 +266,7 @@ class AdminDepositController extends Controller
             $tableHtml = view('admin.deposit.partials.table', [
                 'items' => $items,
                 'latestIncomingId' => $latestIncomingId,
+                'latestIncomingServerColor' => $latestIncomingServerColor,
                 'serverOptions' => $optionLists['serverOptions'],
                 'bankOptions' => $optionLists['bankOptions'],
                 'supplierOptions' => $optionLists['supplierOptions'],

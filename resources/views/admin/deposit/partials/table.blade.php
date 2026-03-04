@@ -1,4 +1,12 @@
 <div class="table-responsive">
+    <style>
+        .table-hover > tbody > tr.table-primary:hover > td { background-color: var(--bs-primary-bg-subtle) !important; color: var(--bs-primary-text-emphasis) !important; }
+        .table-hover > tbody > tr.table-success:hover > td { background-color: var(--bs-success-bg-subtle) !important; color: var(--bs-success-text-emphasis) !important; }
+        .table-hover > tbody > tr.table-info:hover > td { background-color: var(--bs-info-bg-subtle) !important; color: var(--bs-info-text-emphasis) !important; }
+        .table-hover > tbody > tr.table-warning:hover > td { background-color: var(--bs-warning-bg-subtle) !important; color: var(--bs-warning-text-emphasis) !important; }
+        .table-hover > tbody > tr.table-danger:hover > td { background-color: var(--bs-danger-bg-subtle) !important; color: var(--bs-danger-text-emphasis) !important; }
+        .table-hover > tbody > tr.table-secondary:hover > td { background-color: var(--bs-secondary-bg-subtle) !important; color: var(--bs-secondary-text-emphasis) !important; }
+    </style>
     <table class="table table-hover align-middle">
         <thead class="table-light">
             <tr>

@@ -3,11 +3,6 @@
 @section('content')
 
 <style>
-    #monitoringTableContainer tr.latest-row-highlight > td {
-        background-color: var(--bs-{{ $latestIncomingServerColor ?? 'primary' }}-bg-subtle, #cfe2ff) !important;
-        color: var(--bs-body-color, #212529);
-    }
-
     #monitoringTableContainer .modal-super-xl {
         max-width: min(1400px, 96vw);
     }
