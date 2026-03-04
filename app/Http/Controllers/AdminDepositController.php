@@ -305,12 +305,12 @@ class AdminDepositController extends Controller
 
         if ($globalSearch) {
             $query->where(function ($q) use ($globalSearch) {
-                $q->where('nama_pengirim', 'like', "%{$globalSearch}%")
+                $q->where('nama_supplier', 'like', "%{$globalSearch}%")
                   ->orWhere('nominal', 'like', "%{$globalSearch}%")
-                  ->orWhere('berita', 'like', "%{$globalSearch}%")
-                  ->orWhere('no_rekening', 'like', "%{$globalSearch}%")
-                  ->orWhere('kategori', 'like', "%{$globalSearch}%")
-                  ->orWhere('alasan_reject', 'like', "%{$globalSearch}%");
+                  ->orWhere('no_rek', 'like', "%{$globalSearch}%")
+                  ->orWhere('nama_rekening', 'like', "%{$globalSearch}%")
+                  ->orWhere('server', 'like', "%{$globalSearch}%")
+                  ->orWhere('bank', 'like', "%{$globalSearch}%");
             });
         }
 
