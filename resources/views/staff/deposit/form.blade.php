@@ -10,9 +10,6 @@
         max-height: 260px;
     }
 
-    .searchable-select-wrap .js-select-search {
-        margin-bottom: 6px;
-    }
 </style>
 
 <div class="page-header" style="margin: 0; padding: 0;">
@@ -60,15 +57,12 @@
                     @csrf
                     <div class="mb-3">
                         <label class="form-label">Nama Supplier</label>
-                        <div class="searchable-select-wrap">
-                            <input type="text" class="form-control js-select-search" data-target="supplierPublicSelect" placeholder="Cari supplier...">
-                            <select name="nama_supplier" id="supplierPublicSelect" class="form-select js-searchable-select" required>
-                                <option value="">Pilih Supplier</option>
-                                @foreach (($suppliers ?? collect()) as $supplier)
-                                    <option value="{{ $supplier }}" {{ old('nama_supplier') === $supplier ? 'selected' : '' }}>{{ $supplier }}</option>
-                                @endforeach
-                            </select>
-                        </div>
+                        <input type="text" name="nama_supplier" class="form-control" list="supplierPublicList" value="{{ old('nama_supplier') }}" placeholder="Ketik nama supplier..." required>
+                        <datalist id="supplierPublicList">
+                            @foreach (($suppliers ?? collect()) as $supplier)
+                                <option value="{{ $supplier }}"></option>
+                            @endforeach
+                        </datalist>
                         @if (($suppliers ?? collect())->isEmpty())
                             <small class="text-danger">Belum ada supplier. Minta admin tambah supplier di menu Supplier Manajemen.</small>
                         @endif
@@ -79,37 +73,29 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Deposit / Hutang</label>
-                        <div class="searchable-select-wrap">
-                            <input type="text" class="form-control js-select-search" data-target="jenisPublicSelect" placeholder="Cari jenis...">
-                            <select name="jenis_transaksi" id="jenisPublicSelect" class="form-select js-searchable-select" required>
-                                <option value="deposit">Deposit</option>
-                                <option value="hutang">Hutang</option>
-                            </select>
-                        </div>
+                        <input type="text" name="jenis_transaksi" class="form-control" list="jenisPublicList" value="{{ old('jenis_transaksi', 'deposit') }}" required>
+                        <datalist id="jenisPublicList">
+                            <option value="deposit"></option>
+                            <option value="hutang"></option>
+                        </datalist>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">BANK</label>
-                        <div class="searchable-select-wrap">
-                            <input type="text" class="form-control js-select-search" data-target="bankPublicSelect" placeholder="Cari bank...">
-                            <select name="bank" id="bankPublicSelect" class="form-select js-searchable-select" required>
-                                <option value="">Pilih Bank</option>
-                                @foreach (($banks ?? collect()) as $bank)
-                                    <option value="{{ $bank }}" {{ old('bank') === $bank ? 'selected' : '' }}>{{ $bank }}</option>
-                                @endforeach
-                            </select>
-                        </div>
+                        <input type="text" name="bank" class="form-control" list="bankPublicList" value="{{ old('bank') }}" placeholder="Ketik nama bank..." required>
+                        <datalist id="bankPublicList">
+                            @foreach (($banks ?? collect()) as $bank)
+                                <option value="{{ $bank }}"></option>
+                            @endforeach
+                        </datalist>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Server</label>
-                        <div class="searchable-select-wrap">
-                            <input type="text" class="form-control js-select-search" data-target="serverPublicSelect" placeholder="Cari server...">
-                            <select name="server" id="serverPublicSelect" class="form-select js-searchable-select" required>
-                                <option value="">Pilih Server</option>
-                                @foreach (($servers ?? collect()) as $server)
-                                    <option value="{{ $server }}" {{ old('server') === $server ? 'selected' : '' }}>{{ $server }}</option>
-                                @endforeach
-                            </select>
-                        </div>
+                        <input type="text" name="server" class="form-control" list="serverPublicList" value="{{ old('server') }}" placeholder="Ketik server..." required>
+                        <datalist id="serverPublicList">
+                            @foreach (($servers ?? collect()) as $server)
+                                <option value="{{ $server }}"></option>
+                            @endforeach
+                        </datalist>
                         @if (($servers ?? collect())->isEmpty())
                             <small class="text-danger">Belum ada server. Minta admin tambah server di menu Server Manajemen.</small>
                         @endif
@@ -208,42 +194,6 @@
 
             textarea.addEventListener('input', resize);
             resize();
-        });
-
-        document.querySelectorAll('.js-searchable-select').forEach(function (select) {
-            const originalOptions = Array.from(select.options).map(function (opt) {
-                return { value: opt.value, text: opt.text };
-            });
-
-            const searchInput = document.querySelector('.js-select-search[data-target="' + select.id + '"]');
-            if (!searchInput) return;
-
-            const renderOptions = function (query) {
-                const q = String(query || '').toLowerCase().trim();
-                const currentValue = select.value;
-
-                const filtered = originalOptions.filter(function (opt, idx) {
-                    if (idx === 0) return true;
-                    return opt.text.toLowerCase().includes(q);
-                });
-
-                select.innerHTML = '';
-                filtered.forEach(function (opt) {
-                    const option = document.createElement('option');
-                    option.value = opt.value;
-                    option.textContent = opt.text;
-                    if (opt.value === currentValue) option.selected = true;
-                    select.appendChild(option);
-                });
-
-                if (!Array.from(select.options).some(function (opt) { return opt.value === currentValue; })) {
-                    select.selectedIndex = 0;
-                }
-            };
-
-            searchInput.addEventListener('input', function () {
-                renderOptions(this.value);
-            });
         });
 
         if (!btn || !text) return;
