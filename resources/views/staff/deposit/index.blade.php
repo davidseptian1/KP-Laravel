@@ -85,6 +85,17 @@
                 </button>
             </div>
             <div class="card-body">
+                @if ($errors->any())
+                    <div class="alert alert-danger mb-3">
+                        <div class="fw-semibold mb-1">Request deposit gagal disimpan:</div>
+                        <ul class="mb-0 ps-3">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
                 <form method="GET" class="row g-3 align-items-end mb-3 filter-row">
                     <div class="col-xl-2 col-lg-3 col-md-4">
                         <label class="form-label">Tanggal</label>
@@ -371,7 +382,7 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label">Nama Supplier</label>
-                            <input type="text" name="nama_supplier" class="form-control" list="supplierRequestList" placeholder="Ketik nama supplier..." autocomplete="off" required>
+                            <input type="text" name="nama_supplier" class="form-control" list="supplierRequestList" value="{{ old('nama_supplier') }}" placeholder="Ketik nama supplier..." autocomplete="off" required>
                             <datalist id="supplierRequestList">
                                 @foreach (($suppliers ?? collect()) as $supplier)
                                     <option value="{{ $supplier }}"></option>
@@ -383,11 +394,11 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Nominal</label>
-                            <input type="text" name="nominal" class="form-control" inputmode="numeric" placeholder="Contoh: 1.250.000,-" required>
+                            <input type="text" name="nominal" class="form-control" inputmode="numeric" value="{{ old('nominal') }}" placeholder="Contoh: 1.250.000,-" required>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Deposit / Hutang</label>
-                            <input type="text" name="jenis_transaksi" class="form-control" list="jenisRequestList" value="deposit" autocomplete="off" required>
+                            <input type="text" name="jenis_transaksi" class="form-control" list="jenisRequestList" value="{{ old('jenis_transaksi', 'deposit') }}" autocomplete="off" required>
                             <datalist id="jenisRequestList">
                                 <option value="deposit"></option>
                                 <option value="hutang"></option>
@@ -395,7 +406,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Bank</label>
-                            <input type="text" name="bank" class="form-control" list="bankRequestList" placeholder="Ketik nama bank..." autocomplete="off" required>
+                            <input type="text" name="bank" class="form-control" list="bankRequestList" value="{{ old('bank') }}" placeholder="Ketik nama bank..." autocomplete="off" required>
                             <datalist id="bankRequestList">
                                 @foreach (($banks ?? collect()) as $bank)
                                     <option value="{{ $bank }}"></option>
@@ -407,13 +418,13 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Bank Tujuan</label>
-                            <input type="text" name="bank_tujuan" class="form-control" list="bankTujuanRequestList" placeholder="Otomatis dari Reply Tiket" autocomplete="off">
+                            <input type="text" name="bank_tujuan" class="form-control" list="bankTujuanRequestList" value="{{ old('bank_tujuan') }}" placeholder="Otomatis dari Reply Tiket" autocomplete="off">
                             <select id="bankTujuanParsedSelectRequest" class="form-select form-select-sm mt-2 d-none"></select>
                             <datalist id="bankTujuanRequestList"></datalist>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Server</label>
-                            <input type="text" name="server" class="form-control" list="serverRequestList" placeholder="Ketik server..." autocomplete="off" required>
+                            <input type="text" name="server" class="form-control" list="serverRequestList" value="{{ old('server') }}" placeholder="Ketik server..." autocomplete="off" required>
                             <datalist id="serverRequestList">
                                 @foreach (($servers ?? collect()) as $server)
                                     <option value="{{ $server }}"></option>
@@ -425,19 +436,19 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">No Rekening</label>
-                            <input type="text" name="no_rek" class="form-control" list="noRekeningRequestList" autocomplete="off" required>
+                            <input type="text" name="no_rek" class="form-control" list="noRekeningRequestList" value="{{ old('no_rek') }}" autocomplete="off" required>
                             <select id="noRekParsedSelectRequest" class="form-select form-select-sm mt-2 d-none"></select>
                             <datalist id="noRekeningRequestList"></datalist>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Nama Rekening</label>
-                            <input type="text" name="nama_rekening" class="form-control" list="namaRekeningRequestList" autocomplete="off" required>
+                            <input type="text" name="nama_rekening" class="form-control" list="namaRekeningRequestList" value="{{ old('nama_rekening') }}" autocomplete="off" required>
                             <select id="namaRekParsedSelectRequest" class="form-select form-select-sm mt-2 d-none"></select>
                             <datalist id="namaRekeningRequestList"></datalist>
                         </div>
                         <div class="col-12">
                             <label class="form-label">Reply Tiket</label>
-                            <textarea name="reply_tiket" class="form-control js-auto-resize-textarea" rows="2"></textarea>
+                            <textarea name="reply_tiket" class="form-control js-auto-resize-textarea" rows="2">{{ old('reply_tiket') }}</textarea>
                         </div>
                         <div class="col-12">
                             <label class="form-label">Upload / Paste Gambar Reply Tiket</label>
@@ -476,6 +487,7 @@
         const status = @json($status ?? '');
         const nominalFilter = @json($nominalFilter ?? '');
         const pollIntervalMs = 1000;
+        const hasValidationErrors = @json($errors->any());
 
         const notifStatusEl = document.getElementById('browserNotifStatus');
         const enableNotifBtn = document.getElementById('btnEnableBrowserNotif');
@@ -871,6 +883,13 @@
 
         if (enableNotifBtn) {
             enableNotifBtn.addEventListener('click', requestBrowserNotificationPermission);
+        }
+
+        if (hasValidationErrors) {
+            const requestModalEl = document.getElementById('modalRequestDeposit');
+            if (requestModalEl && window.bootstrap && window.bootstrap.Modal) {
+                window.bootstrap.Modal.getOrCreateInstance(requestModalEl).show();
+            }
         }
 
         if (staffRequestDepositForm) {

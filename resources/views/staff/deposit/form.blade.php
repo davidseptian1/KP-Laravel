@@ -44,6 +44,17 @@
                     <div class="alert alert-success">{{ session('success') }}</div>
                 @endif
 
+                @if ($errors->any())
+                    <div class="alert alert-danger">
+                        <div class="fw-semibold mb-1">Pengajuan gagal disimpan:</div>
+                        <ul class="mb-0 ps-3">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
                 @if (session('deposit_reply_text'))
                     <div class="alert alert-warning">
                         Salin data berikut dan kirimkan ke WhatsApp admin jika ingin diproses.
