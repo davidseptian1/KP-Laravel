@@ -129,12 +129,12 @@ class AdminDepositController extends Controller
             ->first();
         $latestIncomingId = $latestIncomingItem?->id;
 
+        $serverColorsMap = Server::query()->pluck('card_color', 'nama_server')->toArray();
+
         $latestIncomingServer = trim((string) ($latestIncomingItem->server ?? ''));
         $latestIncomingServerColor = 'primary';
         if ($latestIncomingServer !== '') {
-            $latestIncomingServerColor = Server::query()
-                ->where('nama_server', $latestIncomingServer)
-                ->value('card_color') ?: 'primary';
+            $latestIncomingServerColor = $serverColorsMap[$latestIncomingServer] ?? 'primary';
         }
 
         return view('admin.deposit.monitoring', [
@@ -155,6 +155,7 @@ class AdminDepositController extends Controller
             'latestIncomingId' => $latestIncomingId,
             'latestIncomingServer' => $latestIncomingServer,
             'latestIncomingServerColor' => $latestIncomingServerColor,
+            'serverColorsMap' => $serverColorsMap,
             'serverOptions' => $optionLists['serverOptions'],
             'bankOptions' => $optionLists['bankOptions'],
             'supplierOptions' => $optionLists['supplierOptions'],
@@ -187,12 +188,12 @@ class AdminDepositController extends Controller
             ->first();
         $latestIncomingId = $latestIncomingItem?->id;
 
+        $serverColorsMap = Server::query()->pluck('card_color', 'nama_server')->toArray();
+
         $latestIncomingServer = trim((string) ($latestIncomingItem->server ?? ''));
         $latestIncomingServerColor = 'primary';
         if ($latestIncomingServer !== '') {
-            $latestIncomingServerColor = Server::query()
-                ->where('nama_server', $latestIncomingServer)
-                ->value('card_color') ?: 'primary';
+            $latestIncomingServerColor = $serverColorsMap[$latestIncomingServer] ?? 'primary';
         }
 
         $since = !empty($filters['since']) ? Carbon::parse($filters['since']) : null;
@@ -243,6 +244,7 @@ class AdminDepositController extends Controller
                 'items' => $items,
                 'latestIncomingId' => $latestIncomingId,
                 'latestIncomingServerColor' => $latestIncomingServerColor,
+                'serverColorsMap' => $serverColorsMap,
                 'serverOptions' => $optionLists['serverOptions'],
                 'bankOptions' => $optionLists['bankOptions'],
                 'supplierOptions' => $optionLists['supplierOptions'],

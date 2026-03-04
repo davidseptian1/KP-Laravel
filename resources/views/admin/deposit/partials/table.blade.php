@@ -28,10 +28,11 @@
             @forelse ($items as $item)
                 @php
                     $rowColorClass = '';
-                    if ((int)($latestIncomingId ?? 0) === (int)$item->id) {
+                    if (strtolower($item->status) === 'pending') {
+                        $itemServer = trim((string)($item->server ?? ''));
                         $defaultColor = 'primary';
-                        if (isset($latestIncomingServerColor) && !empty($latestIncomingServerColor)) {
-                            $defaultColor = $latestIncomingServerColor;
+                        if ($itemServer !== '' && isset($serverColorsMap[$itemServer]) && !empty($serverColorsMap[$itemServer])) {
+                            $defaultColor = $serverColorsMap[$itemServer];
                         }
                         $rowColorClass = 'table-' . $defaultColor;
                     }
