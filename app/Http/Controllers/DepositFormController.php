@@ -267,7 +267,7 @@ class DepositFormController extends Controller
             'no_rek' => 'required|regex:/^[0-9]+$/|max:100',
             'nama_rekening' => 'required|string|max:255',
             'reply_tiket' => 'nullable|string',
-            'jam' => 'required|date_format:H:i',
+            'jam' => 'nullable|date_format:H:i',
         ]);
 
         $formId = $validated['form_id'] ?? DepositForm::where('is_active', true)
@@ -290,7 +290,7 @@ class DepositFormController extends Controller
             'reply_tiket' => $validated['reply_tiket'] ?? null,
             'reply_penambahan' => 'Menunggu Konfirmasi Admin',
             'status' => 'pending',
-            'jam' => $validated['jam'],
+            'jam' => $validated['jam'] ?? now()->format('H:i'),
         ];
 
         if (Schema::hasColumn('deposits', 'bank_tujuan')) {
@@ -357,7 +357,7 @@ class DepositFormController extends Controller
             'no_rek' => 'required|regex:/^[0-9]+$/|max:100',
             'nama_rekening' => 'required|string|max:255',
             'reply_tiket' => 'nullable|string',
-            'jam' => 'required|date_format:H:i',
+            'jam' => 'nullable|date_format:H:i',
         ]);
 
         $depositPayload = [
@@ -373,7 +373,7 @@ class DepositFormController extends Controller
             'reply_tiket' => $validated['reply_tiket'] ?? null,
             'reply_penambahan' => 'Menunggu Konfirmasi Admin',
             'status' => 'pending',
-            'jam' => $validated['jam'],
+            'jam' => $validated['jam'] ?? now()->format('H:i'),
         ];
 
         if (Schema::hasColumn('deposits', 'bank_tujuan')) {
