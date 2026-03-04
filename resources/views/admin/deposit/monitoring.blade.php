@@ -451,13 +451,32 @@
                 }
 
                 if (result.table_html) {
-                    const tableContainer = document.getElementById('monitoringTableContainer');
-                    if (tableContainer) {
-                        tableContainer.innerHTML = result.table_html;
-                        initTransferFormControls();
-                        initAutoResizeTextareas();
-                        bindModalTextareaResize();
-                        applyLatestRowHighlight(latestIncomingId);
+                    const hasOpenModal = document.querySelector('.modal.show') !== null;
+                    
+                    if (!hasOpenModal) {
+                        const tableContainer = document.getElementById('monitoringTableContainer');
+                        if (tableContainer) {
+                            tableContainer.innerHTML = result.table_html;
+                            initTransferFormControls();
+                            initAutoResizeTextareas();
+                            bindModalTextareaResize();
+                            applyLatestRowHighlight(latestIncomingId);
+                        }
+                    } else {
+                        // Kalo ada modal terbuka, tunda update-nya sampai modal ditutup
+                        const openModalEl = document.querySelector('.modal.show');
+                        const handleModalHidden = function () {
+                            const container = document.getElementById('monitoringTableContainer');
+                            if (container) {
+                                container.innerHTML = result.table_html;
+                                initTransferFormControls();
+                                initAutoResizeTextareas();
+                                bindModalTextareaResize();
+                                applyLatestRowHighlight(latestIncomingId);
+                            }
+                            openModalEl.removeEventListener('hidden.bs.modal', handleModalHidden);
+                        };
+                        openModalEl.addEventListener('hidden.bs.modal', handleModalHidden);
                     }
                 }
 
