@@ -43,33 +43,33 @@
                     </button>
                 </div>
 
-                <form method="GET" class="row g-2 align-items-end mb-3">
+                <form method="GET" class="row g-2 align-items-end mb-3" autocomplete="off">
                     <div class="col-md-2">
                         <label class="form-label">Nama Server</label>
-                        <select name="server" class="form-select form-select-sm">
-                            <option value="">Semua Server</option>
+                        <input type="text" name="server" class="form-control form-control-sm" value="{{ $server ?? '' }}" list="filterServerList" placeholder="Semua Server" autocomplete="off">
+                        <datalist id="filterServerList">
                             @foreach (($serverOptions ?? collect()) as $serverOption)
-                                <option value="{{ $serverOption }}" {{ ($server ?? '') === $serverOption ? 'selected' : '' }}>{{ $serverOption }}</option>
+                                <option value="{{ $serverOption }}"></option>
                             @endforeach
-                        </select>
+                        </datalist>
                     </div>
                     <div class="col-md-2">
                         <label class="form-label">Nama Bank</label>
-                        <select name="bank" class="form-select form-select-sm">
-                            <option value="">Semua Bank</option>
+                        <input type="text" name="bank" class="form-control form-control-sm" value="{{ $bank ?? '' }}" list="filterBankList" placeholder="Semua Bank" autocomplete="off">
+                        <datalist id="filterBankList">
                             @foreach (($bankOptions ?? collect()) as $bankOption)
-                                <option value="{{ $bankOption }}" {{ ($bank ?? '') === $bankOption ? 'selected' : '' }}>{{ $bankOption }}</option>
+                                <option value="{{ $bankOption }}"></option>
                             @endforeach
-                        </select>
+                        </datalist>
                     </div>
                     <div class="col-md-2">
                         <label class="form-label">Nama SPL</label>
-                        <select name="nama_supplier" class="form-select form-select-sm">
-                            <option value="">Semua SPL</option>
+                        <input type="text" name="nama_supplier" class="form-control form-control-sm" value="{{ $namaSupplier ?? '' }}" list="filterSupplierList" placeholder="Semua SPL" autocomplete="off">
+                        <datalist id="filterSupplierList">
                             @foreach (($supplierOptions ?? collect()) as $supplierOption)
-                                <option value="{{ $supplierOption }}" {{ ($namaSupplier ?? '') === $supplierOption ? 'selected' : '' }}>{{ $supplierOption }}</option>
+                                <option value="{{ $supplierOption }}"></option>
                             @endforeach
-                        </select>
+                        </datalist>
                     </div>
                     <div class="col-md-2">
                         <label class="form-label">Status</label>
