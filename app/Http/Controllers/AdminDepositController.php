@@ -119,7 +119,8 @@ class AdminDepositController extends Controller
         $query = $this->buildMonitoringQuery($filters);
         $optionLists = $this->getMonitoringOptionLists();
 
-        $items = $query->paginate(15)->withQueryString();
+        $perPage = $filters['per_page'] ?? 50;
+        $items = $query->paginate($perPage)->withQueryString();
         $latestUpdatedAt = (clone $query)->max('updated_at');
         $latestIncomingAt = (clone $query)->max('created_at');
         $latestIncomingItem = (clone $query)
@@ -147,6 +148,8 @@ class AdminDepositController extends Controller
             'endDate' => $filters['end_date'] ?? null,
             'status' => $filters['status'] ?? null,
             'staffDeleted' => $filters['staff_deleted'] ?? null,
+            'globalSearch' => $filters['global_search'] ?? null,
+            'perPage' => $perPage,
             'latestUpdatedAt' => $latestUpdatedAt,
             'latestIncomingAt' => $latestIncomingAt,
             'latestIncomingId' => $latestIncomingId,
@@ -276,6 +279,7 @@ class AdminDepositController extends Controller
         $endDate = $filters['end_date'] ?? null;
         $status = $filters['status'] ?? null;
         $staffDeleted = $filters['staff_deleted'] ?? null;
+        $globalSearch = $filters['global_search'] ?? null;
 
         if ($server) {
             $query->where('server', 'like', "%{$server}%");
@@ -297,6 +301,17 @@ class AdminDepositController extends Controller
             $query->where('is_deleted_by_staff', true);
         } elseif ($staffDeleted === 'no') {
             $query->where('is_deleted_by_staff', false);
+        }
+
+        if ($globalSearch) {
+            $query->where(function ($q) use ($globalSearch) {
+                $q->where('nama_pengirim', 'like', "%{$globalSearch}%")
+                  ->orWhere('nominal', 'like', "%{$globalSearch}%")
+                  ->orWhere('berita', 'like', "%{$globalSearch}%")
+                  ->orWhere('no_rekening', 'like', "%{$globalSearch}%")
+                  ->orWhere('kategori', 'like', "%{$globalSearch}%")
+                  ->orWhere('alasan_reject', 'like', "%{$globalSearch}%");
+            });
         }
 
         if ($startDate && $endDate) {
@@ -325,6 +340,8 @@ class AdminDepositController extends Controller
             'end_date' => 'nullable|date_format:Y-m-d',
             'status' => 'nullable|in:pending,approved,rejected,selesai',
             'staff_deleted' => 'nullable|in:yes,no',
+            'per_page' => 'nullable|integer|in:10,50,100,200',
+            'global_search' => 'nullable|string|max:255',
         ]);
 
         return $this->applyDefaultDateRange($filters);

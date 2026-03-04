@@ -90,6 +90,19 @@
                         </select>
                     </div>
                     <div class="col-md-2">
+                        <label class="form-label">Tampil</label>
+                        <select name="per_page" class="form-select form-select-sm">
+                            <option value="10" {{ ($perPage ?? 50) == 10 ? 'selected' : '' }}>10 baris</option>
+                            <option value="50" {{ ($perPage ?? 50) == 50 ? 'selected' : '' }}>50 baris</option>
+                            <option value="100" {{ ($perPage ?? 50) == 100 ? 'selected' : '' }}>100 baris</option>
+                            <option value="200" {{ ($perPage ?? 50) == 200 ? 'selected' : '' }}>200 baris</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Cari Data</label>
+                        <input type="text" name="global_search" class="form-control form-control-sm" value="{{ $globalSearch ?? '' }}" placeholder="Cari nama, nominal...">
+                    </div>
+                    <div class="col-md-2">
                         <label class="form-label">Start Date</label>
                         <input type="date" name="start_date" class="form-control form-control-sm" value="{{ $startDate ?? '' }}">
                     </div>
