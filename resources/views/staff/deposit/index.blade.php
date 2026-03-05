@@ -370,6 +370,7 @@
         <div class="modal-content">
             <form method="POST" action="{{ route('deposit.request.store') }}" enctype="multipart/form-data" id="staffRequestDepositForm" autocomplete="off">
                 @csrf
+                <input type="hidden" name="reply_penambahan" value="Menunggu Konfirmasi Admin">
                 <div class="modal-header">
                     <h5 class="modal-title">Request Deposit</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>

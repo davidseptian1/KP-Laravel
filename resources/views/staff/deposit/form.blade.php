@@ -66,6 +66,7 @@
 
                 <form method="POST" action="{{ route('deposit.form.submit', $form->token) }}" id="depositRequestForm" autocomplete="off">
                     @csrf
+                    <input type="hidden" name="reply_penambahan" value="Menunggu Konfirmasi Admin">
                     <div class="alert alert-warning py-2 mb-3">
                         <strong>Note:</strong> Untuk <strong>Nama Supplier</strong>, <strong>Deposit/Hutang</strong>, <strong>Bank</strong>, dan <strong>Server</strong> gunakan data yang muncul. Jika data tidak ada, request tidak akan tersimpan.
                     </div>
