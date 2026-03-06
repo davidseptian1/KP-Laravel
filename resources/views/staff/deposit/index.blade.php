@@ -1076,7 +1076,7 @@
                 }
 
                         // Parse Nama Rekening Multiple (tangkap nama sesudah a.n. sampai tanda baca terdekat, nama bank, dsb.)
-                        const namaRegex = /(?:a\/n|a\.n\.?|atas\s+nama\s*:?|\bAN\.?\b)\s*[:\-]?\s*(.*?)(?=\s*(?:BCA|BNI|BRI|MANDIRI|BSI|CIMB|MAYBANK|PERMATA|JENIUS|SEABANK|NEO|BNC|BJB|DANAMON|MEGA|JAGO|ALADIN)\b|\s*no\s*rek\b|\s*rekening\b|\s*berita\b|\s*edc|\s*cntr|\s*\||\s*deposit\b|\s*harap\b|\s*konfirmasi\b|\s*batas\b|\s*transfer\b|\(|!+|\.\s*tiket|\.\s*$|,|\.\s[A-Z]|\n|\r|$)/gi;
+                            const namaRegex = /(?:a\/n|a\.n\.?|atas\s+nama\s*:?|\bAN\.?\b)\s*[:\-]?\s*(.*?)(?=\s*(?:BCA|BNI|BRI|MANDIRI|BSI|CIMB|MAYBANK|PERMATA|JENIUS|SEABANK|NEO|BNC|BJB|DANAMON|MEGA|JAGO|ALADIN)\b|\s*no\s*rek\b|\s*rekening\b|\s*berita\b|\s*edc|\s*cntr|\s*\||\s*deposit\b|\s*harap\b|\s*konfirmasi\b|\s*batas\b|\s*transfer\b|\s*tiket\s*berlaku\b|\s*open\s*jam\b|\*transaksi\s*normal\*|\(|!+|\.\s*tiket|\.\s*$|,|\n|\r|$)/gi;
                         let parsedNamas = [];
                         let nMatch;
                         while ((nMatch = namaRegex.exec(text)) !== null) {
@@ -1088,6 +1088,17 @@
                                 parsedNamas.push(extracted);
                             }
                         }
+
+                const anLineMatch = text.match(/\bAn\.?\s*:\s*([A-Za-z0-9 .,&'\-]{3,120}?)(?=\s*(?:\.\s*Tiket\b|Tiket\s*Berlaku\b|Open\s*Jam\b|\*TRANSAKSI\s*NORMAL\*|HARUSSAMA\b|$))/i);
+                if (anLineMatch) {
+                    const anName = anLineMatch[1]
+                        .replace(/\s{2,}/g, ' ')
+                        .replace(/[\s:;,\-|()\[\]]+$/g, '')
+                        .trim();
+                    if (anName && anName.length > 2 && !parsedNamas.includes(anName)) {
+                        parsedNamas.unshift(anName);
+                    }
+                }
 
                 if (parsedNamas.length > 0) {
                     if (namaRekeningInput && !namaRekeningInput.value) {
@@ -1106,6 +1117,7 @@
 
                 // Parse Bank and Norek directly without limiting to "Ke Rek:"
                 const bankRegexes = [
+                    /(?:^|[\/\s])(BCA|BNI|BRI|MANDIRI|MNDR|BSI|CIMB|MAYBANK|PERMATA|JENIUS|SEABANK|NEO|BNC|BJB|DANAMON|MEGA|JAGO|ALADIN|OVO|DANA|GOPAY|SHOPEEPAY|LINKAJA|MUAMALAT|BTN|PANIN)\s*[:=]\s*([0-9][0-9\-\s]{4,30})/gi,
                     /\[(BCA|BNI|BRI|MANDIRI|MNDR|BSI|CIMB|MAYBANK|PERMATA|JENIUS|SEABANK|NEO|BNC|BJB|DANAMON|MEGA|JAGO|ALADIN|OVO|DANA|GOPAY|SHOPEEPAY|LINKAJA|MUAMALAT|BTN|PANIN)(?:\s+\d+)?[^\]]*\]\s*[-:=]?\s*([0-9][0-9\-\s]{4,30})/gi,
                     /\b(BCA|BNI|BRI|MANDIRI|MNDR|BSI|CIMB|MAYBANK|PERMATA|JENIUS|SEABANK|NEO|BNC|BJB|DANAMON|MEGA|JAGO|ALADIN|OVO|DANA|GOPAY|SHOPEEPAY|LINKAJA|MUAMALAT|BTN|PANIN)\b\s*(?:-|:|=)?\s*([0-9][0-9\-\s]{4,30})/gi,
                     /\b(BCA|BNI|BRI|MANDIRI|MNDR|BSI|CIMB|MAYBANK|PERMATA|JENIUS|SEABANK|NEO|BNC|BJB|DANAMON|MEGA|JAGO|ALADIN|OVO|DANA|GOPAY|SHOPEEPAY|LINKAJA|MUAMALAT|BTN|PANIN)\b\s*(?:-|:|=)\s*[A-Z]{2,20}\s*(?:-|:|=)\s*([0-9][0-9\-\s]{4,30})/gi,
