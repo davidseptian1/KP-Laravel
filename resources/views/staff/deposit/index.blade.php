@@ -57,6 +57,13 @@
         opacity: 0.55;
     }
 
+    .staff-deposit-page .table thead th.col-jam,
+    .staff-deposit-page .table tbody td.cell-jam,
+    .staff-deposit-page .table thead th.col-aksi,
+    .staff-deposit-page .table tbody td.cell-aksi {
+        white-space: nowrap;
+    }
+
     .staff-deposit-page .column-settings-panel {
         border: 1px solid var(--bs-border-color, #dee2e6);
         border-radius: 10px;
@@ -102,6 +109,33 @@
         .staff-deposit-page .table .btn,
         .staff-deposit-page .table .badge {
             font-size: 0.68rem;
+        }
+
+        .staff-deposit-page .table thead th.col-jam,
+        .staff-deposit-page .table tbody td.cell-jam {
+            width: 64px;
+            min-width: 64px;
+            text-align: center;
+            white-space: nowrap !important;
+            word-break: normal !important;
+            overflow-wrap: normal !important;
+        }
+
+        .staff-deposit-page .table thead th.col-aksi,
+        .staff-deposit-page .table tbody td.cell-aksi {
+            width: 84px;
+            min-width: 84px;
+            text-align: center;
+            white-space: nowrap !important;
+            word-break: normal !important;
+            overflow-wrap: normal !important;
+        }
+
+        .staff-deposit-page .table tbody td.cell-aksi .btn {
+            white-space: nowrap;
+            min-width: 58px;
+            padding-left: 0.35rem;
+            padding-right: 0.35rem;
         }
 
         .staff-deposit-page .column-settings-panel {
@@ -291,8 +325,8 @@
                                 <th><i class="ti ti-file-text me-1"></i>REPLY PENAMBAHAN</th>
                                 <th><i class="ti ti-photo me-1"></i>Bukti Tranfers Admin</th>
                                 <th><i class="ti ti-list-check me-1"></i>STATUS</th>
-                                <th><i class="ti ti-clock me-1"></i>JAM</th>
-                                <th><i class="ti ti-settings me-1"></i>AKSI</th>
+                                <th class="col-jam"><i class="ti ti-clock me-1"></i>JAM</th>
+                                <th class="col-aksi"><i class="ti ti-settings me-1"></i>AKSI</th>
                             </tr>
                         </thead>
                         <tbody>
