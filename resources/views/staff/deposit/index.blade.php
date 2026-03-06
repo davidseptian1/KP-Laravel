@@ -77,6 +77,38 @@
         max-height: 260px;
     }
 
+    @media (max-width: 768px) {
+        .staff-deposit-page .table-wrap table {
+            min-width: 100% !important;
+            width: 100%;
+            table-layout: fixed;
+        }
+
+        .staff-deposit-page .table thead th,
+        .staff-deposit-page .table tbody td {
+            white-space: normal !important;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            vertical-align: top;
+            font-size: 0.72rem;
+            padding: 0.4rem 0.3rem;
+            line-height: 1.2;
+        }
+
+        .staff-deposit-page .table thead th i {
+            margin-right: 0.1rem !important;
+        }
+
+        .staff-deposit-page .table .btn,
+        .staff-deposit-page .table .badge {
+            font-size: 0.68rem;
+        }
+
+        .staff-deposit-page .column-settings-panel {
+            font-size: 0.78rem;
+        }
+    }
+
 </style>
 
 <div class="page-header" style="margin: 0; padding: 0;">
@@ -818,6 +850,7 @@
 
             const orderStorageKey = 'staff.deposit.table.column.order.v1';
             const visibilityStorageKey = 'staff.deposit.table.column.visibility.v1';
+            const mobileDefaultVisibleColumnCount = 8;
             const headerCells = Array.from(headerRow.cells || []);
             if (headerCells.length < 2) return;
 
@@ -972,8 +1005,28 @@
                 }
             }
 
+            function applyMobileDefaultVisibilityIfNeeded() {
+                const isMobile = window.matchMedia('(max-width: 768px)').matches;
+                if (!isMobile) return;
+
+                let hasSavedVisibility = false;
+                try {
+                    hasSavedVisibility = !!localStorage.getItem(visibilityStorageKey);
+                } catch (error) {
+                }
+                if (hasSavedVisibility) return;
+
+                const orderedHeaders = Array.from(headerRow.cells || []);
+                orderedHeaders.forEach(function (th, index) {
+                    const colId = String(th.dataset.colId || '');
+                    setColumnVisibilityById(colId, index < mobileDefaultVisibleColumnCount);
+                });
+                saveVisibility();
+            }
+
             applySavedOrder();
             applySavedVisibility();
+            applyMobileDefaultVisibilityIfNeeded();
             renderColumnVisibilityOptions();
 
             if (toggleSettingsBtn && settingsPanel) {
