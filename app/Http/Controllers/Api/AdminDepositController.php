@@ -14,6 +14,9 @@ class AdminDepositController extends Controller
             'status' => 'nullable|in:pending,approved,rejected,selesai',
             'search' => 'nullable|string|max:100',
             'server' => 'nullable|string|max:100',
+            'bank' => 'nullable|string|max:100',
+            'nama_supplier' => 'nullable|string|max:255',
+            'no_rek' => 'nullable|string|max:100',
             'start_date' => 'nullable|date_format:Y-m-d',
             'end_date' => 'nullable|date_format:Y-m-d',
         ]);
@@ -21,6 +24,9 @@ class AdminDepositController extends Controller
         $status = $validated['status'] ?? null;
         $search = $validated['search'] ?? null;
         $server = $validated['server'] ?? null;
+        $bank = $validated['bank'] ?? null;
+        $namaSupplier = $validated['nama_supplier'] ?? null;
+        $noRek = $validated['no_rek'] ?? null;
         $startDate = $validated['start_date'] ?? null;
         $endDate = $validated['end_date'] ?? null;
 
@@ -42,6 +48,18 @@ class AdminDepositController extends Controller
             $query->where('server', 'like', "%{$server}%");
         }
 
+        if ($bank) {
+            $query->where('bank', 'like', "%{$bank}%");
+        }
+
+        if ($namaSupplier) {
+            $query->where('nama_supplier', 'like', "%{$namaSupplier}%");
+        }
+
+        if ($noRek) {
+            $query->where('no_rek', 'like', "%{$noRek}%");
+        }
+
         if ($startDate) {
             $query->whereDate('created_at', '>=', $startDate);
         }
@@ -50,10 +68,13 @@ class AdminDepositController extends Controller
             $query->whereDate('created_at', '<=', $endDate);
         }
 
+        $items = $query->get();
+
         return response()->json([
             'status' => true,
             'message' => 'List monitoring deposit',
-            'data' => $query->paginate(15),
+            'total' => $items->count(),
+            'data' => $items,
         ]);
     }
 
