@@ -12,6 +12,7 @@ use App\Models\Supplier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
@@ -408,7 +409,9 @@ class DepositFormController extends Controller
     public function updateReplyPenambahan(Request $request, int $id)
     {
         $validated = $request->validate([
-            'reply_penambahan' => 'required|string',
+            'reply_penambahan_type' => 'nullable|in:text,image',
+            'reply_penambahan' => 'nullable|string',
+            'reply_penambahan_image' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:5120',
         ]);
 
         $item = Deposit::where('id', $id)
@@ -419,7 +422,45 @@ class DepositFormController extends Controller
             return redirect()->route('deposit.request.index')->with('error', 'Request belum approved oleh admin');
         }
 
-        $item->reply_penambahan = $validated['reply_penambahan'];
+        $replyType = $validated['reply_penambahan_type'] ?? ($request->hasFile('reply_penambahan_image') ? 'image' : 'text');
+        $replyText = trim((string) ($validated['reply_penambahan'] ?? ''));
+
+        if ($replyType === 'image') {
+            if ($request->hasFile('reply_penambahan_image')) {
+                if ($item->reply_penambahan_image && Storage::disk('local')->exists($item->reply_penambahan_image)) {
+                    Storage::disk('local')->delete($item->reply_penambahan_image);
+                }
+
+                $path = $request->file('reply_penambahan_image')->store('deposit/reply-penambahan', 'local');
+                $item->reply_penambahan_image = $path;
+            }
+
+            if (!$item->reply_penambahan_image) {
+                throw ValidationException::withMessages([
+                    'reply_penambahan_image' => 'Pilih atau paste gambar reply penambahan terlebih dahulu untuk tipe image.',
+                ]);
+            }
+
+            $item->reply_penambahan_type = 'image';
+            $item->reply_penambahan = $replyText !== '' ? $replyText : null;
+            $item->save();
+
+            return redirect()->route('deposit.request.index')->with('success', 'Reply Penambahan berhasil diupdate');
+        }
+
+        if ($replyText === '') {
+            throw ValidationException::withMessages([
+                'reply_penambahan' => 'Reply penambahan wajib diisi untuk tipe text.',
+            ]);
+        }
+
+        if ($item->reply_penambahan_image && Storage::disk('local')->exists($item->reply_penambahan_image)) {
+            Storage::disk('local')->delete($item->reply_penambahan_image);
+            $item->reply_penambahan_image = null;
+        }
+
+        $item->reply_penambahan_type = 'text';
+        $item->reply_penambahan = $replyText;
         $item->save();
 
         return redirect()->route('deposit.request.index')->with('success', 'Reply Penambahan berhasil diupdate');
