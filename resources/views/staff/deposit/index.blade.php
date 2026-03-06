@@ -77,7 +77,7 @@
         max-height: 260px;
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 1200px) {
         .staff-deposit-page .table-wrap table {
             min-width: 100% !important;
             width: 100%;
@@ -851,6 +851,7 @@
             const orderStorageKey = 'staff.deposit.table.column.order.v1';
             const visibilityStorageKey = 'staff.deposit.table.column.visibility.v1';
             const mobileDefaultVisibleColumnCount = 8;
+            const responsiveBreakpoint = '(max-width: 1200px)';
             const headerCells = Array.from(headerRow.cells || []);
             if (headerCells.length < 2) return;
 
@@ -1006,8 +1007,8 @@
             }
 
             function applyMobileDefaultVisibilityIfNeeded() {
-                const isMobile = window.matchMedia('(max-width: 768px)').matches;
-                if (!isMobile) return;
+                const isResponsiveNarrow = window.matchMedia(responsiveBreakpoint).matches;
+                if (!isResponsiveNarrow) return;
 
                 let hasSavedVisibility = false;
                 try {
@@ -1056,6 +1057,11 @@
                     renderColumnVisibilityOptions();
                 });
             }
+
+            window.addEventListener('resize', function () {
+                applyMobileDefaultVisibilityIfNeeded();
+                renderColumnVisibilityOptions();
+            });
 
             let dragFromIndex = null;
 
