@@ -789,6 +789,27 @@
                 .replace(/'/g, '&#039;');
         }
 
+        function formatJamValue(value) {
+            if (!value) return '-';
+            const raw = String(value).trim();
+            if (!raw) return '-';
+
+            const hhmmMatch = raw.match(/^(\d{2}:\d{2})/);
+            if (hhmmMatch) return hhmmMatch[1];
+
+            const isoMatch = raw.match(/T(\d{2}:\d{2})/);
+            if (isoMatch) return isoMatch[1];
+
+            const parsed = new Date(raw);
+            if (!Number.isNaN(parsed.getTime())) {
+                const hours = String(parsed.getHours()).padStart(2, '0');
+                const minutes = String(parsed.getMinutes()).padStart(2, '0');
+                return hours + ':' + minutes;
+            }
+
+            return raw;
+        }
+
         function applyChangedItems(items) {
             if (!Array.isArray(items) || items.length === 0) {
                 return;
@@ -819,7 +840,7 @@
                 if (penambahanCell) penambahanCell.textContent = item.reply_penambahan || 'Menunggu Konfirmasi Admin';
                 if (buktiCell) buktiCell.innerHTML = buktiTransferHtml(item);
                 if (statusCell) statusCell.innerHTML = statusBadgeHtml(item.status || 'pending');
-                if (jamCell) jamCell.textContent = item.jam || '-';
+                if (jamCell) jamCell.textContent = formatJamValue(item.jam);
 
                 if (aksiCell) {
                     const normalizedStatus = String(item.status || 'pending').toLowerCase();

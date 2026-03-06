@@ -246,7 +246,7 @@ class DepositFormController extends Controller
                     'bukti_transfer_admin_text' => $item->bukti_transfer_admin_text,
                     'has_bukti_transfer_admin_image' => !empty($item->bukti_transfer_admin_image),
                     'status' => $item->status,
-                    'jam' => $item->jam,
+                    'jam' => $item->jam ? Carbon::parse((string) $item->jam)->format('H:i') : null,
                 ];
             })->values(),
             'server_time' => now()->toDateTimeString(),
