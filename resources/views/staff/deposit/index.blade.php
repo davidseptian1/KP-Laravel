@@ -48,6 +48,15 @@
         white-space: nowrap;
     }
 
+    .staff-deposit-page .table thead th.js-col-draggable {
+        cursor: move;
+        user-select: none;
+    }
+
+    .staff-deposit-page .table thead th.js-col-dragging {
+        opacity: 0.55;
+    }
+
     textarea.js-auto-resize-textarea {
         overflow-y: auto;
         resize: none;
@@ -208,7 +217,7 @@
                 </div>
 
                 <div class="table-responsive table-wrap">
-                    <table class="table table-hover align-middle">
+                    <table class="table table-hover align-middle js-reorderable-table">
                         <thead class="table-light">
                             <tr>
                                 <th><i class="ti ti-calendar-event me-1"></i>Tanggal</th>
@@ -773,6 +782,117 @@
             });
         }
 
+        function initReorderableColumns() {
+            const table = document.querySelector('.js-reorderable-table');
+            if (!table) return;
+
+            const headerRow = table.querySelector('thead tr');
+            if (!headerRow) return;
+
+            const storageKey = 'staff.deposit.table.column.order.v1';
+            const headerCells = Array.from(headerRow.cells || []);
+            if (headerCells.length < 2) return;
+
+            headerCells.forEach(function (th, index) {
+                th.classList.add('js-col-draggable');
+                th.setAttribute('draggable', 'true');
+                if (!th.dataset.colId) {
+                    th.dataset.colId = String(index);
+                }
+                th.title = 'Geser untuk pindah kolom';
+            });
+
+            function moveColumn(fromIndex, toIndex) {
+                if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0) return;
+                const rows = Array.from(table.rows || []);
+                rows.forEach(function (row) {
+                    const cells = row.cells;
+                    if (!cells || cells.length <= Math.max(fromIndex, toIndex)) return;
+
+                    const movingCell = cells[fromIndex];
+                    const targetCell = cells[toIndex];
+                    if (!movingCell || !targetCell) return;
+
+                    if (fromIndex < toIndex) {
+                        row.insertBefore(movingCell, targetCell.nextSibling);
+                    } else {
+                        row.insertBefore(movingCell, targetCell);
+                    }
+                });
+            }
+
+            function getCurrentOrder() {
+                return Array.from(headerRow.cells || []).map(function (th) {
+                    return String(th.dataset.colId || '');
+                });
+            }
+
+            function saveOrder() {
+                try {
+                    localStorage.setItem(storageKey, JSON.stringify(getCurrentOrder()));
+                } catch (error) {
+                }
+            }
+
+            function applySavedOrder() {
+                try {
+                    const raw = localStorage.getItem(storageKey);
+                    if (!raw) return;
+                    const savedOrder = JSON.parse(raw);
+                    if (!Array.isArray(savedOrder) || savedOrder.length !== headerCells.length) return;
+
+                    const currentOrder = getCurrentOrder();
+                    savedOrder.forEach(function (desiredId, targetIndex) {
+                        const currentIndex = currentOrder.indexOf(String(desiredId));
+                        if (currentIndex === -1 || currentIndex === targetIndex) return;
+
+                        moveColumn(currentIndex, targetIndex);
+                        const moved = currentOrder.splice(currentIndex, 1)[0];
+                        currentOrder.splice(targetIndex, 0, moved);
+                    });
+                } catch (error) {
+                }
+            }
+
+            applySavedOrder();
+
+            let dragFromIndex = null;
+
+            headerCells.forEach(function (th) {
+                th.addEventListener('dragstart', function (event) {
+                    dragFromIndex = this.cellIndex;
+                    this.classList.add('js-col-dragging');
+                    if (event.dataTransfer) {
+                        event.dataTransfer.effectAllowed = 'move';
+                        event.dataTransfer.setData('text/plain', String(dragFromIndex));
+                    }
+                });
+
+                th.addEventListener('dragover', function (event) {
+                    event.preventDefault();
+                    if (event.dataTransfer) {
+                        event.dataTransfer.dropEffect = 'move';
+                    }
+                });
+
+                th.addEventListener('drop', function (event) {
+                    event.preventDefault();
+                    if (dragFromIndex === null) return;
+
+                    const dropIndex = this.cellIndex;
+                    moveColumn(dragFromIndex, dropIndex);
+                    saveOrder();
+                });
+
+                th.addEventListener('dragend', function () {
+                    dragFromIndex = null;
+                    headerRow.querySelectorAll('th.js-col-dragging').forEach(function (draggingTh) {
+                        draggingTh.classList.remove('js-col-dragging');
+                    });
+                });
+            });
+        }
+
         function initStaffReplyPenambahanControls() {
             function setPreview(targetId, file) {
                 const wrap = document.querySelector('.js-staff-reply-preview-wrap[data-target="' + targetId + '"]');
@@ -910,6 +1030,7 @@
         }
 
         updateNotifStatusText();
+        initReorderableColumns();
         bindAutoResizeTextareas();
         initStaffReplyPenambahanControls();
 
