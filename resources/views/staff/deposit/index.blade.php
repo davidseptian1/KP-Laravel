@@ -57,6 +57,19 @@
         opacity: 0.55;
     }
 
+    .staff-deposit-page .column-settings-panel {
+        border: 1px solid var(--bs-border-color, #dee2e6);
+        border-radius: 10px;
+        background: var(--bs-body-bg, #fff);
+    }
+
+    .staff-deposit-page .column-option-item {
+        border: 1px solid var(--bs-border-color, #dee2e6);
+        border-radius: 8px;
+        padding: 4px 8px;
+        background: var(--bs-tertiary-bg, #f8f9fa);
+    }
+
     textarea.js-auto-resize-textarea {
         overflow-y: auto;
         resize: none;
@@ -213,6 +226,20 @@
                                 <small class="text-muted">Ditampilkan dengan card biru.</small>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end mb-2 gap-2">
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="btnToggleColumnSettings">
+                        Atur Kolom
+                    </button>
+                </div>
+
+                <div id="columnSettingsPanel" class="column-settings-panel p-2 mb-2 d-none">
+                    <div class="small text-muted mb-2">Centang kolom yang ingin ditampilkan.</div>
+                    <div id="columnVisibilityOptions" class="d-flex flex-wrap gap-2"></div>
+                    <div class="text-end mt-2">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="btnResetTableColumns">Reset Kolom</button>
                     </div>
                 </div>
 
@@ -789,9 +816,15 @@
             const headerRow = table.querySelector('thead tr');
             if (!headerRow) return;
 
-            const storageKey = 'staff.deposit.table.column.order.v1';
+            const orderStorageKey = 'staff.deposit.table.column.order.v1';
+            const visibilityStorageKey = 'staff.deposit.table.column.visibility.v1';
             const headerCells = Array.from(headerRow.cells || []);
             if (headerCells.length < 2) return;
+
+            const toggleSettingsBtn = document.getElementById('btnToggleColumnSettings');
+            const settingsPanel = document.getElementById('columnSettingsPanel');
+            const visibilityOptions = document.getElementById('columnVisibilityOptions');
+            const resetColumnsBtn = document.getElementById('btnResetTableColumns');
 
             headerCells.forEach(function (th, index) {
                 th.classList.add('js-col-draggable');
@@ -827,34 +860,149 @@
                 });
             }
 
+            function applyOrder(desiredOrder) {
+                if (!Array.isArray(desiredOrder) || desiredOrder.length !== headerCells.length) return;
+
+                const currentOrder = getCurrentOrder();
+                desiredOrder.forEach(function (desiredId, targetIndex) {
+                    const currentIndex = currentOrder.indexOf(String(desiredId));
+                    if (currentIndex === -1 || currentIndex === targetIndex) return;
+
+                    moveColumn(currentIndex, targetIndex);
+                    const moved = currentOrder.splice(currentIndex, 1)[0];
+                    currentOrder.splice(targetIndex, 0, moved);
+                });
+            }
+
+            function getColumnIndexById(colId) {
+                const currentHeaders = Array.from(headerRow.cells || []);
+                return currentHeaders.findIndex(function (th) {
+                    return String(th.dataset.colId || '') === String(colId);
+                });
+            }
+
+            function setColumnVisibilityById(colId, isVisible) {
+                const index = getColumnIndexById(colId);
+                if (index < 0) return;
+
+                Array.from(table.rows || []).forEach(function (row) {
+                    if (!row.cells || !row.cells[index]) return;
+                    row.cells[index].style.display = isVisible ? '' : 'none';
+                });
+            }
+
+            function getVisibilityState() {
+                const state = {};
+                Array.from(headerRow.cells || []).forEach(function (th) {
+                    const id = String(th.dataset.colId || '');
+                    if (!id) return;
+                    state[id] = th.style.display !== 'none';
+                });
+                return state;
+            }
+
+            function saveVisibility() {
+                try {
+                    localStorage.setItem(visibilityStorageKey, JSON.stringify(getVisibilityState()));
+                } catch (error) {
+                }
+            }
+
+            function renderColumnVisibilityOptions() {
+                if (!visibilityOptions) return;
+                visibilityOptions.innerHTML = '';
+
+                Array.from(headerRow.cells || []).forEach(function (th) {
+                    const colId = String(th.dataset.colId || '');
+                    const labelText = (th.textContent || '').trim();
+                    const checked = th.style.display !== 'none';
+
+                    const wrap = document.createElement('label');
+                    wrap.className = 'column-option-item d-inline-flex align-items-center gap-1';
+
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.className = 'form-check-input m-0';
+                    checkbox.checked = checked;
+                    checkbox.dataset.colId = colId;
+
+                    checkbox.addEventListener('change', function () {
+                        setColumnVisibilityById(this.dataset.colId, this.checked);
+                        saveVisibility();
+                    });
+
+                    const text = document.createElement('span');
+                    text.className = 'small';
+                    text.textContent = labelText;
+
+                    wrap.appendChild(checkbox);
+                    wrap.appendChild(text);
+                    visibilityOptions.appendChild(wrap);
+                });
+            }
+
             function saveOrder() {
                 try {
-                    localStorage.setItem(storageKey, JSON.stringify(getCurrentOrder()));
+                    localStorage.setItem(orderStorageKey, JSON.stringify(getCurrentOrder()));
                 } catch (error) {
                 }
             }
 
             function applySavedOrder() {
                 try {
-                    const raw = localStorage.getItem(storageKey);
+                    const raw = localStorage.getItem(orderStorageKey);
                     if (!raw) return;
                     const savedOrder = JSON.parse(raw);
-                    if (!Array.isArray(savedOrder) || savedOrder.length !== headerCells.length) return;
+                    applyOrder(savedOrder);
+                } catch (error) {
+                }
+            }
 
-                    const currentOrder = getCurrentOrder();
-                    savedOrder.forEach(function (desiredId, targetIndex) {
-                        const currentIndex = currentOrder.indexOf(String(desiredId));
-                        if (currentIndex === -1 || currentIndex === targetIndex) return;
+            function applySavedVisibility() {
+                try {
+                    const raw = localStorage.getItem(visibilityStorageKey);
+                    if (!raw) return;
+                    const savedState = JSON.parse(raw);
+                    if (!savedState || typeof savedState !== 'object') return;
 
-                        moveColumn(currentIndex, targetIndex);
-                        const moved = currentOrder.splice(currentIndex, 1)[0];
-                        currentOrder.splice(targetIndex, 0, moved);
+                    Object.keys(savedState).forEach(function (colId) {
+                        setColumnVisibilityById(colId, savedState[colId] !== false);
                     });
                 } catch (error) {
                 }
             }
 
             applySavedOrder();
+            applySavedVisibility();
+            renderColumnVisibilityOptions();
+
+            if (toggleSettingsBtn && settingsPanel) {
+                toggleSettingsBtn.addEventListener('click', function () {
+                    settingsPanel.classList.toggle('d-none');
+                });
+            }
+
+            if (resetColumnsBtn) {
+                resetColumnsBtn.addEventListener('click', function () {
+                    try {
+                        localStorage.removeItem(orderStorageKey);
+                        localStorage.removeItem(visibilityStorageKey);
+                    } catch (error) {
+                    }
+
+                    const defaultOrder = headerCells
+                        .map(function (th) { return String(th.dataset.colId || ''); })
+                        .sort(function (a, b) { return Number(a) - Number(b); });
+
+                    applyOrder(defaultOrder);
+
+                    defaultOrder.forEach(function (colId) {
+                        setColumnVisibilityById(colId, true);
+                    });
+
+                    renderColumnVisibilityOptions();
+                });
+            }
 
             let dragFromIndex = null;
 
@@ -882,6 +1030,7 @@
                     const dropIndex = this.cellIndex;
                     moveColumn(dragFromIndex, dropIndex);
                     saveOrder();
+                    renderColumnVisibilityOptions();
                 });
 
                 th.addEventListener('dragend', function () {
