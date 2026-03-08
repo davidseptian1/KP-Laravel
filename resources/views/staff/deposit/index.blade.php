@@ -46,6 +46,19 @@
         font-size: 0.78rem;
         letter-spacing: 0.02em;
         white-space: nowrap;
+        border-right: 1px solid var(--bs-border-color, #dee2e6);
+    }
+
+    .staff-deposit-page .table thead th:last-child {
+        border-right: none;
+    }
+
+    .staff-deposit-page .table tbody td {
+        border-right: 1px solid var(--bs-border-color, #dee2e6);
+    }
+
+    .staff-deposit-page .table tbody td:last-child {
+        border-right: none;
     }
 
     .staff-deposit-page .table thead th.js-col-draggable {
@@ -61,11 +74,30 @@
     .staff-deposit-page .table thead th .js-col-resize-handle {
         position: absolute;
         top: 0;
-        right: -4px;
-        width: 10px;
+        right: -5px;
+        width: 12px;
         height: 100%;
         cursor: ew-resize;
         z-index: 3;
+    }
+
+    .staff-deposit-page .table thead th .js-col-resize-handle::before {
+        content: '';
+        position: absolute;
+        top: 8%;
+        bottom: 8%;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 2px;
+        border-radius: 2px;
+        background: var(--bs-border-color, #dee2e6);
+        opacity: 0.9;
+    }
+
+    .staff-deposit-page .table thead th:hover .js-col-resize-handle::before,
+    .staff-deposit-page .table thead th .js-col-resize-handle:hover::before {
+        background: var(--bs-primary, #0d6efd);
+        opacity: 1;
     }
 
     .staff-deposit-page .table thead th.col-jam,
