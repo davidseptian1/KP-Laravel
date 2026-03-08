@@ -100,6 +100,12 @@
         opacity: 1;
     }
 
+    .staff-deposit-page .table.js-col-resizing,
+    .staff-deposit-page .table.js-col-resizing * {
+        cursor: ew-resize !important;
+        user-select: none;
+    }
+
     .staff-deposit-page .table thead th.col-jam,
     .staff-deposit-page .table tbody td.cell-jam,
     .staff-deposit-page .table thead th.col-aksi,
@@ -1071,6 +1077,13 @@
                 return state;
             }
 
+            function lockCurrentColumnWidths() {
+                const widthState = getWidthState();
+                Object.keys(widthState).forEach(function (colId) {
+                    applyColumnWidthById(colId, widthState[colId]);
+                });
+            }
+
             function saveVisibility() {
                 try {
                     localStorage.setItem(visibilityStorageKey, JSON.stringify(getVisibilityState()));
@@ -1185,6 +1198,7 @@
             applySavedOrder();
             applySavedVisibility();
             applySavedWidths();
+            lockCurrentColumnWidths();
             applyMobileDefaultVisibilityIfNeeded();
             renderColumnVisibilityOptions();
 
@@ -1224,6 +1238,7 @@
             });
 
             let dragFromIndex = null;
+            let isResizingColumn = false;
 
             function initColumnResizers() {
                 Array.from(headerRow.cells || []).forEach(function (th) {
@@ -1240,6 +1255,9 @@
                         event.preventDefault();
                         event.stopPropagation();
 
+                        isResizingColumn = true;
+                        table.classList.add('js-col-resizing');
+
                         const startX = event.clientX;
                         const startWidth = th.getBoundingClientRect().width || th.offsetWidth || 0;
 
@@ -1252,6 +1270,8 @@
                         function onMouseUp() {
                             document.removeEventListener('mousemove', onMouseMove);
                             document.removeEventListener('mouseup', onMouseUp);
+                            isResizingColumn = false;
+                            table.classList.remove('js-col-resizing');
                             saveWidths();
                         }
 
@@ -1272,6 +1292,24 @@
 
             headerCells.forEach(function (th) {
                 th.addEventListener('dragstart', function (event) {
+                    if (isResizingColumn) {
+                        event.preventDefault();
+                        return;
+                    }
+
+                    const target = event.target;
+                    if (target && target.closest && target.closest('.js-col-resize-handle')) {
+                        event.preventDefault();
+                        return;
+                    }
+
+                    const dragEdgeThreshold = 14;
+                    const pointerX = typeof event.offsetX === 'number' ? event.offsetX : 0;
+                    if ((th.clientWidth - pointerX) <= dragEdgeThreshold) {
+                        event.preventDefault();
+                        return;
+                    }
+
                     dragFromIndex = this.cellIndex;
                     this.classList.add('js-col-dragging');
                     if (event.dataTransfer) {
@@ -1281,6 +1319,7 @@
                 });
 
                 th.addEventListener('dragover', function (event) {
+                    if (isResizingColumn) return;
                     event.preventDefault();
                     if (event.dataTransfer) {
                         event.dataTransfer.dropEffect = 'move';
@@ -1288,12 +1327,15 @@
                 });
 
                 th.addEventListener('drop', function (event) {
+                    if (isResizingColumn) return;
                     event.preventDefault();
                     if (dragFromIndex === null) return;
 
                     const dropIndex = this.cellIndex;
                     moveColumn(dragFromIndex, dropIndex);
+                    lockCurrentColumnWidths();
                     saveOrder();
+                    saveWidths();
                     renderColumnVisibilityOptions();
                 });
 
