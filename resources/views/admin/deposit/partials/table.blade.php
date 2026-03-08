@@ -7,7 +7,7 @@
         .table-hover > tbody > tr.table-danger:hover > td { background-color: var(--bs-danger-bg-subtle) !important; color: var(--bs-danger-text-emphasis) !important; }
         .table-hover > tbody > tr.table-secondary:hover > td { background-color: var(--bs-secondary-bg-subtle) !important; color: var(--bs-secondary-text-emphasis) !important; }
     </style>
-    <table class="table table-hover align-middle">
+    <table class="table table-hover align-middle js-admin-reorderable-table">
         <thead class="table-light">
             <tr>
                 <th>Tanggal</th>

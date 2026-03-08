@@ -13,6 +13,73 @@
         min-height: 70px;
         max-height: 260px;
     }
+
+    #adminMonitoringColumnSettingsPanel {
+        border: 1px solid var(--bs-border-color, #dee2e6);
+        border-radius: 10px;
+        background: var(--bs-body-bg, #fff);
+    }
+
+    #adminMonitoringColumnVisibilityOptions .column-option-item {
+        border: 1px solid var(--bs-border-color, #dee2e6);
+        border-radius: 8px;
+        padding: 4px 8px;
+        background: var(--bs-tertiary-bg, #f8f9fa);
+    }
+
+    #monitoringTableContainer table.js-admin-reorderable-table thead th {
+        position: relative;
+        border-right: 1px solid var(--bs-border-color, #dee2e6);
+        user-select: none;
+    }
+
+    #monitoringTableContainer table.js-admin-reorderable-table thead th:last-child,
+    #monitoringTableContainer table.js-admin-reorderable-table tbody td:last-child {
+        border-right: none;
+    }
+
+    #monitoringTableContainer table.js-admin-reorderable-table tbody td {
+        border-right: 1px solid var(--bs-border-color, #dee2e6);
+    }
+
+    #monitoringTableContainer table.js-admin-reorderable-table thead th.js-col-dragging {
+        opacity: 0.55;
+    }
+
+    #monitoringTableContainer table.js-admin-reorderable-table thead th .js-col-resize-handle {
+        position: absolute;
+        top: 0;
+        right: -5px;
+        width: 12px;
+        height: 100%;
+        cursor: ew-resize;
+        z-index: 3;
+    }
+
+    #monitoringTableContainer table.js-admin-reorderable-table thead th .js-col-resize-handle::before {
+        content: '';
+        position: absolute;
+        top: 8%;
+        bottom: 8%;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 2px;
+        border-radius: 2px;
+        background: var(--bs-border-color, #dee2e6);
+        opacity: 0.9;
+    }
+
+    #monitoringTableContainer table.js-admin-reorderable-table thead th:hover .js-col-resize-handle::before,
+    #monitoringTableContainer table.js-admin-reorderable-table thead th .js-col-resize-handle:hover::before {
+        background: var(--bs-primary, #0d6efd);
+        opacity: 1;
+    }
+
+    #monitoringTableContainer table.js-admin-reorderable-table.js-col-resizing,
+    #monitoringTableContainer table.js-admin-reorderable-table.js-col-resizing * {
+        cursor: ew-resize !important;
+        user-select: none;
+    }
 </style>
 
 <div class="page-header" style="margin: 0; padding: 0;">
@@ -155,6 +222,18 @@
                         'latestIncomingServer' => $latestIncomingServer ?? null,
                         'latestIncomingServerColor' => $latestIncomingServerColor ?? 'primary',
                     ])
+                </div>
+
+                <div class="d-flex justify-content-end mb-2 gap-2">
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="btnToggleAdminColumnSettings">Atur Kolom</button>
+                </div>
+
+                <div id="adminMonitoringColumnSettingsPanel" class="p-2 mb-2 d-none">
+                    <div class="small text-muted mb-2">Centang kolom yang ingin ditampilkan.</div>
+                    <div id="adminMonitoringColumnVisibilityOptions" class="d-flex flex-wrap gap-2"></div>
+                    <div class="text-end mt-2">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="btnResetAdminTableColumns">Reset Kolom</button>
+                    </div>
                 </div>
 
                 <div id="monitoringTableContainer">
@@ -396,6 +475,381 @@
             });
         }
 
+        function initAdminTableColumnControls() {
+            const table = document.querySelector('#monitoringTableContainer .js-admin-reorderable-table');
+            if (!table) return;
+
+            const headerRow = table.querySelector('thead tr');
+            if (!headerRow) return;
+
+            const orderStorageKey = 'admin.deposit.table.column.order.v1';
+            const visibilityStorageKey = 'admin.deposit.table.column.visibility.v1';
+            const widthStorageKey = 'admin.deposit.table.column.width.v1';
+
+            const toggleSettingsBtn = document.getElementById('btnToggleAdminColumnSettings');
+            const settingsPanel = document.getElementById('adminMonitoringColumnSettingsPanel');
+            const visibilityOptions = document.getElementById('adminMonitoringColumnVisibilityOptions');
+            const resetColumnsBtn = document.getElementById('btnResetAdminTableColumns');
+
+            const headerCells = Array.from(headerRow.cells || []);
+            if (headerCells.length < 2) return;
+
+            headerCells.forEach(function (th, index) {
+                th.classList.add('js-col-draggable');
+                th.setAttribute('draggable', 'true');
+                if (!th.dataset.colId) {
+                    th.dataset.colId = String(index);
+                }
+                th.title = 'Geser untuk pindah kolom';
+            });
+
+            function moveColumn(fromIndex, toIndex) {
+                if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0) return;
+                const rows = Array.from(table.rows || []);
+                rows.forEach(function (row) {
+                    const cells = row.cells;
+                    if (!cells || cells.length <= Math.max(fromIndex, toIndex)) return;
+
+                    const movingCell = cells[fromIndex];
+                    const targetCell = cells[toIndex];
+                    if (!movingCell || !targetCell) return;
+
+                    if (fromIndex < toIndex) {
+                        row.insertBefore(movingCell, targetCell.nextSibling);
+                    } else {
+                        row.insertBefore(movingCell, targetCell);
+                    }
+                });
+            }
+
+            function getCurrentOrder() {
+                return Array.from(headerRow.cells || []).map(function (th) {
+                    return String(th.dataset.colId || '');
+                });
+            }
+
+            function applyOrder(desiredOrder) {
+                if (!Array.isArray(desiredOrder) || desiredOrder.length !== headerCells.length) return;
+
+                const currentOrder = getCurrentOrder();
+                desiredOrder.forEach(function (desiredId, targetIndex) {
+                    const currentIndex = currentOrder.indexOf(String(desiredId));
+                    if (currentIndex === -1 || currentIndex === targetIndex) return;
+
+                    moveColumn(currentIndex, targetIndex);
+                    const moved = currentOrder.splice(currentIndex, 1)[0];
+                    currentOrder.splice(targetIndex, 0, moved);
+                });
+            }
+
+            function getColumnIndexById(colId) {
+                const currentHeaders = Array.from(headerRow.cells || []);
+                return currentHeaders.findIndex(function (th) {
+                    return String(th.dataset.colId || '') === String(colId);
+                });
+            }
+
+            function setColumnVisibilityById(colId, isVisible) {
+                const index = getColumnIndexById(colId);
+                if (index < 0) return;
+
+                Array.from(table.rows || []).forEach(function (row) {
+                    if (!row.cells || !row.cells[index]) return;
+                    row.cells[index].style.display = isVisible ? '' : 'none';
+                });
+            }
+
+            function applyColumnWidthById(colId, widthPx) {
+                const index = getColumnIndexById(colId);
+                if (index < 0) return;
+
+                const safeWidth = Math.max(60, Number(widthPx) || 0);
+                if (!safeWidth) return;
+
+                Array.from(table.rows || []).forEach(function (row) {
+                    if (!row.cells || !row.cells[index]) return;
+                    row.cells[index].style.width = safeWidth + 'px';
+                    row.cells[index].style.minWidth = safeWidth + 'px';
+                    row.cells[index].style.maxWidth = safeWidth + 'px';
+                });
+            }
+
+            function clearColumnWidthById(colId) {
+                const index = getColumnIndexById(colId);
+                if (index < 0) return;
+
+                Array.from(table.rows || []).forEach(function (row) {
+                    if (!row.cells || !row.cells[index]) return;
+                    row.cells[index].style.removeProperty('width');
+                    row.cells[index].style.removeProperty('min-width');
+                    row.cells[index].style.removeProperty('max-width');
+                });
+            }
+
+            function getVisibilityState() {
+                const state = {};
+                Array.from(headerRow.cells || []).forEach(function (th) {
+                    const id = String(th.dataset.colId || '');
+                    if (!id) return;
+                    state[id] = th.style.display !== 'none';
+                });
+                return state;
+            }
+
+            function getWidthState() {
+                const state = {};
+                Array.from(headerRow.cells || []).forEach(function (th) {
+                    const id = String(th.dataset.colId || '');
+                    if (!id) return;
+                    state[id] = Math.round(th.getBoundingClientRect().width || th.offsetWidth || 0);
+                });
+                return state;
+            }
+
+            function lockCurrentColumnWidths() {
+                const widthState = getWidthState();
+                Object.keys(widthState).forEach(function (colId) {
+                    applyColumnWidthById(colId, widthState[colId]);
+                });
+            }
+
+            function saveOrder() {
+                try {
+                    localStorage.setItem(orderStorageKey, JSON.stringify(getCurrentOrder()));
+                } catch (error) {
+                }
+            }
+
+            function saveVisibility() {
+                try {
+                    localStorage.setItem(visibilityStorageKey, JSON.stringify(getVisibilityState()));
+                } catch (error) {
+                }
+            }
+
+            function saveWidths() {
+                try {
+                    localStorage.setItem(widthStorageKey, JSON.stringify(getWidthState()));
+                } catch (error) {
+                }
+            }
+
+            function applySavedOrder() {
+                try {
+                    const raw = localStorage.getItem(orderStorageKey);
+                    if (!raw) return;
+                    const savedOrder = JSON.parse(raw);
+                    applyOrder(savedOrder);
+                } catch (error) {
+                }
+            }
+
+            function applySavedVisibility() {
+                try {
+                    const raw = localStorage.getItem(visibilityStorageKey);
+                    if (!raw) return;
+                    const savedState = JSON.parse(raw);
+                    if (!savedState || typeof savedState !== 'object') return;
+
+                    Object.keys(savedState).forEach(function (colId) {
+                        setColumnVisibilityById(colId, savedState[colId] !== false);
+                    });
+                } catch (error) {
+                }
+            }
+
+            function applySavedWidths() {
+                try {
+                    const raw = localStorage.getItem(widthStorageKey);
+                    if (!raw) return;
+                    const savedState = JSON.parse(raw);
+                    if (!savedState || typeof savedState !== 'object') return;
+
+                    Object.keys(savedState).forEach(function (colId) {
+                        applyColumnWidthById(colId, savedState[colId]);
+                    });
+                } catch (error) {
+                }
+            }
+
+            function renderColumnVisibilityOptions() {
+                if (!visibilityOptions) return;
+                visibilityOptions.innerHTML = '';
+
+                Array.from(headerRow.cells || []).forEach(function (th) {
+                    const colId = String(th.dataset.colId || '');
+                    const labelText = (th.textContent || '').trim();
+                    const checked = th.style.display !== 'none';
+
+                    const wrap = document.createElement('label');
+                    wrap.className = 'column-option-item d-inline-flex align-items-center gap-1';
+
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.className = 'form-check-input m-0';
+                    checkbox.checked = checked;
+                    checkbox.dataset.colId = colId;
+
+                    checkbox.addEventListener('change', function () {
+                        setColumnVisibilityById(this.dataset.colId, this.checked);
+                        saveVisibility();
+                    });
+
+                    const text = document.createElement('span');
+                    text.className = 'small';
+                    text.textContent = labelText;
+
+                    wrap.appendChild(checkbox);
+                    wrap.appendChild(text);
+                    visibilityOptions.appendChild(wrap);
+                });
+            }
+
+            applySavedOrder();
+            applySavedVisibility();
+            applySavedWidths();
+            lockCurrentColumnWidths();
+            renderColumnVisibilityOptions();
+
+            if (toggleSettingsBtn && settingsPanel && !toggleSettingsBtn.dataset.boundColumnSetting) {
+                toggleSettingsBtn.dataset.boundColumnSetting = '1';
+                toggleSettingsBtn.addEventListener('click', function () {
+                    settingsPanel.classList.toggle('d-none');
+                });
+            }
+
+            if (resetColumnsBtn && !resetColumnsBtn.dataset.boundColumnReset) {
+                resetColumnsBtn.dataset.boundColumnReset = '1';
+                resetColumnsBtn.addEventListener('click', function () {
+                    try {
+                        localStorage.removeItem(orderStorageKey);
+                        localStorage.removeItem(visibilityStorageKey);
+                        localStorage.removeItem(widthStorageKey);
+                    } catch (error) {
+                    }
+
+                    const defaultOrder = headerCells
+                        .map(function (th) { return String(th.dataset.colId || ''); })
+                        .sort(function (a, b) { return Number(a) - Number(b); });
+
+                    applyOrder(defaultOrder);
+
+                    defaultOrder.forEach(function (colId) {
+                        setColumnVisibilityById(colId, true);
+                        clearColumnWidthById(colId);
+                    });
+
+                    renderColumnVisibilityOptions();
+                });
+            }
+
+            let dragFromIndex = null;
+            let isResizingColumn = false;
+
+            Array.from(headerRow.cells || []).forEach(function (th) {
+                if (th.querySelector('.js-col-resize-handle')) return;
+
+                const colId = String(th.dataset.colId || '');
+                if (!colId) return;
+
+                const handle = document.createElement('span');
+                handle.className = 'js-col-resize-handle';
+                handle.title = 'Tarik untuk ubah lebar kolom';
+
+                handle.addEventListener('mousedown', function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    isResizingColumn = true;
+                    table.classList.add('js-col-resizing');
+
+                    const startX = event.clientX;
+                    const startWidth = th.getBoundingClientRect().width || th.offsetWidth || 0;
+
+                    function onMouseMove(moveEvent) {
+                        const diffX = moveEvent.clientX - startX;
+                        const nextWidth = Math.max(60, Math.round(startWidth + diffX));
+                        applyColumnWidthById(colId, nextWidth);
+                    }
+
+                    function onMouseUp() {
+                        document.removeEventListener('mousemove', onMouseMove);
+                        document.removeEventListener('mouseup', onMouseUp);
+                        isResizingColumn = false;
+                        table.classList.remove('js-col-resizing');
+                        saveWidths();
+                    }
+
+                    document.addEventListener('mousemove', onMouseMove);
+                    document.addEventListener('mouseup', onMouseUp);
+                });
+
+                handle.addEventListener('dragstart', function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                });
+
+                th.appendChild(handle);
+            });
+
+            Array.from(headerRow.cells || []).forEach(function (th) {
+                th.addEventListener('dragstart', function (event) {
+                    if (isResizingColumn) {
+                        event.preventDefault();
+                        return;
+                    }
+
+                    const target = event.target;
+                    if (target && target.closest && target.closest('.js-col-resize-handle')) {
+                        event.preventDefault();
+                        return;
+                    }
+
+                    const dragEdgeThreshold = 14;
+                    const pointerX = typeof event.offsetX === 'number' ? event.offsetX : 0;
+                    if ((th.clientWidth - pointerX) <= dragEdgeThreshold) {
+                        event.preventDefault();
+                        return;
+                    }
+
+                    dragFromIndex = this.cellIndex;
+                    this.classList.add('js-col-dragging');
+                    if (event.dataTransfer) {
+                        event.dataTransfer.effectAllowed = 'move';
+                        event.dataTransfer.setData('text/plain', String(dragFromIndex));
+                    }
+                });
+
+                th.addEventListener('dragover', function (event) {
+                    if (isResizingColumn) return;
+                    event.preventDefault();
+                    if (event.dataTransfer) {
+                        event.dataTransfer.dropEffect = 'move';
+                    }
+                });
+
+                th.addEventListener('drop', function (event) {
+                    if (isResizingColumn) return;
+                    event.preventDefault();
+                    if (dragFromIndex === null) return;
+
+                    const dropIndex = this.cellIndex;
+                    moveColumn(dragFromIndex, dropIndex);
+                    lockCurrentColumnWidths();
+                    saveOrder();
+                    saveWidths();
+                    renderColumnVisibilityOptions();
+                });
+
+                th.addEventListener('dragend', function () {
+                    dragFromIndex = null;
+                    headerRow.querySelectorAll('th.js-col-dragging').forEach(function (draggingTh) {
+                        draggingTh.classList.remove('js-col-dragging');
+                    });
+                });
+            });
+        }
+
         function applyLatestRowHighlight(targetId) {
             if (!targetId) return;
 
@@ -460,6 +914,7 @@
                             initTransferFormControls();
                             initAutoResizeTextareas();
                             bindModalTextareaResize();
+                            initAdminTableColumnControls();
                             applyLatestRowHighlight(latestIncomingId);
                         }
                     } else {
@@ -472,6 +927,7 @@
                                 initTransferFormControls();
                                 initAutoResizeTextareas();
                                 bindModalTextareaResize();
+                                initAdminTableColumnControls();
                                 applyLatestRowHighlight(latestIncomingId);
                             }
                             openModalEl.removeEventListener('hidden.bs.modal', handleModalHidden);
@@ -506,6 +962,7 @@
         initTransferFormControls();
         initAutoResizeTextareas();
         bindModalTextareaResize();
+        initAdminTableColumnControls();
         applyLatestRowHighlight(latestIncomingId);
 
         document.addEventListener('visibilitychange', function () {
