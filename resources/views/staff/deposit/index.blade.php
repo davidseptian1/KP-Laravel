@@ -51,10 +51,21 @@
     .staff-deposit-page .table thead th.js-col-draggable {
         cursor: move;
         user-select: none;
+        position: relative;
     }
 
     .staff-deposit-page .table thead th.js-col-dragging {
         opacity: 0.55;
+    }
+
+    .staff-deposit-page .table thead th .js-col-resize-handle {
+        position: absolute;
+        top: 0;
+        right: -4px;
+        width: 10px;
+        height: 100%;
+        cursor: ew-resize;
+        z-index: 3;
     }
 
     .staff-deposit-page .table thead th.col-jam,
@@ -905,6 +916,7 @@
 
             const orderStorageKey = 'staff.deposit.table.column.order.v1';
             const visibilityStorageKey = 'staff.deposit.table.column.visibility.v1';
+            const widthStorageKey = 'staff.deposit.table.column.width.v1';
             const mobileDefaultVisibleColumnCount = 8;
             const responsiveBreakpoint = '(max-width: 1200px)';
             const headerCells = Array.from(headerRow.cells || []);
@@ -980,6 +992,33 @@
                 });
             }
 
+            function applyColumnWidthById(colId, widthPx) {
+                const index = getColumnIndexById(colId);
+                if (index < 0) return;
+
+                const safeWidth = Math.max(60, Number(widthPx) || 0);
+                if (!safeWidth) return;
+
+                Array.from(table.rows || []).forEach(function (row) {
+                    if (!row.cells || !row.cells[index]) return;
+                    row.cells[index].style.width = safeWidth + 'px';
+                    row.cells[index].style.minWidth = safeWidth + 'px';
+                    row.cells[index].style.maxWidth = safeWidth + 'px';
+                });
+            }
+
+            function clearColumnWidthById(colId) {
+                const index = getColumnIndexById(colId);
+                if (index < 0) return;
+
+                Array.from(table.rows || []).forEach(function (row) {
+                    if (!row.cells || !row.cells[index]) return;
+                    row.cells[index].style.removeProperty('width');
+                    row.cells[index].style.removeProperty('min-width');
+                    row.cells[index].style.removeProperty('max-width');
+                });
+            }
+
             function getVisibilityState() {
                 const state = {};
                 Array.from(headerRow.cells || []).forEach(function (th) {
@@ -990,9 +1029,26 @@
                 return state;
             }
 
+            function getWidthState() {
+                const state = {};
+                Array.from(headerRow.cells || []).forEach(function (th) {
+                    const id = String(th.dataset.colId || '');
+                    if (!id) return;
+                    state[id] = Math.round(th.getBoundingClientRect().width || th.offsetWidth || 0);
+                });
+                return state;
+            }
+
             function saveVisibility() {
                 try {
                     localStorage.setItem(visibilityStorageKey, JSON.stringify(getVisibilityState()));
+                } catch (error) {
+                }
+            }
+
+            function saveWidths() {
+                try {
+                    localStorage.setItem(widthStorageKey, JSON.stringify(getWidthState()));
                 } catch (error) {
                 }
             }
@@ -1061,6 +1117,20 @@
                 }
             }
 
+            function applySavedWidths() {
+                try {
+                    const raw = localStorage.getItem(widthStorageKey);
+                    if (!raw) return;
+                    const savedState = JSON.parse(raw);
+                    if (!savedState || typeof savedState !== 'object') return;
+
+                    Object.keys(savedState).forEach(function (colId) {
+                        applyColumnWidthById(colId, savedState[colId]);
+                    });
+                } catch (error) {
+                }
+            }
+
             function applyMobileDefaultVisibilityIfNeeded() {
                 const isResponsiveNarrow = window.matchMedia(responsiveBreakpoint).matches;
                 if (!isResponsiveNarrow) return;
@@ -1082,6 +1152,7 @@
 
             applySavedOrder();
             applySavedVisibility();
+            applySavedWidths();
             applyMobileDefaultVisibilityIfNeeded();
             renderColumnVisibilityOptions();
 
@@ -1096,6 +1167,7 @@
                     try {
                         localStorage.removeItem(orderStorageKey);
                         localStorage.removeItem(visibilityStorageKey);
+                        localStorage.removeItem(widthStorageKey);
                     } catch (error) {
                     }
 
@@ -1107,6 +1179,7 @@
 
                     defaultOrder.forEach(function (colId) {
                         setColumnVisibilityById(colId, true);
+                        clearColumnWidthById(colId);
                     });
 
                     renderColumnVisibilityOptions();
@@ -1119,6 +1192,51 @@
             });
 
             let dragFromIndex = null;
+
+            function initColumnResizers() {
+                Array.from(headerRow.cells || []).forEach(function (th) {
+                    if (th.querySelector('.js-col-resize-handle')) return;
+
+                    const colId = String(th.dataset.colId || '');
+                    if (!colId) return;
+
+                    const handle = document.createElement('span');
+                    handle.className = 'js-col-resize-handle';
+                    handle.title = 'Tarik untuk ubah lebar kolom';
+
+                    handle.addEventListener('mousedown', function (event) {
+                        event.preventDefault();
+                        event.stopPropagation();
+
+                        const startX = event.clientX;
+                        const startWidth = th.getBoundingClientRect().width || th.offsetWidth || 0;
+
+                        function onMouseMove(moveEvent) {
+                            const diffX = moveEvent.clientX - startX;
+                            const nextWidth = Math.max(60, Math.round(startWidth + diffX));
+                            applyColumnWidthById(colId, nextWidth);
+                        }
+
+                        function onMouseUp() {
+                            document.removeEventListener('mousemove', onMouseMove);
+                            document.removeEventListener('mouseup', onMouseUp);
+                            saveWidths();
+                        }
+
+                        document.addEventListener('mousemove', onMouseMove);
+                        document.addEventListener('mouseup', onMouseUp);
+                    });
+
+                    handle.addEventListener('dragstart', function (event) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    });
+
+                    th.appendChild(handle);
+                });
+            }
+
+            initColumnResizers();
 
             headerCells.forEach(function (th) {
                 th.addEventListener('dragstart', function (event) {
