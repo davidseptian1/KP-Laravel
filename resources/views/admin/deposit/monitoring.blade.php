@@ -224,6 +224,12 @@
                     ])
                 </div>
 
+                <div id="monitoringSummaryCardContainer">
+                    @include('admin.deposit.partials.summary-card', [
+                        'monitoringSummary' => $monitoringSummary ?? null,
+                    ])
+                </div>
+
                 <div class="d-flex justify-content-end mb-2 gap-2">
                     <button type="button" class="btn btn-outline-primary btn-sm" id="btnToggleAdminColumnSettings">Atur Kolom</button>
                 </div>
@@ -901,6 +907,13 @@
                     const latestCardContainer = document.getElementById('latestIncomingCardContainer');
                     if (latestCardContainer) {
                         latestCardContainer.innerHTML = result.latest_card_html;
+                    }
+                }
+
+                if (result.summary_card_html) {
+                    const summaryCardContainer = document.getElementById('monitoringSummaryCardContainer');
+                    if (summaryCardContainer) {
+                        summaryCardContainer.innerHTML = result.summary_card_html;
                     }
                 }
 

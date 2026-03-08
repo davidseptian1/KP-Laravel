@@ -121,6 +121,9 @@ class AdminDepositController extends Controller
 
         $perPage = $filters['per_page'] ?? 50;
         $items = $query->paginate($perPage)->withQueryString();
+        $monitoringSummary = (clone $query)
+            ->selectRaw('COUNT(*) as total_request, COALESCE(SUM(nominal), 0) as total_nominal')
+            ->first();
         $latestUpdatedAt = (clone $query)->max('updated_at');
         $latestIncomingAt = (clone $query)->max('created_at');
         $latestIncomingItem = (clone $query)
@@ -150,6 +153,7 @@ class AdminDepositController extends Controller
             'staffDeleted' => $filters['staff_deleted'] ?? null,
             'globalSearch' => $filters['global_search'] ?? null,
             'perPage' => $perPage,
+            'monitoringSummary' => $monitoringSummary,
             'latestUpdatedAt' => $latestUpdatedAt,
             'latestIncomingAt' => $latestIncomingAt,
             'latestIncomingId' => $latestIncomingId,
@@ -235,6 +239,7 @@ class AdminDepositController extends Controller
 
         $tableHtml = null;
         $latestCardHtml = null;
+        $summaryCardHtml = null;
 
         if ($hasChanges) {
             $optionLists = $this->getMonitoringOptionLists();
@@ -254,6 +259,12 @@ class AdminDepositController extends Controller
                 'latestIncomingServer' => $latestIncomingServer,
                 'latestIncomingServerColor' => $latestIncomingServerColor,
             ])->render();
+            $monitoringSummary = (clone $query)
+                ->selectRaw('COUNT(*) as total_request, COALESCE(SUM(nominal), 0) as total_nominal')
+                ->first();
+            $summaryCardHtml = view('admin.deposit.partials.summary-card', [
+                'monitoringSummary' => $monitoringSummary,
+            ])->render();
         }
 
         return response()->json([
@@ -266,6 +277,7 @@ class AdminDepositController extends Controller
             'change_description' => $changeDescription,
             'table_html' => $tableHtml,
             'latest_card_html' => $latestCardHtml,
+            'summary_card_html' => $summaryCardHtml,
             'server_time' => now()->toDateTimeString(),
         ]);
     }
