@@ -227,6 +227,7 @@
                 <div id="monitoringSummaryCardContainer">
                     @include('admin.deposit.partials.summary-card', [
                         'monitoringSummary' => $monitoringSummary ?? null,
+                        'monitoringByBank' => $monitoringByBank ?? collect(),
                     ])
                 </div>
 

@@ -124,6 +124,14 @@ class AdminDepositController extends Controller
         $monitoringSummary = (clone $query)
             ->selectRaw('COUNT(*) as total_request, COALESCE(SUM(nominal), 0) as total_nominal')
             ->first();
+        $bankGroupExpression = DB::raw("COALESCE(NULLIF(TRIM(bank), ''), '-')");
+        $monitoringByBank = (clone $query)
+            ->selectRaw("COALESCE(NULLIF(TRIM(bank), ''), '-') as bank_name")
+            ->selectRaw('COUNT(*) as total_request')
+            ->selectRaw('COALESCE(SUM(nominal), 0) as total_nominal')
+            ->groupBy($bankGroupExpression)
+            ->orderByDesc('total_nominal')
+            ->get();
         $latestUpdatedAt = (clone $query)->max('updated_at');
         $latestIncomingAt = (clone $query)->max('created_at');
         $latestIncomingItem = (clone $query)
@@ -154,6 +162,7 @@ class AdminDepositController extends Controller
             'globalSearch' => $filters['global_search'] ?? null,
             'perPage' => $perPage,
             'monitoringSummary' => $monitoringSummary,
+            'monitoringByBank' => $monitoringByBank,
             'latestUpdatedAt' => $latestUpdatedAt,
             'latestIncomingAt' => $latestIncomingAt,
             'latestIncomingId' => $latestIncomingId,
@@ -262,8 +271,17 @@ class AdminDepositController extends Controller
             $monitoringSummary = (clone $query)
                 ->selectRaw('COUNT(*) as total_request, COALESCE(SUM(nominal), 0) as total_nominal')
                 ->first();
+            $bankGroupExpression = DB::raw("COALESCE(NULLIF(TRIM(bank), ''), '-')");
+            $monitoringByBank = (clone $query)
+                ->selectRaw("COALESCE(NULLIF(TRIM(bank), ''), '-') as bank_name")
+                ->selectRaw('COUNT(*) as total_request')
+                ->selectRaw('COALESCE(SUM(nominal), 0) as total_nominal')
+                ->groupBy($bankGroupExpression)
+                ->orderByDesc('total_nominal')
+                ->get();
             $summaryCardHtml = view('admin.deposit.partials.summary-card', [
                 'monitoringSummary' => $monitoringSummary,
+                'monitoringByBank' => $monitoringByBank,
             ])->render();
         }
 
