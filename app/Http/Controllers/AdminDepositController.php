@@ -126,6 +126,7 @@ class AdminDepositController extends Controller
             ->first();
         $bankGroupExpression = DB::raw("COALESCE(NULLIF(TRIM(bank), ''), '-')");
         $monitoringByBank = (clone $query)
+            ->reorder()
             ->selectRaw("COALESCE(NULLIF(TRIM(bank), ''), '-') as bank_name")
             ->selectRaw('COUNT(*) as total_request')
             ->selectRaw('COALESCE(SUM(nominal), 0) as total_nominal')
@@ -273,6 +274,7 @@ class AdminDepositController extends Controller
                 ->first();
             $bankGroupExpression = DB::raw("COALESCE(NULLIF(TRIM(bank), ''), '-')");
             $monitoringByBank = (clone $query)
+                ->reorder()
                 ->selectRaw("COALESCE(NULLIF(TRIM(bank), ''), '-') as bank_name")
                 ->selectRaw('COUNT(*) as total_request')
                 ->selectRaw('COALESCE(SUM(nominal), 0) as total_nominal')
