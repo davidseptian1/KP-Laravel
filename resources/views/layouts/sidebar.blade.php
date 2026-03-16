@@ -263,6 +263,10 @@
                         <span class="pc-mtext">Bank Manajemen</span>
                     </a>
                 </li>
+                <!-- PERSEDIAAN STOK -->
+                <li class="pc-item pc-caption">
+                    <label>Persediaan Stok</label>
+                </li>
 
                 <li class="pc-item pc-caption">
                     <label>API Manajement</label>
