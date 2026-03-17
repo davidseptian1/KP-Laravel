@@ -34,7 +34,9 @@ class PersediaanStokController extends Controller
             'items_json' => 'required|string',
             'on_behalf' => 'nullable|string|max:255',
             'transfer_proof' => 'nullable|image|max:5120',
+            'transfer_proof_base64' => 'nullable|string',
             'invoice_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'invoice_file_base64' => 'nullable|string',
             'invoice_text' => 'nullable|string'
         ]);
 
@@ -57,17 +59,47 @@ class PersediaanStokController extends Controller
         $record->total_amount = $total;
         $record->on_behalf = $data['on_behalf'] ?? null;
 
+        // handle uploaded file
         if ($request->hasFile('transfer_proof')) {
             $record->transfer_proof_path = $request->file('transfer_proof')->store('persediaan', 'public');
+        } elseif (!empty($data['transfer_proof_base64'])) {
+            // save base64 image to storage
+            try {
+                $fileData = $data['transfer_proof_base64'];
+                if (preg_match('/^data:(image\/\w+);base64,/', $fileData, $type)) {
+                    $fileData = substr($fileData, strpos($fileData, ',') + 1);
+                    $fileData = base64_decode($fileData);
+                    $ext = explode('/', $type[1])[1];
+                    $filename = 'persediaan/transfer_' . time() . '_' . bin2hex(random_bytes(6)) . '.' . $ext;
+                    Storage::disk('public')->put($filename, $fileData);
+                    $record->transfer_proof_path = $filename;
+                }
+            } catch (\Exception $e) {
+                // ignore saving base64 on failure
+            }
         }
 
         if ($request->hasFile('invoice_file')) {
             $record->invoice_path = $request->file('invoice_file')->store('persediaan', 'public');
+        } elseif (!empty($data['invoice_file_base64'])) {
+            try {
+                $fileData = $data['invoice_file_base64'];
+                if (preg_match('/^data:(application\/pdf|image\/\w+);base64,/', $fileData, $type)) {
+                    $fileData = substr($fileData, strpos($fileData, ',') + 1);
+                    $fileData = base64_decode($fileData);
+                    $ext = strpos($type[1], 'pdf') !== false ? 'pdf' : explode('/', $type[1])[1];
+                    $filename = 'persediaan/invoice_' . time() . '_' . bin2hex(random_bytes(6)) . '.' . $ext;
+                    Storage::disk('public')->put($filename, $fileData);
+                    $record->invoice_path = $filename;
+                }
+            } catch (\Exception $e) {
+                // ignore
+            }
         }
 
         $record->invoice_text = $data['invoice_text'] ?? null;
         $record->save();
 
-        return redirect()->route('deposit.request.index')->with('success', 'Permintaan persediaan dikirim.');
+        return redirect()->route('persediaan.create')->with('success', 'Permintaan persediaan dikirim.');
     }
 }

@@ -7,6 +7,19 @@
             <h5>Form Permintaan Persediaan Stok</h5>
             <form method="post" action="{{ route('persediaan.store') }}" enctype="multipart/form-data">
                 @csrf
+                @if(session('success'))
+                    <div class="alert alert-success">{{ session('success') }}</div>
+                @endif
+
+                @if($errors->any())
+                    <div class="alert alert-danger">
+                        <ul class="mb-0">
+                            @foreach($errors->all() as $err)
+                                <li>{{ $err }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
 
                 <div class="mb-3">
                     <label class="form-label">Nama Pemilik</label>
@@ -57,14 +70,18 @@
                 </div>
 
                 <div class="mb-3 mt-3">
-                    <label class="form-label">Bukti Transfer (gambar)</label>
-                    <input type="file" name="transfer_proof" accept="image/*" class="form-control">
+                    <label class="form-label">Bukti Transfer (gambar) - bisa paste gambar atau upload</label>
+                    <input type="file" name="transfer_proof" accept="image/*" class="form-control" id="transfer-proof-file">
+                    <div id="transfer-proof-preview" style="margin-top:.5rem;"></div>
+                    <input type="hidden" name="transfer_proof_base64" id="transfer_proof_base64">
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Bukti Faktur (opsional copy/paste)</label>
-                    <textarea name="invoice_text" class="form-control" rows="3"></textarea>
-                    <div class="mt-2">atau upload file: <input type="file" name="invoice_file" class="form-control"/></div>
+                    <label class="form-label">Bukti Faktur (opsional copy/paste gambar atau teks)</label>
+                    <textarea name="invoice_text" id="invoice-text" class="form-control" rows="3" placeholder="Anda bisa paste teks atau gambar di sini (gambar akan disimpan sebagai lampiran)"></textarea>
+                    <div class="mt-2">atau upload file: <input type="file" name="invoice_file" id="invoice-file" class="form-control"/></div>
+                    <div id="invoice-file-preview" style="margin-top:.5rem;"></div>
+                    <input type="hidden" name="invoice_file_base64" id="invoice_file_base64">
                 </div>
 
                 <input type="hidden" name="items_json" id="items-json">
@@ -78,6 +95,68 @@
 </div>
 
 <script>
+    // handle paste image and preview for transfer proof and invoice
+    function readClipboardImageAndSetPreview(items, targetHiddenInputId, previewContainerId){
+        for (const item of items) {
+            if (item.type && item.type.indexOf('image') === 0) {
+                const blob = item.getAsFile ? item.getAsFile() : null;
+                if (blob) {
+                    const reader = new FileReader();
+                    reader.onload = function(e){
+                        document.getElementById(targetHiddenInputId).value = e.target.result;
+                        document.getElementById(previewContainerId).innerHTML = '<img src="'+e.target.result+'" style="max-width:200px;max-height:200px;"/>';
+                    };
+                    reader.readAsDataURL(blob);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    document.addEventListener('paste', function(e){
+        // prioritize invoice textarea if focused
+        const active = document.activeElement;
+        const clipboard = (e.clipboardData || window.clipboardData);
+        if (!clipboard) return;
+
+        // if invoice textarea focused, try set invoice image
+        if (active && active.id === 'invoice-text') {
+            const items = clipboard.items || [];
+            if (readClipboardImageAndSetPreview(items, 'invoice_file_base64', 'invoice-file-preview')) {
+                e.preventDefault();
+                return;
+            }
+        }
+
+        // if not invoice textarea, allow paste to transfer proof area via any paste
+        const items = clipboard.items || [];
+        if (readClipboardImageAndSetPreview(items, 'transfer_proof_base64', 'transfer-proof-preview')) {
+            e.preventDefault();
+            return;
+        }
+    });
+
+    // file input change -> preview and set base64 for convenience (so both ways supported)
+    function bindFilePreview(inputId, previewId, hiddenBase64Id){
+        const input = document.getElementById(inputId);
+        if (!input) return;
+        input.addEventListener('change', function(){
+            const file = input.files && input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e){
+                document.getElementById(previewId).innerHTML = '<img src="'+e.target.result+'" style="max-width:200px;max-height:200px;"/>';
+                // set hidden base64 so server accepts even when file input not processed
+                try{ document.getElementById(hiddenBase64Id).value = e.target.result; }catch(err){}
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    bindFilePreview('transfer-proof-file','transfer-proof-preview','transfer_proof_base64');
+    bindFilePreview('invoice-file','invoice-file-preview','invoice_file_base64');
+
     function recalcRow(row){
         const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
         const price = parseFloat(row.querySelector('.item-price').value) || 0;
