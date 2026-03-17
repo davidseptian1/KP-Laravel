@@ -361,7 +361,14 @@
     (function(){
         function closeOpenDetail() {
             const open = document.querySelector('.persediaan-detail-row');
-            if (open) open.remove();
+            if (open) {
+                const prev = open.previousElementSibling;
+                if (prev) {
+                    const prevBtn = prev.querySelector('.js-persediaan-open-detail');
+                    if (prevBtn) prevBtn.textContent = 'Lihat';
+                }
+                open.remove();
+            }
         }
 
         function buildDetailHtml(items, transferPath, invoicePath, id){
@@ -401,8 +408,10 @@
                 // ignore clicks on buttons/links inside row
                 if (e.target.closest('button') || e.target.closest('a')) return;
                 const next = row.nextElementSibling;
-                // if a detail row already open below this row, close it
+                // if a detail row already open below this row, close it and toggle button text
                 if (next && next.classList && next.classList.contains('persediaan-detail-row')) {
+                    const btnHere = row.querySelector('.js-persediaan-open-detail');
+                    if (btnHere) btnHere.textContent = 'Lihat';
                     next.remove();
                     return;
                 }
@@ -418,6 +427,9 @@
                 tr.className = 'persediaan-detail-row';
                 tr.innerHTML = buildDetailHtml(items, transferPath, invoicePath, id);
                 row.parentNode.insertBefore(tr, row.nextSibling);
+                // set button to 'Tutup'
+                const btnHere = row.querySelector('.js-persediaan-open-detail');
+                if (btnHere) btnHere.textContent = 'Tutup';
                 // scroll into view a bit
                 tr.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             });
