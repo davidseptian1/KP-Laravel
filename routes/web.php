@@ -28,6 +28,8 @@ use App\Http\Controllers\ServerController;
 use App\Http\Controllers\BankController;
 use App\Http\Controllers\DataMatrixController;
 use App\Http\Controllers\ApiManagementController;
+use App\Http\Controllers\PersediaanStokController;
+use App\Http\Controllers\AdminPersediaanStokController;
 
 
 
@@ -128,6 +130,10 @@ Route::middleware('checkLogin')->group(function () {
     // Reimburse (User)
     Route::get('reimburse', [ReimburseWebController::class, 'index'])->name('reimburse.index');
     Route::post('reimburse', [ReimburseWebController::class, 'store'])->name('reimburse.store');
+
+    // Persediaan Stok - Staff form
+    Route::get('persediaan-stok/form', [PersediaanStokController::class, 'create'])->name('persediaan.create');
+    Route::post('persediaan-stok', [PersediaanStokController::class, 'store'])->name('persediaan.store');
 
     // Deposit Request (User)
     Route::get('deposit/request', [DepositFormController::class, 'index'])->name('deposit.request.index');
@@ -272,6 +278,11 @@ Route::middleware('checkLogin')->group(function () {
         Route::put('admin/deposit/{id}/details', [AdminDepositController::class, 'updateDetails'])->name('admin.deposit.update-details');
         Route::put('admin/deposit/{id}/status', [AdminDepositController::class, 'updateStatus'])->name('admin.deposit.update-status');
         Route::delete('admin/deposit/{id}', [AdminDepositController::class, 'destroy'])->name('admin.deposit.destroy');
+
+        // Persediaan Stok - Admin monitoring
+        Route::get('admin/persediaan-stok', [AdminPersediaanStokController::class, 'index'])->name('admin.persediaan-stok.index');
+        Route::get('admin/persediaan-stok/{id}', [AdminPersediaanStokController::class, 'show'])->name('admin.persediaan.show');
+        Route::get('admin/persediaan-stok/{id}/file/{field}', [AdminPersediaanStokController::class, 'viewFile'])->name('admin.persediaan.file');
 
         // Create Minusan
         Route::get('minusan/create', [MinusanController::class, 'create'])->name('minusanCreate');

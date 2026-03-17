@@ -263,7 +263,8 @@
                         <span class="pc-mtext">Bank Manajemen</span>
                     </a>
                 </li>
-                <!-- PERSEDIAAN STOK -->
+                <!-- PERSEDIAAN STOK 
+                 1.pembelian stok, ngisi form persatu-->
                 <li class="pc-item pc-caption">
                     <label>Persediaan Stok</label>
                 </li>
