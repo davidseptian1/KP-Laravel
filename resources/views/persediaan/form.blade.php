@@ -5,7 +5,7 @@
     <div class="card">
         <div class="card-body">
             <h5>Form Permintaan Persediaan Stok</h5>
-            <form method="post" action="{{ route('persediaan.store') }}" enctype="multipart/form-data">
+            <form id="persediaan-form" method="post" action="{{ route('persediaan.store') }}" enctype="multipart/form-data">
                 @csrf
                 @if(session('success'))
                     <div class="alert alert-success">{{ session('success') }}</div>
@@ -209,15 +209,25 @@
     // add one initial row
     addRow();
 
-    document.querySelector('form').addEventListener('submit', function(e){
-        const rows = Array.from(document.querySelectorAll('#items-table tbody tr'));
-        const items = rows.map(r=>({
-            name: r.querySelector('.item-name').value,
-            qty: r.querySelector('.item-qty').value,
-            price: r.querySelector('.item-price').value,
-        }));
-        document.getElementById('items-json').value = JSON.stringify(items);
-    });
+    (function(){
+        const form = document.getElementById('persediaan-form');
+        if(!form) return;
+        form.addEventListener('submit', function(e){
+            // ensure at least one item row exists
+            const tbody = document.querySelector('#items-table tbody');
+            if (tbody && tbody.children.length === 0) {
+                addRow();
+            }
+
+            const rows = Array.from(document.querySelectorAll('#items-table tbody tr'));
+            const items = rows.map(r=>({
+                name: (r.querySelector('.item-name') && r.querySelector('.item-name').value) || '',
+                qty: (r.querySelector('.item-qty') && r.querySelector('.item-qty').value) || 0,
+                price: (r.querySelector('.item-price') && r.querySelector('.item-price').value) || 0,
+            }));
+            document.getElementById('items-json').value = JSON.stringify(items);
+        });
+    })();
 </script>
 
 @endsection
