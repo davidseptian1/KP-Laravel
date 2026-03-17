@@ -117,8 +117,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Auto-hide alerts after 5 seconds
     const alerts = document.querySelectorAll('.alert:not(.alert-permanent)');
-    // Auto-close alerts after 5 seconds
-    const alerts = document.querySelectorAll('.alert');
     alerts.forEach(alert => {
         setTimeout(() => {
             if (typeof bootstrap !== 'undefined') {
