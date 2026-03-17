@@ -97,6 +97,27 @@
 
 <script>
     // handle paste image and preview for transfer proof and invoice
+    function setImagePreview(containerId, base64HiddenId, fileInputId, dataUrl){
+        const container = document.getElementById(containerId);
+        if(!container) return;
+        container.innerHTML = `
+            <div style="position:relative;display:inline-block;">
+                <img src="${dataUrl}" style="max-width:200px;max-height:200px;display:block;" />
+                <button type="button" class="btn btn-sm btn-danger remove-preview" style="position:absolute;top:4px;right:4px;line-height:1;padding:2px 6px;border-radius:3px;">×</button>
+            </div>
+        `;
+        try{ document.getElementById(base64HiddenId).value = dataUrl; }catch(e){}
+        // bind remove
+        const btn = container.querySelector('.remove-preview');
+        if(btn){
+            btn.addEventListener('click', function(){
+                container.innerHTML = '';
+                try{ document.getElementById(base64HiddenId).value = ''; }catch(e){}
+                if(fileInputId){ try{ document.getElementById(fileInputId).value = ''; }catch(e){} }
+            });
+        }
+    }
+
     function readClipboardImageAndSetPreview(items, targetHiddenInputId, previewContainerId){
         for (const item of items) {
             if (item.type && item.type.indexOf('image') === 0) {
@@ -104,8 +125,9 @@
                 if (blob) {
                     const reader = new FileReader();
                     reader.onload = function(e){
-                        document.getElementById(targetHiddenInputId).value = e.target.result;
-                        document.getElementById(previewContainerId).innerHTML = '<img src="'+e.target.result+'" style="max-width:200px;max-height:200px;"/>';
+                        setImagePreview(previewContainerId, targetHiddenInputId,
+                            previewContainerId === 'transfer-proof-preview' ? 'transfer-proof-file' : 'invoice-file',
+                            e.target.result);
                     };
                     reader.readAsDataURL(blob);
                     return true;
@@ -152,9 +174,7 @@
             if (!file) return;
             const reader = new FileReader();
             reader.onload = function(e){
-                document.getElementById(previewId).innerHTML = '<img src="'+e.target.result+'" style="max-width:200px;max-height:200px;"/>';
-                // set hidden base64 so server accepts even when file input not processed
-                try{ document.getElementById(hiddenBase64Id).value = e.target.result; }catch(err){}
+                setImagePreview(previewId, hiddenBase64Id, inputId, e.target.result);
             };
             reader.readAsDataURL(file);
         });
