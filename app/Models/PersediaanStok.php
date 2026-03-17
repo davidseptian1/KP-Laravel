@@ -21,4 +21,9 @@ class PersediaanStok extends Model
         'receive_date' => 'datetime',
         'total_amount' => 'decimal:2'
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(\App\Models\User::class);
+    }
 }
