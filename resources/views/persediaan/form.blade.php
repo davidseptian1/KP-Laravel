@@ -19,7 +19,7 @@
                         <select name="bank_id" class="form-select">
                             <option value="">-- Pilih Bank --</option>
                             @foreach($banks as $bank)
-                                <option value="{{ $bank->id }}">{{ $bank->nama }} - {{ $bank->nomor_rekening ?? '' }}</option>
+                                <option value="{{ $bank->id }}">{{ $bank->nama_bank ?? $bank->nama ?? 'Bank '.$bank->id }} - {{ $bank->nomor_rekening ?? $bank->nomor_rek ?? '' }}</option>
                             @endforeach
                         </select>
                     </div>

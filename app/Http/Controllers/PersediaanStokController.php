@@ -15,7 +15,8 @@ class PersediaanStokController extends Controller
     {
         $banks = [];
         if (class_exists(Bank::class)) {
-            $banks = Bank::orderBy('nama')->get();
+            // banks table uses column `nama_bank`
+            $banks = Bank::orderBy('nama_bank')->get();
         }
 
         return view('persediaan.form', compact('banks'));
