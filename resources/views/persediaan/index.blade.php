@@ -59,17 +59,17 @@
                         </thead>
                         <tbody>
                             @foreach(($records ?? collect()) as $r)
-                                <tr>
+                                <tr class="js-persediaan-row" data-items='@json($r->items ?? [])' data-transfer-path="{{ $r->transfer_proof_path }}" data-invoice-path="{{ $r->invoice_path }}" data-id="{{ $r->id }}">
                                     <td>{{ optional($r->created_at)->format('Y-m-d H:i') }}</td>
                                     <td>{{ $r->owner_name }}</td>
                                     <td>{{ number_format($r->total_amount, 2, '.', ',') }}</td>
                                     <td>{{ $r->status ?? 'pending' }}</td>
                                     <td class="text-end">
-                                        <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#persediaanDetail{{ $r->id }}">Lihat</button>
+                                        <button class="btn btn-sm btn-outline-secondary js-persediaan-open-detail" data-id="{{ $r->id }}">Lihat</button>
                                     </td>
                                 </tr>
 
-                                {{-- Detail modal per record --}}
+                                {{-- Detail modal per record (kept for backward compatibility) --}}
                                 <div class="modal fade" id="persediaanDetail{{ $r->id }}" tabindex="-1" aria-hidden="true">
                                     <div class="modal-dialog modal-lg modal-dialog-scrollable">
                                         <div class="modal-content">
@@ -354,5 +354,83 @@
             document.getElementById('items-json').value = JSON.stringify(items);
         });
     });
+
+    // Inline detail toggle for persediaan rows
+    (function(){
+        function closeOpenDetail() {
+            const open = document.querySelector('.persediaan-detail-row');
+            if (open) open.remove();
+        }
+
+        function buildDetailHtml(items, transferPath, invoicePath, id){
+            let html = '<td colspan="5">';
+            html += '<table class="table table-sm mb-2"><thead><tr><th>NAMA</th><th>QTY</th><th>HARGA</th><th>SUBTOTAL</th></tr></thead><tbody>';
+            items.forEach(it => {
+                const name = it.name || '';
+                const qty = parseFloat(it.qty || 0);
+                const price = parseFloat(it.price || 0);
+                const subtotal = (qty*price).toFixed(2);
+                html += `<tr><td>${name}</td><td>${qty}</td><td>${price.toFixed(2)}</td><td>${subtotal}</td></tr>`;
+            });
+            html += '</tbody></table>';
+
+            html += '<div><strong>Bukti Transfer:</strong><div style="margin-top:.5rem;">';
+            if (transferPath) {
+                html += `<img src="/persediaan-stok/`+id+`/file/transfer" style="max-width:240px;max-height:240px;display:block;" onerror="this.style.display='none'"/>`;
+            } else {
+                html += '<div class="text-muted">Tidak ada bukti transfer</div>';
+            }
+            html += '</div></div>';
+
+            html += '<div class="mt-3"><strong>Faktur / Lampiran:</strong> ';
+            if (invoicePath) {
+                html += `<a href="/persediaan-stok/`+id+`/file/invoice" target="_blank" class="btn btn-sm btn-outline-primary">Buka Faktur</a>`;
+            } else {
+                html += '<div class="text-muted">Tidak ada faktur</div>';
+            }
+            html += '</div>';
+
+            html += '</td>';
+            return html;
+        }
+
+        document.querySelectorAll('.js-persediaan-row').forEach(row => {
+            row.addEventListener('click', function(e){
+                // ignore clicks on buttons/links inside row
+                if (e.target.closest('button') || e.target.closest('a')) return;
+                const next = row.nextElementSibling;
+                // if a detail row already open below this row, close it
+                if (next && next.classList && next.classList.contains('persediaan-detail-row')) {
+                    next.remove();
+                    return;
+                }
+                // close any other open detail
+                closeOpenDetail();
+
+                const items = JSON.parse(row.getAttribute('data-items') || '[]');
+                const transferPath = row.getAttribute('data-transfer-path');
+                const invoicePath = row.getAttribute('data-invoice-path');
+                const id = row.getAttribute('data-id');
+
+                const tr = document.createElement('tr');
+                tr.className = 'persediaan-detail-row';
+                tr.innerHTML = buildDetailHtml(items, transferPath, invoicePath, id);
+                row.parentNode.insertBefore(tr, row.nextSibling);
+                // scroll into view a bit
+                tr.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            });
+        });
+
+        // Also support clicking the small 'Lihat' button to toggle the inline detail
+        document.querySelectorAll('.js-persediaan-open-detail').forEach(btn => {
+            btn.addEventListener('click', function(e){
+                e.preventDefault();
+                e.stopPropagation();
+                const id = btn.getAttribute('data-id');
+                const row = document.querySelector(`.js-persediaan-row[data-id="${id}"]`);
+                if (row) row.click();
+            });
+        });
+    })();
 </script>
 @endsection
