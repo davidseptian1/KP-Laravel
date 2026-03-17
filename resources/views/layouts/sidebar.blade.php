@@ -269,6 +269,14 @@
                     <label>Persediaan Stok</label>
                 </li>
 
+                <!-- Persediaan Stok (Admin menu link) -->
+                <li class="pc-item {{ $menuAdminPersediaan ?? '' }}">
+                    <a href="{{ route('admin.persediaan-stok.index') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-package"></i></span>
+                        <span class="pc-mtext">Persediaan Stok</span>
+                    </a>
+                </li>
+
                 <li class="pc-item pc-caption">
                     <label>API Manajement</label>
                 </li>
@@ -309,6 +317,14 @@
                     <a href="{{ route('deposit.request.index') }}" class="pc-link">
                         <span class="pc-micon"><i class="ti ti-wallet"></i></span>
                         <span class="pc-mtext">Request Deposit</span>
+                    </a>
+                </li>
+
+                <!-- Permintaan Persediaan (Staff) -->
+                <li class="pc-item {{ $menuPersediaanRequest ?? '' }}">
+                    <a href="{{ route('persediaan.create') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-box"></i></span>
+                        <span class="pc-mtext">Permintaan Persediaan</span>
                     </a>
                 </li>
 
