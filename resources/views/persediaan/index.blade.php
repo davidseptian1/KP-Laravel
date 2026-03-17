@@ -403,48 +403,53 @@
             return html;
         }
 
-        document.querySelectorAll('.js-persediaan-row').forEach(row => {
-            row.addEventListener('click', function(e){
-                // ignore clicks on buttons/links inside row
-                if (e.target.closest('button') || e.target.closest('a')) return;
-                const next = row.nextElementSibling;
-                // if a detail row already open below this row, close it and toggle button text
-                if (next && next.classList && next.classList.contains('persediaan-detail-row')) {
-                    const btnHere = row.querySelector('.js-persediaan-open-detail');
-                    if (btnHere) btnHere.textContent = 'Lihat';
-                    next.remove();
-                    return;
-                }
-                // close any other open detail
-                closeOpenDetail();
-
-                const items = JSON.parse(row.getAttribute('data-items') || '[]');
-                const transferPath = row.getAttribute('data-transfer-path');
-                const invoicePath = row.getAttribute('data-invoice-path');
-                const id = row.getAttribute('data-id');
-
-                const tr = document.createElement('tr');
-                tr.className = 'persediaan-detail-row';
-                tr.innerHTML = buildDetailHtml(items, transferPath, invoicePath, id);
-                row.parentNode.insertBefore(tr, row.nextSibling);
-                // set button to 'Tutup'
-                const btnHere = row.querySelector('.js-persediaan-open-detail');
-                if (btnHere) btnHere.textContent = 'Tutup';
-                // scroll into view a bit
-                tr.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            });
-        });
-
-        // Also support clicking the small 'Lihat' button to toggle the inline detail
-        document.querySelectorAll('.js-persediaan-open-detail').forEach(btn => {
-            btn.addEventListener('click', function(e){
+        // Use event delegation to reliably handle clicks on rows and buttons
+        document.addEventListener('click', function(e){
+            // button click - toggle corresponding row
+            const btn = e.target.closest('.js-persediaan-open-detail');
+            if (btn) {
                 e.preventDefault();
                 e.stopPropagation();
                 const id = btn.getAttribute('data-id');
                 const row = document.querySelector(`.js-persediaan-row[data-id="${id}"]`);
-                if (row) row.click();
-            });
+                if (row) toggleRow(row);
+                return;
+            }
+
+            // row click (but not clicks on buttons/links)
+            const row = e.target.closest('.js-persediaan-row');
+            if (row) {
+                if (e.target.closest('button') || e.target.closest('a')) return;
+                toggleRow(row);
+            }
         });
+
+        function toggleRow(row) {
+            const next = row.nextElementSibling;
+            // if detail open for this row, close it
+            if (next && next.classList && next.classList.contains('persediaan-detail-row')) {
+                const btnHere = row.querySelector('.js-persediaan-open-detail');
+                if (btnHere) btnHere.textContent = 'Lihat';
+                next.remove();
+                return;
+            }
+
+            // otherwise close any other open detail and open this one
+            closeOpenDetail();
+
+            const items = JSON.parse(row.getAttribute('data-items') || '[]');
+            const transferPath = row.getAttribute('data-transfer-path');
+            const invoicePath = row.getAttribute('data-invoice-path');
+            const id = row.getAttribute('data-id');
+
+            const tr = document.createElement('tr');
+            tr.className = 'persediaan-detail-row';
+            tr.innerHTML = buildDetailHtml(items, transferPath, invoicePath, id);
+            row.parentNode.insertBefore(tr, row.nextSibling);
+            const btnHere = row.querySelector('.js-persediaan-open-detail');
+            if (btnHere) btnHere.textContent = 'Tutup';
+            tr.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
     })();
 </script>
 @endsection
