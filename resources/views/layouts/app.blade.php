@@ -1,3 +1,4 @@
+@php $title = $title ?? config('app.name', 'e-SMT'); @endphp
 @include('layouts/header')
 
 <body data-pc-preset="preset-1" data-pc-direction="ltr" data-pc-theme="light">

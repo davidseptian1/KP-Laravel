@@ -9,7 +9,7 @@
     <meta name="description" content="e-Sistem Monitoring Transaksi - PT. CHIKA MULYA MULTIMEDIA">
     <meta name="author" content="PT. CHIKA MULYA MULTIMEDIA">
 
-    <title>{{ $title }} | e-SMT</title>
+    <title>{{ $title ?? config('app.name', 'e-SMT') }} | e-SMT</title>
 
     <!-- [Favicon] icon -->
     <link rel="icon" href="{{ asset('mantis/images/favicon.svg') }}" type="image/x-icon">
