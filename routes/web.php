@@ -134,6 +134,7 @@ Route::middleware('checkLogin')->group(function () {
     // Persediaan Stok - Staff form
     Route::get('persediaan-stok/form', [PersediaanStokController::class, 'create'])->name('persediaan.create');
     Route::post('persediaan-stok', [PersediaanStokController::class, 'store'])->name('persediaan.store');
+    Route::get('persediaan-stok/{id}/file/{field}', [PersediaanStokController::class, 'viewFile'])->name('persediaan.file');
 
     // Deposit Request (User)
     Route::get('deposit/request', [DepositFormController::class, 'index'])->name('deposit.request.index');

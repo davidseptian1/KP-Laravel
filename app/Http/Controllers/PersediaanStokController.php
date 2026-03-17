@@ -19,8 +19,26 @@ class PersediaanStokController extends Controller
             $banks = Bank::orderBy('nama_bank')->get();
         }
 
+        // load recent records for the current user so they appear in the table
+        $records = PersediaanStok::where('user_id', Auth::id())->orderByDesc('created_at')->get();
+
         // show index-like page with modal form (match Request Deposit UI)
-        return view('persediaan.index', compact('banks'));
+        return view('persediaan.index', compact('banks', 'records'));
+    }
+
+    public function viewFile($id, $field)
+    {
+        $item = PersediaanStok::findOrFail($id);
+        // only allow owner to view via this route
+        if ($item->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $path = $field === 'transfer' ? $item->transfer_proof_path : $item->invoice_path;
+        if (!$path || !Storage::disk('public')->exists($path)) {
+            abort(404);
+        }
+        return Storage::disk('public')->response($path);
     }
 
     public function store(Request $request)

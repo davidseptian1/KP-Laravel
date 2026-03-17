@@ -58,7 +58,72 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {{-- Simple listing placeholder (admin view handles monitoring) --}}
+                            @foreach(($records ?? collect()) as $r)
+                                <tr>
+                                    <td>{{ optional($r->created_at)->format('Y-m-d H:i') }}</td>
+                                    <td>{{ $r->owner_name }}</td>
+                                    <td>{{ number_format($r->total_amount, 2, '.', ',') }}</td>
+                                    <td>{{ $r->status ?? 'pending' }}</td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#persediaanDetail{{ $r->id }}">Lihat</button>
+                                    </td>
+                                </tr>
+
+                                {{-- Detail modal per record --}}
+                                <div class="modal fade" id="persediaanDetail{{ $r->id }}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Detail Permintaan #{{ $r->id }}</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p><strong>Tanggal:</strong> {{ optional($r->created_at)->format('Y-m-d H:i') }}</p>
+                                                <p><strong>Nama Pemilik:</strong> {{ $r->owner_name }}</p>
+                                                <p><strong>Total:</strong> {{ number_format($r->total_amount,2,'.',',') }}</p>
+                                                <p><strong>Items:</strong></p>
+                                                <table class="table table-sm">
+                                                    <thead><tr><th>Nama</th><th>Qty</th><th>Harga</th><th>Subtotal</th></tr></thead>
+                                                    <tbody>
+                                                        @foreach($r->items ?? [] as $it)
+                                                            <tr>
+                                                                <td>{{ $it['name'] ?? '' }}</td>
+                                                                <td>{{ $it['qty'] ?? 0 }}</td>
+                                                                <td>{{ number_format($it['price'] ?? 0,2,'.',',') }}</td>
+                                                                <td>{{ number_format((($it['qty'] ?? 0) * ($it['price'] ?? 0)),2,'.',',') }}</td>
+                                                            </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
+
+                                                <p><strong>Bukti Transfer:</strong></p>
+                                                @if($r->transfer_proof_path && 
+                                                    
+                                                    file_exists(storage_path('app/public/'.$r->transfer_proof_path)))
+                                                    <img src="{{ route('persediaan.file', ['id' => $r->id, 'field' => 'transfer']) }}" style="max-width:240px;max-height:240px;display:block;" />
+                                                @else
+                                                    <div class="text-muted">Tidak ada bukti transfer</div>
+                                                @endif
+
+                                                <p class="mt-3"><strong>Faktur / Lampiran:</strong></p>
+                                                @if($r->invoice_path && file_exists(storage_path('app/public/'.$r->invoice_path)))
+                                                    <a href="{{ route('persediaan.file', ['id' => $r->id, 'field' => 'invoice']) }}" target="_blank" class="btn btn-sm btn-outline-primary">Buka Faktur</a>
+                                                @elseif($r->invoice_text)
+                                                    <pre class="small">{{ $r->invoice_text }}</pre>
+                                                @else
+                                                    <div class="text-muted">Tidak ada faktur</div>
+                                                @endif
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                            @if(empty($records) || $records->isEmpty())
+                                <tr><td colspan="5" class="text-center text-muted">Belum ada permintaan persediaan.</td></tr>
+                            @endif
                         </tbody>
                     </table>
                 </div>
