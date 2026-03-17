@@ -70,8 +70,9 @@
                 </div>
 
                 <div class="mb-3 mt-3">
-                    <label class="form-label">Bukti Transfer (gambar) - bisa paste gambar atau upload</label>
-                    <input type="file" name="transfer_proof" accept="image/*" class="form-control" id="transfer-proof-file">
+                    <label class="form-label">Bukti Transfer (gambar) - klik area di bawah lalu tekan Ctrl+V untuk paste atau pilih file</label>
+                    <div id="transfer-paste-area" contenteditable="true" style="border:1px dashed #ccc;padding:8px;min-height:80px;cursor:text;">Klik di sini lalu paste gambar (atau gunakan tombol pilih file)</div>
+                    <div style="margin-top:.5rem;"><input type="file" name="transfer_proof" accept="image/*" class="form-control" id="transfer-proof-file"></div>
                     <div id="transfer-proof-preview" style="margin-top:.5rem;"></div>
                     <input type="hidden" name="transfer_proof_base64" id="transfer_proof_base64">
                 </div>
@@ -115,26 +116,31 @@
     }
 
     document.addEventListener('paste', function(e){
-        // prioritize invoice textarea if focused
         const active = document.activeElement;
         const clipboard = (e.clipboardData || window.clipboardData);
         if (!clipboard) return;
 
-        // if invoice textarea focused, try set invoice image
+        // hanya tangani paste jika fokus di salah satu area yang didukung
         if (active && active.id === 'invoice-text') {
             const items = clipboard.items || [];
             if (readClipboardImageAndSetPreview(items, 'invoice_file_base64', 'invoice-file-preview')) {
                 e.preventDefault();
                 return;
             }
-        }
-
-        // if not invoice textarea, allow paste to transfer proof area via any paste
-        const items = clipboard.items || [];
-        if (readClipboardImageAndSetPreview(items, 'transfer_proof_base64', 'transfer-proof-preview')) {
-            e.preventDefault();
+            // jika bukan gambar, biarkan teks masuk ke textarea normal
             return;
         }
+
+        if (active && active.id === 'transfer-paste-area') {
+            const items = clipboard.items || [];
+            if (readClipboardImageAndSetPreview(items, 'transfer_proof_base64', 'transfer-proof-preview')) {
+                e.preventDefault();
+                return;
+            }
+            // jika teks ditempel di area transfer, biarkan teks ditampilkan (opsional)
+            return;
+        }
+        // jika fokus bukan pada kedua area, abaikan paste (tidak mengambil gambar otomatis)
     });
 
     // file input change -> preview and set base64 for convenience (so both ways supported)
