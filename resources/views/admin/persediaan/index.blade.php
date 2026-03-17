@@ -22,6 +22,7 @@
                                 @endif
                                 @if($row->invoice_path)
                                     <a href="{{ route('admin.persediaan.file', [$row->id, 'invoice']) }}" target="_blank" class="btn btn-sm btn-outline-secondary">Lihat Faktur</a>
+                                    <a href="{{ route('admin.persediaan.invoice.pdf', $row->id) }}" class="btn btn-sm btn-primary">Unduh PDF</a>
                                 @endif
                             </td>
                         </tr>

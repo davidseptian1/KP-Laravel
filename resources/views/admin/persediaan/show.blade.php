@@ -30,7 +30,10 @@
                                 <img src="{{ route('admin.persediaan.file', [$item->id, 'transfer']) }}" class="img-fluid" alt="bukti" style="max-height:300px;" />
                             </a>
                         </p>
-                        <p><a href="{{ route('admin.persediaan.file', [$item->id, 'transfer']) }}" target="_blank" class="btn btn-sm btn-outline-primary">Buka fullscreen</a></p>
+                        <p>
+                            <a href="{{ route('admin.persediaan.file', [$item->id, 'transfer']) }}" target="_blank" class="btn btn-sm btn-outline-primary">Buka fullscreen</a>
+                            <a href="{{ route('admin.persediaan.invoice.pdf', $item->id) }}" class="btn btn-sm btn-primary">Unduh PDF</a>
+                        </p>
                     @else
                         <p>Tidak ada bukti transfer</p>
                     @endif
