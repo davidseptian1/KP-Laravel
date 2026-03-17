@@ -25,7 +25,12 @@
                 <div class="col-md-6">
                     <h6>Bukti Transfer</h6>
                     @if($item->transfer_proof_path)
-                        <img src="{{ asset('storage/'.$item->transfer_proof_path) }}" class="img-fluid" alt="bukti" />
+                        <p>
+                            <a href="{{ route('admin.persediaan.file', [$item->id, 'transfer']) }}" target="_blank">
+                                <img src="{{ route('admin.persediaan.file', [$item->id, 'transfer']) }}" class="img-fluid" alt="bukti" style="max-height:300px;" />
+                            </a>
+                        </p>
+                        <p><a href="{{ route('admin.persediaan.file', [$item->id, 'transfer']) }}" target="_blank" class="btn btn-sm btn-outline-primary">Buka fullscreen</a></p>
                     @else
                         <p>Tidak ada bukti transfer</p>
                     @endif
@@ -36,7 +41,14 @@
                         <pre style="white-space:pre-wrap">{{ $item->invoice_text }}</pre>
                     @endif
                     @if($item->invoice_path)
-                        <p><a href="{{ asset('storage/'.$item->invoice_path) }}" target="_blank">Unduh/lihat file faktur</a></p>
+                        <p>
+                            <a href="{{ route('admin.persediaan.file', [$item->id, 'invoice']) }}" target="_blank">Unduh/lihat file faktur</a>
+                        </p>
+                        <p>
+                            <a href="{{ route('admin.persediaan.file', [$item->id, 'invoice']) }}" target="_blank">
+                                <img src="{{ route('admin.persediaan.file', [$item->id, 'invoice']) }}" alt="faktur" class="img-fluid" style="max-height:300px;" />
+                            </a>
+                        </p>
                     @endif
                 </div>
             </div>

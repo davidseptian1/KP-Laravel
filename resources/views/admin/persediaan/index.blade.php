@@ -17,6 +17,12 @@
                             <td>{{ $row->status }}</td>
                             <td>
                                 <a href="{{ route('admin.persediaan.show', $row->id) }}" class="btn btn-sm btn-primary">Lihat</a>
+                                @if($row->transfer_proof_path)
+                                    <a href="{{ route('admin.persediaan.file', [$row->id, 'transfer']) }}" target="_blank" class="btn btn-sm btn-outline-secondary">Lihat Bukti Transfer</a>
+                                @endif
+                                @if($row->invoice_path)
+                                    <a href="{{ route('admin.persediaan.file', [$row->id, 'invoice']) }}" target="_blank" class="btn btn-sm btn-outline-secondary">Lihat Faktur</a>
+                                @endif
                             </td>
                         </tr>
                     @endforeach
