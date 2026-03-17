@@ -19,7 +19,8 @@ class PersediaanStokController extends Controller
             $banks = Bank::orderBy('nama_bank')->get();
         }
 
-        return view('persediaan.form', compact('banks'));
+        // show index-like page with modal form (match Request Deposit UI)
+        return view('persediaan.index', compact('banks'));
     }
 
     public function store(Request $request)
