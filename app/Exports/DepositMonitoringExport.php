@@ -52,6 +52,7 @@ class DepositMonitoringExport implements FromCollection, WithHeadings, WithMappi
         } elseif (!empty($item->bukti_transfer_admin_text)) {
             $buktiTransferAdmin = $item->bukti_transfer_admin_text;
         }
+        $buktiTransferAdmin = $this->sanitizeForExcel($buktiTransferAdmin);
 
         return [
             optional($item->created_at)->format('d/m/Y H:i'),
@@ -62,11 +63,25 @@ class DepositMonitoringExport implements FromCollection, WithHeadings, WithMappi
             $item->server,
             $item->no_rek,
             (float) ($item->nominal ?? 0),
-            $item->reply_tiket ?? '-',
-            $item->reply_penambahan ?? '-',
+            $this->sanitizeForExcel($item->reply_tiket ?? '-'),
+            $this->sanitizeForExcel($item->reply_penambahan ?? '-'),
             $buktiTransferAdmin,
             ucfirst((string) ($item->status ?? 'pending')),
             $item->jam ? date('H:i', strtotime((string) $item->jam)) : '-',
         ];
+    }
+
+    private function sanitizeForExcel(mixed $value): mixed
+    {
+        if (!is_string($value)) {
+            return $value;
+        }
+
+        $first = $value !== '' ? $value[0] : '';
+        if ($first === '=' || $first === '+' || $first === '-' || $first === '@') {
+            return "'" . $value;
+        }
+
+        return $value;
     }
 }
