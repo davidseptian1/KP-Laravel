@@ -114,7 +114,7 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Server</label>
-                        <input type="text" name="server" class="form-control" list="serverPublicList" value="{{ old('server') }}" placeholder="Ketik server..." autocomplete="off" required>
+                        <input type="text" name="server" class="form-control" list="serverPublicList" value="{{ old('server', $defaultServer ?? '') }}" placeholder="Ketik server..." autocomplete="off" required>
                         <datalist id="serverPublicList">
                             @foreach (($servers ?? collect()) as $server)
                                 <option value="{{ $server }}"></option>

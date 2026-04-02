@@ -135,6 +135,18 @@ class DepositFormController extends Controller
 
         $servers = $serversQuery->orderBy('nama_server')->pluck('nama_server');
 
+        // determine default server for the current user: prefer a server explicitly assigned to the user's email
+        $defaultServer = null;
+        if ($current && !in_array($current->jabatan, ['Admin', 'Superadmin'])) {
+            $assigned = Server::where('user_email', $current->email)->orderBy('nama_server')->first();
+            if ($assigned) {
+                $defaultServer = $assigned->nama_server;
+            } elseif ($servers->count() === 1) {
+                // if only one available server for this user (e.g. only ALL or single), default to it
+                $defaultServer = $servers->first();
+            }
+        }
+
         return view('staff.deposit.index', [
             'title' => 'Request Deposit',
             'menuDepositRequest' => 'active',
