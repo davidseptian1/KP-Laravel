@@ -102,7 +102,23 @@ class DepositFormController extends Controller
             ->withQueryString();
 
         $suppliers = Supplier::orderBy('nama_supplier')->pluck('nama_supplier');
-        $banks = Bank::orderBy('nama_bank')->pluck('nama_bank');
+
+        // Filter banks: if user is Admin or Superadmin show all banks, otherwise show banks assigned to the user or to ALL
+        $banksQuery = Bank::query();
+        $current = Auth::user();
+        if ($current && in_array($current->jabatan, ['Admin', 'Superadmin'])) {
+            $banksQuery = $banksQuery;
+        } else if ($current) {
+            $email = $current->email;
+            $banksQuery = $banksQuery->where(function ($q) use ($email) {
+                $q->where('user_email', 'ALL')->orWhere('user_email', $email);
+            });
+        } else {
+            // not authenticated, default to banks assigned to ALL
+            $banksQuery = $banksQuery->where('user_email', 'ALL');
+        }
+
+        $banks = $banksQuery->orderBy('nama_bank')->pluck('nama_bank');
         $servers = Server::orderBy('nama_server')->pluck('nama_server');
 
         return view('staff.deposit.index', [
@@ -271,6 +287,14 @@ class DepositFormController extends Controller
             'jam' => 'nullable|date_format:H:i',
         ]);
 
+        // enforce that the selected bank is allowed for this user (unless Admin/Superadmin)
+        $current = Auth::user();
+        if ($current && !in_array($current->jabatan, ['Admin', 'Superadmin'])) {
+            $bankRow = Bank::where('nama_bank', $validated['bank'])->first();
+            if (!$bankRow || ($bankRow->user_email !== 'ALL' && $bankRow->user_email !== $current->email)) {
+                throw ValidationException::withMessages(['bank' => 'Bank yang dipilih tidak tersedia untuk akun Anda.']);
+            }
+        }
         $formId = $validated['form_id'] ?? DepositForm::where('is_active', true)
             ->where(function ($q) {
                 $q->whereNull('expires_at')
