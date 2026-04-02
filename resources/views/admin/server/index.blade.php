@@ -33,6 +33,7 @@
                             <tr>
                                 <th style="width:80px;">No</th>
                                 <th>Nama Server</th>
+                                <th>User</th>
                                 <th>Warna Card</th>
                                 <th>Dibuat</th>
                                 <th class="text-center" style="width:220px;">Aksi</th>
@@ -43,6 +44,13 @@
                                 <tr>
                                     <td>{{ $index + 1 }}</td>
                                     <td>{{ $item->nama_server }}</td>
+                                    <td>
+                                        @if(($item->user_email ?? '') === 'ALL')
+                                            All Users
+                                        @else
+                                            {{ $item->user_email ?? '-' }}
+                                        @endif
+                                    </td>
                                     <td>
                                         <span class="badge bg-{{ $item->card_color ?? 'primary' }}">
                                             @php
@@ -84,7 +92,7 @@
                     <div class="modal fade" id="modalEditServer-{{ $item->id }}" tabindex="-1" aria-hidden="true">
                         <div class="modal-dialog modal-dialog-centered">
                             <div class="modal-content">
-                                <form method="POST" action="{{ route('admin.server.update', $item->id) }}">
+                                        <form method="POST" action="{{ route('admin.server.update', $item->id) }}">
                                     @csrf
                                     @method('PUT')
                                     <div class="modal-header">
@@ -94,6 +102,15 @@
                                     <div class="modal-body">
                                         <label class="form-label">Nama Server</label>
                                         <input type="text" name="nama_server" class="form-control" value="{{ $item->nama_server }}" required>
+                                                
+                                                <label class="form-label mt-3">User (email)</label>
+                                                <select name="user_email" class="form-control">
+                                                    <option value="">-- Pilih User (opsional) --</option>
+                                                    <option value="ALL" {{ ($item->user_email ?? '') === 'ALL' ? 'selected' : '' }}>All Users</option>
+                                                    @foreach(($users ?? collect()) as $u)
+                                                        <option value="{{ $u->email }}" {{ ($item->user_email ?? '') == $u->email ? 'selected' : '' }}>{{ $u->email }}</option>
+                                                    @endforeach
+                                                </select>
                                         <label class="form-label mt-3">Warna Card Monitoring</label>
                                         <select name="card_color" class="form-select" required>
                                             @foreach (($cardColorOptions ?? []) as $colorValue => $colorLabel)
@@ -127,6 +144,14 @@
                 <div class="modal-body">
                     <label class="form-label">Nama Server</label>
                     <input type="text" name="nama_server" class="form-control" placeholder="Masukkan nama server" required>
+                            <label class="form-label mt-3">User (email)</label>
+                            <select name="user_email" class="form-control">
+                                <option value="">-- Pilih User (opsional) --</option>
+                                <option value="ALL">All Users</option>
+                                @foreach(($users ?? collect()) as $u)
+                                    <option value="{{ $u->email }}">{{ $u->email }}</option>
+                                @endforeach
+                            </select>
                     <label class="form-label mt-3">Warna Card Monitoring</label>
                     <select name="card_color" class="form-select" required>
                         @foreach (($cardColorOptions ?? []) as $colorValue => $colorLabel)

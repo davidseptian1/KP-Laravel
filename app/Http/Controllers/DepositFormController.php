@@ -119,7 +119,21 @@ class DepositFormController extends Controller
         }
 
         $banks = $banksQuery->orderBy('nama_bank')->pluck('nama_bank');
-        $servers = Server::orderBy('nama_server')->pluck('nama_server');
+
+        // Filter servers similarly: Admin/Superadmin see all, other users see servers assigned to them or ALL
+        $serversQuery = Server::query();
+        if ($current && in_array($current->jabatan, ['Admin', 'Superadmin'])) {
+            $serversQuery = $serversQuery;
+        } else if ($current) {
+            $email = $current->email;
+            $serversQuery = $serversQuery->where(function ($q) use ($email) {
+                $q->where('user_email', 'ALL')->orWhere('user_email', $email);
+            });
+        } else {
+            $serversQuery = $serversQuery->where('user_email', 'ALL');
+        }
+
+        $servers = $serversQuery->orderBy('nama_server')->pluck('nama_server');
 
         return view('staff.deposit.index', [
             'title' => 'Request Deposit',
@@ -293,6 +307,14 @@ class DepositFormController extends Controller
             $bankRow = Bank::where('nama_bank', $validated['bank'])->first();
             if (!$bankRow || ($bankRow->user_email !== 'ALL' && $bankRow->user_email !== $current->email)) {
                 throw ValidationException::withMessages(['bank' => 'Bank yang dipilih tidak tersedia untuk akun Anda.']);
+            }
+        }
+
+        // enforce that the selected server is allowed for this user (unless Admin/Superadmin)
+        if ($current && !in_array($current->jabatan, ['Admin', 'Superadmin'])) {
+            $serverRow = Server::where('nama_server', $validated['server'])->first();
+            if (!$serverRow || ($serverRow->user_email !== 'ALL' && $serverRow->user_email !== $current->email)) {
+                throw ValidationException::withMessages(['server' => 'Server yang dipilih tidak tersedia untuk akun Anda.']);
             }
         }
         $formId = $validated['form_id'] ?? DepositForm::where('is_active', true)

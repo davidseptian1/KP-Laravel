@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Server;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class ServerController extends Controller
@@ -26,6 +27,7 @@ class ServerController extends Controller
             'menuAdminServer' => 'active',
             'items' => Server::orderByDesc('created_at')->get(),
             'cardColorOptions' => $this->cardColorOptions(),
+            'users' => User::orderBy('email')->get(),
         ]);
     }
 
@@ -34,7 +36,12 @@ class ServerController extends Controller
         $validated = $request->validate([
             'nama_server' => 'required|string|max:255|unique:servers,nama_server',
             'card_color' => 'required|in:' . implode(',', array_keys($this->cardColorOptions())),
+            'user_email' => 'nullable',
         ]);
+
+        if (!empty($validated['user_email']) && $validated['user_email'] !== 'ALL') {
+            $request->validate(['user_email' => 'email|exists:users,email']);
+        }
 
         Server::create($validated);
 
@@ -46,7 +53,12 @@ class ServerController extends Controller
         $validated = $request->validate([
             'nama_server' => 'required|string|max:255|unique:servers,nama_server,' . $id,
             'card_color' => 'required|in:' . implode(',', array_keys($this->cardColorOptions())),
+            'user_email' => 'nullable',
         ]);
+
+        if (!empty($validated['user_email']) && $validated['user_email'] !== 'ALL') {
+            $request->validate(['user_email' => 'email|exists:users,email']);
+        }
 
         $item = Server::findOrFail($id);
         $item->update($validated);
