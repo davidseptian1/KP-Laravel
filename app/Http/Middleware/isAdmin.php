@@ -17,8 +17,8 @@ class isAdmin
 
     public function handle(Request $request, Closure $next): Response
     {
-        $role = Auth::user()->jabatan ?? '';
-        if ($role === 'Admin' || $role === 'Superadmin') {
+        $role = strtolower(Auth::user()->jabatan ?? '');
+        if (in_array($role, ['admin', 'superadmin'], true)) {
             return $next($request);
         }
 
