@@ -7,6 +7,7 @@ use App\Models\Bank;
 use App\Models\Deposit;
 use App\Models\DepositForm;
 use App\Models\NotificationItem;
+use App\Models\RekManual;
 use App\Models\Server;
 use App\Models\Supplier;
 use Illuminate\Http\Request;
@@ -147,6 +148,25 @@ class DepositFormController extends Controller
             }
         }
 
+        $rekManualEntries = RekManual::query()
+            ->with('supplier:id,nama_supplier')
+            ->orderByDesc('id')
+            ->get()
+            ->filter(function ($item) {
+                return !empty($item->supplier?->nama_supplier)
+                    && !empty($item->no_rek)
+                    && !empty($item->nama_rekening);
+            })
+            ->map(function ($item) {
+                return [
+                    'supplier' => $item->supplier->nama_supplier,
+                    'bank_tujuan' => $item->bank_tujuan,
+                    'no_rek' => $item->no_rek,
+                    'nama_rekening' => $item->nama_rekening,
+                ];
+            })
+            ->values();
+
         return view('staff.deposit.index', [
             'title' => 'Request Deposit',
             'menuDepositRequest' => 'active',
@@ -155,6 +175,7 @@ class DepositFormController extends Controller
             'suppliers' => $suppliers,
             'banks' => $banks,
             'servers' => $servers,
+            'rekManualEntries' => $rekManualEntries,
             'defaultServer' => $defaultServer,
             'tanggal' => $tanggal,
             'serverFilter' => $serverFilter,

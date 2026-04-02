@@ -638,6 +638,7 @@
         const serverFilter = @json($serverFilter ?? '');
         const status = @json($status ?? '');
         const nominalFilter = @json($nominalFilter ?? '');
+        const rekManualEntries = @json($rekManualEntries ?? []);
         const pollIntervalMs = 1000;
         const hasValidationErrors = @json($errors->any());
 
@@ -1499,6 +1500,7 @@
 
         // Auto parse Reply Tiket
         const parserScope = staffRequestDepositForm || document;
+        const supplierInput = parserScope.querySelector('input[name="nama_supplier"]');
         const replyTiketInput = parserScope.querySelector('textarea[name="reply_tiket"]');
         const nominalInput = parserScope.querySelector('input[name="nominal"]');
         const bankTujuanInput = parserScope.querySelector('input[name="bank_tujuan"]');
@@ -1596,6 +1598,98 @@
             };
 
             selectEl.classList.remove('d-none');
+        }
+
+        function normalizeSupplierName(value) {
+            return String(value || '').trim().toLowerCase();
+        }
+
+        const rekManualMapBySupplier = Array.isArray(rekManualEntries)
+            ? rekManualEntries.reduce(function (acc, item) {
+                const key = normalizeSupplierName(item && item.supplier);
+                if (!key) return acc;
+                if (!acc[key]) acc[key] = [];
+                acc[key].push({
+                    bank_tujuan: String(item.bank_tujuan || '').trim(),
+                    no_rek: String(item.no_rek || '').trim(),
+                    nama_rekening: String(item.nama_rekening || '').trim(),
+                });
+                return acc;
+            }, {})
+            : {};
+
+        function applyRekManualAutofillBySupplier() {
+            if (!supplierInput) return;
+
+            const supplierKey = normalizeSupplierName(supplierInput.value);
+            if (!supplierKey) return;
+
+            const matches = rekManualMapBySupplier[supplierKey] || [];
+            if (matches.length === 0) return;
+
+            const primary = matches[0];
+
+            if (bankTujuanInput) {
+                bankTujuanInput.value = primary.bank_tujuan || '';
+            }
+            if (noRekInput) {
+                noRekInput.value = primary.no_rek || '';
+            }
+            if (namaRekeningInput) {
+                namaRekeningInput.value = primary.nama_rekening || '';
+            }
+
+            const bankOptions = matches
+                .map(function (item) { return item.bank_tujuan; })
+                .filter(function (value, index, arr) { return value && arr.indexOf(value) === index; });
+
+            const noRekOptions = matches
+                .map(function (item) { return item.no_rek; })
+                .filter(function (value, index, arr) { return value && arr.indexOf(value) === index; });
+
+            const namaRekOptions = matches
+                .map(function (item) { return item.nama_rekening; })
+                .filter(function (value, index, arr) { return value && arr.indexOf(value) === index; });
+
+            if (bankTujuanList) {
+                bankTujuanList.innerHTML = '';
+                bankOptions.forEach(function (value) {
+                    const opt = document.createElement('option');
+                    opt.value = value;
+                    bankTujuanList.appendChild(opt);
+                });
+            }
+
+            if (noRekList) {
+                noRekList.innerHTML = '';
+                noRekOptions.forEach(function (value) {
+                    const opt = document.createElement('option');
+                    opt.value = value;
+                    noRekList.appendChild(opt);
+                });
+            }
+
+            if (namaRekList) {
+                namaRekList.innerHTML = '';
+                namaRekOptions.forEach(function (value) {
+                    const opt = document.createElement('option');
+                    opt.value = value;
+                    namaRekList.appendChild(opt);
+                });
+            }
+
+            bindParsedSelect(bankTujuanParsedSelect, bankTujuanInput, bankOptions, 'Pilih Bank Tujuan Rek Manual...');
+            bindParsedSelect(noRekParsedSelect, noRekInput, noRekOptions, 'Pilih No Rekening Rek Manual...');
+            bindParsedSelect(namaRekParsedSelect, namaRekeningInput, namaRekOptions, 'Pilih Nama Rekening Rek Manual...');
+        }
+
+        if (supplierInput) {
+            supplierInput.addEventListener('change', applyRekManualAutofillBySupplier);
+            supplierInput.addEventListener('input', applyRekManualAutofillBySupplier);
+
+            if (supplierInput.value) {
+                applyRekManualAutofillBySupplier();
+            }
         }
 
         function syncNoRekFromBank(selectedBank) {
