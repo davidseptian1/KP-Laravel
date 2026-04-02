@@ -26,6 +26,7 @@ use App\Http\Controllers\DepositFormController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\ServerController;
 use App\Http\Controllers\BankController;
+use App\Http\Controllers\RekManualController;
 use App\Http\Controllers\DataMatrixController;
 use App\Http\Controllers\ApiManagementController;
 use App\Http\Controllers\PersediaanStokController;
@@ -301,6 +302,12 @@ Route::middleware('checkLogin')->group(function () {
         Route::delete('user/destroy/{id}', [UserController::class, 'destroy'])->name('userDestroy');
         Route::get('user/excel', [UserController::class, 'excel'])->name('userExcel');
         Route::get('user/pdf', [UserController::class, 'pdf'])->name('userPdf');
+
+        // Rek Manual Management
+        Route::get('admin/rek-manual', [RekManualController::class, 'index'])->name('admin.rek-manual.index');
+        Route::post('admin/rek-manual', [RekManualController::class, 'store'])->name('admin.rek-manual.store');
+        Route::put('admin/rek-manual/{id}', [RekManualController::class, 'update'])->name('admin.rek-manual.update');
+        Route::delete('admin/rek-manual/{id}', [RekManualController::class, 'destroy'])->name('admin.rek-manual.destroy');
     });
 
     Route::get('admin/deposit/analysis', [AdminDepositController::class, 'analysis'])->name('admin.deposit.analysis');

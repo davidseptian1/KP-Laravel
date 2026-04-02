@@ -260,7 +260,15 @@
                 <li class="pc-item {{ $menuAdminBank ?? '' }}">
                     <a href="{{ route('admin.bank.index') }}" class="pc-link">
                         <span class="pc-micon"><i class="ti ti-building-bank"></i></span>
-                        <span class="pc-mtext">Rekening Manajemen</span>
+                        <span class="pc-mtext">Bank Manajemen</span>
+                    </a>
+                </li>
+
+                <!-- Rek Manual Management -->
+                <li class="pc-item {{ $menuAdminRekManual ?? '' }}">
+                    <a href="{{ route('admin.rek-manual.index') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-credit-card"></i></span>
+                        <span class="pc-mtext">Rek Manual Manajement</span>
                     </a>
                 </li>
                 <!-- PERSEDIAAN STOK 
