@@ -21,7 +21,7 @@
                     </a>
                 </li>
 
-                @if (auth()->check() && auth()->user()->jabatan=='Admin')
+                @if (auth()->check() && in_array(auth()->user()->jabatan, ['Admin','Superadmin']))
 
                 <li class="pc-item pc-caption">
                     <label>Data Management</label>
@@ -171,7 +171,7 @@
 
                 @endif
 
-                @if (auth()->check() && (auth()->user()->jabatan=='Admin' || auth()->user()->jabatan=='HRD'))
+                @if (auth()->check() && in_array(auth()->user()->jabatan, ['Admin','HRD','Superadmin']))
 
                 <li class="pc-item pc-caption">
                     <label>Reports</label>
@@ -213,7 +213,7 @@
 
                 @endif
 
-                @if (auth()->check() && auth()->user()->jabatan=='Admin')
+                @if (auth()->check() && in_array(auth()->user()->jabatan, ['Admin','Superadmin']))
 
                 <!-- Analisis Transaksi -->
                 <li class="pc-item {{ $menuTransaksi ?? '' }}">
@@ -226,7 +226,7 @@
                 @endif
 
 
-                @if (auth()->check() && auth()->user()->jabatan=='Admin')
+                @if (auth()->check() && in_array(auth()->user()->jabatan, ['Admin','Superadmin']))
 
                 <li class="pc-item pc-caption">
                     <label>System</label>
@@ -290,7 +290,7 @@
 
                 @endif
 
-                @if (auth()->check() && auth()->user()->jabatan=='Staff')
+                @if (auth()->check() && in_array(auth()->user()->jabatan, ['Staff','Superadmin']))
 
                 <li class="pc-item pc-caption">
                     <label>Data</label>
