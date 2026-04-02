@@ -25,10 +25,26 @@ class UserController extends Controller
         $data = array(
             'title'                 => 'Tambah Data User',
             'menuAdminUser'         => 'active',
+            'allowedRoles'          => $this->allowedRolesFor(auth()->user()?->jabatan ?? ''),
 
         );
         return view('admin/user/create', $data);
     
+    }
+
+    /**
+     * Return allowed roles that the given role can assign/create.
+     */
+    private function allowedRolesFor(string $currentRole): array
+    {
+        $map = [
+            'Superadmin' => ['Superadmin', 'Admin', 'HRD', 'Staff'],
+            'Admin' => ['HRD', 'Staff'],
+            'HRD' => ['Staff'],
+            'Staff' => [],
+        ];
+
+        return $map[$currentRole] ?? [];
     }
     public function store(Request $request){
         $request->validate([
@@ -47,6 +63,12 @@ class UserController extends Controller
 
         ]);
 
+        // enforce allowed roles for the authenticated user
+        $allowed = $this->allowedRolesFor(auth()->user()?->jabatan ?? '');
+        if (!in_array($request->jabatan, $allowed, true)) {
+            return back()->withInput()->withErrors(['jabatan' => 'Anda tidak memiliki izin untuk memilih jabatan tersebut.']);
+        }
+
         $user = new User;
         $user->nama        = $request->nama;
         $user->email       = $request->email;
@@ -62,6 +84,7 @@ class UserController extends Controller
             'title'                 => 'Edit Data User',
             'menuAdminUser'         => 'active',
             'user'                  => User::findOrFail($id),
+            'allowedRoles'          => $this->allowedRolesFor(auth()->user()?->jabatan ?? ''),
 
         );
         return view('admin/user/edit', $data);
@@ -83,6 +106,12 @@ class UserController extends Controller
             'password.min'      => 'Password Minimal 8 Karakter',
 
         ]);
+
+        // enforce allowed roles for the authenticated user
+        $allowed = $this->allowedRolesFor(auth()->user()?->jabatan ?? '');
+        if (!in_array($request->jabatan, $allowed, true)) {
+            return back()->withInput()->withErrors(['jabatan' => 'Anda tidak memiliki izin untuk memilih jabatan tersebut.']);
+        }
 
         $user = User::findOrFail($id);
         $user->nama        = $request->nama;

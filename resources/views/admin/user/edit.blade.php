@@ -52,9 +52,19 @@
                     </label>
                     <select name="jabatan" class="form-control @error('jabatan') is-invalid @enderror">
                         <option disabled>-- Pilih Jabatan --</option>
-                        <option value="Admin" {{ $user->jabatan == 'Admin' ? 'selected' : '' }}>Admin</option>
-                        <option value="HRD" {{ $user->jabatan == 'HRD' ? 'selected' : '' }}>HRD</option>
-                        <option value="Staff" {{ $user->jabatan == 'Staff' ? 'selected' : '' }}>Staff</option>
+                        @php
+                            $allowed = $allowedRoles ?? [];
+                        @endphp
+                        @if(!empty($allowed))
+                            @foreach($allowed as $role)
+                                <option value="{{ $role }}" {{ $user->jabatan == $role ? 'selected' : '' }}>{{ $role }}</option>
+                            @endforeach
+                            @if(!in_array($user->jabatan, $allowed))
+                                <option value="{{ $user->jabatan }}" selected disabled>{{ $user->jabatan }} (saat ini)</option>
+                            @endif
+                        @else
+                            <option value="{{ $user->jabatan }}" selected disabled>{{ $user->jabatan }}</option>
+                        @endif
                     </select>
                     @error('jabatan')
                     <small class="text-danger">

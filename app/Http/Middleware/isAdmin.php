@@ -17,12 +17,12 @@ class isAdmin
 
     public function handle(Request $request, Closure $next): Response
     {
-        if(Auth::user()->jabatan=='Admin'){
-        return $next($request);
-        
-        }else{
-            return redirect()->route('dashboard')->with('error', 'Anda Bukan Admin');
+        $role = Auth::user()->jabatan ?? '';
+        if ($role === 'Admin' || $role === 'Superadmin') {
+            return $next($request);
         }
+
+        return redirect()->route('dashboard')->with('error', 'Anda Bukan Admin');
         
     }
 }

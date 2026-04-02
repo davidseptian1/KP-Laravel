@@ -51,9 +51,13 @@
                     </label>
                     <select name="jabatan" class="form-control @error('jabatan') is-invalid @enderror">
                         <option selected disabled>-- Pilih Jabatan --</option>
-                        <option value="Admin">Admin</option>
-                        <option value="HRD">HRD</option>
-                        <option value="Staff">Staff</option>
+                        @if(!empty($allowedRoles) && is_array($allowedRoles))
+                            @foreach($allowedRoles as $role)
+                                <option value="{{ $role }}" {{ old('jabatan') == $role ? 'selected' : '' }}>{{ $role }}</option>
+                            @endforeach
+                        @else
+                            <option disabled>-- Tidak Ada Jabatan Tersedia --</option>
+                        @endif
                     </select>
                     @error('jabatan')
                     <small class="text-danger">
@@ -88,7 +92,7 @@
             </div>
 
             <div class="form-group mt-3">
-                <button type="submit" class="btn btn-sm btn-primary">
+                <button type="submit" class="btn btn-sm btn-primary" {{ empty($allowedRoles) ? 'disabled' : '' }}>
                     <i class="fas fa-save mr-1"></i> Simpan
                 </button>
             </div>
