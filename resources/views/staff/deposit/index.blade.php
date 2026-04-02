@@ -1594,6 +1594,8 @@
             selectEl.onchange = function () {
                 if (this.value) {
                     inputEl.value = this.value;
+                    inputEl.dispatchEvent(new Event('change', { bubbles: true }));
+                    inputEl.dispatchEvent(new Event('input', { bubbles: true }));
                 }
             };
 
@@ -1603,6 +1605,12 @@
         function normalizeSupplierName(value) {
             return String(value || '').trim().toLowerCase();
         }
+
+        function normalizeNoRek(value) {
+            return String(value || '').replace(/[^0-9]/g, '');
+        }
+
+        let activeRekManualMatches = [];
 
         const rekManualMapBySupplier = Array.isArray(rekManualEntries)
             ? rekManualEntries.reduce(function (acc, item) {
@@ -1622,10 +1630,18 @@
             if (!supplierInput) return;
 
             const supplierKey = normalizeSupplierName(supplierInput.value);
-            if (!supplierKey) return;
+            if (!supplierKey) {
+                activeRekManualMatches = [];
+                return;
+            }
 
             const matches = rekManualMapBySupplier[supplierKey] || [];
-            if (matches.length === 0) return;
+            if (matches.length === 0) {
+                activeRekManualMatches = [];
+                return;
+            }
+
+            activeRekManualMatches = matches;
 
             const primary = matches[0];
 
@@ -1681,6 +1697,29 @@
             bindParsedSelect(bankTujuanParsedSelect, bankTujuanInput, bankOptions, 'Pilih Bank Tujuan Rek Manual...');
             bindParsedSelect(noRekParsedSelect, noRekInput, noRekOptions, 'Pilih No Rekening Rek Manual...');
             bindParsedSelect(namaRekParsedSelect, namaRekeningInput, namaRekOptions, 'Pilih Nama Rekening Rek Manual...');
+
+            syncRekManualByNoRek(primary.no_rek || '');
+        }
+
+        function syncRekManualByNoRek(selectedNoRek) {
+            if (!Array.isArray(activeRekManualMatches) || activeRekManualMatches.length === 0) return;
+
+            const normalizedNoRek = normalizeNoRek(selectedNoRek);
+            if (!normalizedNoRek) return;
+
+            const matched = activeRekManualMatches.find(function (item) {
+                return normalizeNoRek(item.no_rek) === normalizedNoRek;
+            });
+
+            if (!matched) return;
+
+            if (bankTujuanInput) {
+                bankTujuanInput.value = matched.bank_tujuan || '';
+            }
+
+            if (namaRekeningInput) {
+                namaRekeningInput.value = matched.nama_rekening || '';
+            }
         }
 
         if (supplierInput) {
@@ -1690,6 +1729,15 @@
             if (supplierInput.value) {
                 applyRekManualAutofillBySupplier();
             }
+        }
+
+        if (noRekInput) {
+            noRekInput.addEventListener('change', function () {
+                syncRekManualByNoRek(this.value);
+            });
+            noRekInput.addEventListener('input', function () {
+                syncRekManualByNoRek(this.value);
+            });
         }
 
         function syncNoRekFromBank(selectedBank) {
