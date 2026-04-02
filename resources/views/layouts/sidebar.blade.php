@@ -21,7 +21,7 @@
                     </a>
                 </li>
 
-                @if (auth()->check() && auth()->user()->jabatan === 'Superadmin')
+                @if (auth()->check() && in_array(auth()->user()->jabatan, ['Admin','Superadmin']))
 
                 <li class="pc-item pc-caption">
                     <label>Data Management</label>
@@ -213,7 +213,7 @@
 
                 @endif
 
-                @if (auth()->check() && auth()->user()->jabatan === 'Superadmin')
+                @if (auth()->check() && in_array(auth()->user()->jabatan, ['Admin','Superadmin']))
 
                 <!-- Analisis Transaksi -->
                 <li class="pc-item {{ $menuTransaksi ?? '' }}">

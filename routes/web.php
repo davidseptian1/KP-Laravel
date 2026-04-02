@@ -151,30 +151,6 @@ Route::middleware('checkLogin')->group(function () {
 
     // Middleware isAdmin
     Route::middleware('isAdmin')->group(function () {
-        // User
-        Route::get('user', [UserController::class, 'index'])->name('user');
-
-        // User Create
-        Route::get('user/create', [UserController::class, 'create'])->name('userCreate');
-
-        // Store Data User
-        Route::post('user/store', [UserController::class, 'store'])->name('userStore');
-
-        // User Edit
-        Route::get('user/edit/{id}', [UserController::class, 'edit'])->name('userEdit');
-
-        // User Update
-        Route::post('user/update/{id}', [UserController::class, 'update'])->name('userUpdate');
-
-        // User Hapus Destroy
-        Route::delete('user/destroy/{id}', [UserController::class, 'destroy'])->name('userDestroy');
-
-        // User Excel
-        Route::get('user/excel', [UserController::class, 'excel'])->name('userExcel');
-
-        // User PDF
-        Route::get('user/pdf', [UserController::class, 'pdf'])->name('userPdf');
-
         // Supplier Management
         Route::get('admin/supplier', [SupplierController::class, 'index'])->name('admin.supplier.index');
         Route::post('admin/supplier', [SupplierController::class, 'store'])->name('admin.supplier.store');
@@ -313,6 +289,18 @@ Route::middleware('checkLogin')->group(function () {
         // Rekap Bulanan PDF
         Route::get('rekap-bulanan/pdf', [MinusanController::class, 'rekapPdf'])->name('rekap.pdf');
         
+    });
+
+    Route::middleware('isSuperadmin')->group(function () {
+        // User Management
+        Route::get('user', [UserController::class, 'index'])->name('user');
+        Route::get('user/create', [UserController::class, 'create'])->name('userCreate');
+        Route::post('user/store', [UserController::class, 'store'])->name('userStore');
+        Route::get('user/edit/{id}', [UserController::class, 'edit'])->name('userEdit');
+        Route::post('user/update/{id}', [UserController::class, 'update'])->name('userUpdate');
+        Route::delete('user/destroy/{id}', [UserController::class, 'destroy'])->name('userDestroy');
+        Route::get('user/excel', [UserController::class, 'excel'])->name('userExcel');
+        Route::get('user/pdf', [UserController::class, 'pdf'])->name('userPdf');
     });
 
     Route::get('admin/deposit/analysis', [AdminDepositController::class, 'analysis'])->name('admin.deposit.analysis');
