@@ -13,5 +13,6 @@ class Bank extends Model
 
     protected $fillable = [
         'nama_bank',
+        'user_email',
     ];
 }

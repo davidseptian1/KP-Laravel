@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Bank;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class BankController extends Controller
@@ -13,6 +14,7 @@ class BankController extends Controller
             'title' => 'Bank Manajemen',
             'menuAdminBank' => 'active',
             'items' => Bank::orderByDesc('created_at')->get(),
+            'users' => User::orderBy('email')->get(),
         ]);
     }
 
@@ -20,7 +22,13 @@ class BankController extends Controller
     {
         $validated = $request->validate([
             'nama_bank' => 'required|string|max:255|unique:banks,nama_bank',
+            'user_email' => 'nullable',
         ]);
+
+        // allow special value 'ALL' to mean assigned to all users
+        if (!empty($validated['user_email']) && $validated['user_email'] !== 'ALL') {
+            $request->validate(['user_email' => 'email|exists:users,email']);
+        }
 
         Bank::create($validated);
 
@@ -31,7 +39,12 @@ class BankController extends Controller
     {
         $validated = $request->validate([
             'nama_bank' => 'required|string|max:255|unique:banks,nama_bank,' . $id,
+            'user_email' => 'nullable',
         ]);
+
+        if (!empty($validated['user_email']) && $validated['user_email'] !== 'ALL') {
+            $request->validate(['user_email' => 'email|exists:users,email']);
+        }
 
         $item = Bank::findOrFail($id);
         $item->update($validated);

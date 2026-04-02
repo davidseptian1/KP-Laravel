@@ -33,6 +33,7 @@
                             <tr>
                                 <th style="width:80px;">No</th>
                                 <th>Nama Bank</th>
+                                <th>User</th>
                                 <th>Dibuat</th>
                                 <th class="text-center" style="width:220px;">Aksi</th>
                             </tr>
@@ -42,6 +43,13 @@
                                 <tr>
                                     <td>{{ $index + 1 }}</td>
                                     <td>{{ $item->nama_bank }}</td>
+                                    <td>
+                                        @if(($item->user_email ?? '') === 'ALL')
+                                            All Users
+                                        @else
+                                            {{ $item->user_email ?? '-' }}
+                                        @endif
+                                    </td>
                                     <td>{{ $item->created_at?->format('d/m/Y H:i') }}</td>
                                     <td class="text-center">
                                         <div class="d-flex justify-content-center gap-2">
@@ -67,7 +75,7 @@
                     <div class="modal fade" id="modalEditBank-{{ $item->id }}" tabindex="-1" aria-hidden="true">
                         <div class="modal-dialog modal-dialog-centered">
                             <div class="modal-content">
-                                <form method="POST" action="{{ route('admin.bank.update', $item->id) }}">
+                                        <form method="POST" action="{{ route('admin.bank.update', $item->id) }}">
                                     @csrf
                                     @method('PUT')
                                     <div class="modal-header">
@@ -77,6 +85,15 @@
                                     <div class="modal-body">
                                         <label class="form-label">Nama Bank</label>
                                         <input type="text" name="nama_bank" class="form-control" value="{{ $item->nama_bank }}" required>
+                                                
+                                                <label class="form-label mt-3">User (email)</label>
+                                                <select name="user_email" class="form-control">
+                                                    <option value="">-- Pilih User (opsional) --</option>
+                                                    <option value="ALL" {{ ($item->user_email ?? '') === 'ALL' ? 'selected' : '' }}>All Users</option>
+                                                    @foreach(($users ?? collect()) as $u)
+                                                        <option value="{{ $u->email }}" {{ ($item->user_email ?? '') == $u->email ? 'selected' : '' }}>{{ $u->email }}</option>
+                                                    @endforeach
+                                                </select>
                                     </div>
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
@@ -94,7 +111,7 @@
 
 <div class="modal fade" id="modalTambahBank" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
+                <div class="modal-content">
             <form method="POST" action="{{ route('admin.bank.store') }}">
                 @csrf
                 <div class="modal-header">
@@ -104,6 +121,15 @@
                 <div class="modal-body">
                     <label class="form-label">Nama Bank</label>
                     <input type="text" name="nama_bank" class="form-control" placeholder="Masukkan nama bank" required>
+                    
+                    <label class="form-label mt-3">User (email)</label>
+                    <select name="user_email" class="form-control">
+                        <option value="">-- Pilih User (opsional) --</option>
+                        <option value="ALL">All Users</option>
+                        @foreach(($users ?? collect()) as $u)
+                            <option value="{{ $u->email }}">{{ $u->email }}</option>
+                        @endforeach
+                    </select>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
