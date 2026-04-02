@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\RekManual;
+use App\Models\Supplier;
 use Illuminate\Http\Request;
 
 class RekManualController extends Controller
@@ -12,13 +13,15 @@ class RekManualController extends Controller
         return view('admin.rek-manual.index', [
             'title' => 'Rek Manual Manajement',
             'menuAdminRekManual' => 'active',
-            'items' => RekManual::orderByDesc('created_at')->get(),
+            'items' => RekManual::with('supplier')->orderByDesc('created_at')->get(),
+            'suppliers' => Supplier::orderBy('nama_supplier')->get(),
         ]);
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
+            'supplier_id' => 'required|exists:suppliers,id',
             'bank_tujuan' => 'required|string|max:100',
             'no_rek' => 'required|string|max:100|unique:rek_manuals,no_rek',
             'nama_rekening' => 'required|string|max:255',
@@ -33,6 +36,7 @@ class RekManualController extends Controller
     public function update(Request $request, int $id)
     {
         $validated = $request->validate([
+            'supplier_id' => 'required|exists:suppliers,id',
             'bank_tujuan' => 'required|string|max:100',
             'no_rek' => 'required|string|max:100|unique:rek_manuals,no_rek,' . $id,
             'nama_rekening' => 'required|string|max:255',

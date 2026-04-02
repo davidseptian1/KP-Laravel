@@ -32,6 +32,7 @@
                         <thead class="table-light">
                             <tr>
                                 <th style="width:80px;">No</th>
+                                <th>Supplier</th>
                                 <th>Bank Tujuan</th>
                                 <th>No Rekening</th>
                                 <th>Nama Rekening</th>
@@ -44,6 +45,7 @@
                             @forelse ($items as $index => $item)
                                 <tr>
                                     <td>{{ $index + 1 }}</td>
+                                    <td>{{ $item->supplier?->nama_supplier ?? '-' }}</td>
                                     <td>{{ $item->bank_tujuan }}</td>
                                     <td>{{ $item->no_rek }}</td>
                                     <td>{{ $item->nama_rekening }}</td>
@@ -62,7 +64,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="text-center text-muted py-4">Belum ada data rek manual</td>
+                                    <td colspan="8" class="text-center text-muted py-4">Belum ada data rek manual</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -81,6 +83,14 @@
                                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                     </div>
                                     <div class="modal-body">
+                                        <label class="form-label">Supplier</label>
+                                        <select name="supplier_id" class="form-control" required>
+                                            <option value="">-- Pilih Supplier --</option>
+                                            @foreach(($suppliers ?? collect()) as $supplier)
+                                                <option value="{{ $supplier->id }}" {{ (int) $item->supplier_id === (int) $supplier->id ? 'selected' : '' }}>{{ $supplier->nama_supplier }}</option>
+                                            @endforeach
+                                        </select>
+
                                         <label class="form-label">Bank Tujuan</label>
                                         <input type="text" name="bank_tujuan" class="form-control" value="{{ $item->bank_tujuan }}" required>
 
@@ -117,6 +127,14 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
+                    <label class="form-label">Supplier</label>
+                    <select name="supplier_id" class="form-control" required>
+                        <option value="">-- Pilih Supplier --</option>
+                        @foreach(($suppliers ?? collect()) as $supplier)
+                            <option value="{{ $supplier->id }}">{{ $supplier->nama_supplier }}</option>
+                        @endforeach
+                    </select>
+
                     <label class="form-label">Bank Tujuan</label>
                     <input type="text" name="bank_tujuan" class="form-control" placeholder="Contoh: BCA" required>
 
