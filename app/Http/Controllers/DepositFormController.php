@@ -155,6 +155,7 @@ class DepositFormController extends Controller
             'suppliers' => $suppliers,
             'banks' => $banks,
             'servers' => $servers,
+            'defaultServer' => $defaultServer,
             'tanggal' => $tanggal,
             'serverFilter' => $serverFilter,
             'status' => $status,

@@ -576,7 +576,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Server</label>
-                            <input type="text" name="server" class="form-control" list="serverRequestList" value="{{ old('server') }}" placeholder="Ketik server..." autocomplete="off" required>
+                            <input type="text" name="server" class="form-control" list="serverRequestList" value="{{ old('server', $defaultServer ?? '') }}" placeholder="Ketik server..." autocomplete="off" required>
                             <datalist id="serverRequestList">
                                 @foreach (($servers ?? collect()) as $server)
                                     <option value="{{ $server }}"></option>
