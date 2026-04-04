@@ -7,12 +7,22 @@ use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Pagination\Paginator;
 use App\Models\Minusan;
+use App\Observers\AdminModelAuditObserver;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\File;
 
 class AppServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
         Paginator::useBootstrapFive();
+
+        foreach (File::files(app_path('Models')) as $file) {
+            $class = 'App\\Models\\' . $file->getFilenameWithoutExtension();
+            if (class_exists($class) && is_subclass_of($class, Model::class)) {
+                $class::observe(AdminModelAuditObserver::class);
+            }
+        }
 
         // Blade directive for accounting currency format: @acct($value) - no rounding
         Blade::directive('acct', function ($expression) {

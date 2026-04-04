@@ -15,12 +15,18 @@ class AdminActivityLogController extends Controller
                 'actor_id',
                 'actor_name',
                 'actor_role',
+                'action_type',
                 'method',
                 'route_name',
                 'path',
+                'target_model',
+                'target_id',
                 'ip_address',
                 'status_code',
+                'change_summary',
                 'request_data',
+                'before_data',
+                'after_data',
                 'created_at',
             ]);
 
@@ -29,8 +35,16 @@ class AdminActivityLogController extends Controller
             $query->where(function ($builder) use ($keyword) {
                 $builder->where('actor_name', 'like', "%{$keyword}%")
                     ->orWhere('path', 'like', "%{$keyword}%")
-                    ->orWhere('route_name', 'like', "%{$keyword}%");
+                    ->orWhere('route_name', 'like', "%{$keyword}%")
+                    ->orWhere('target_model', 'like', "%{$keyword}%")
+                    ->orWhere('change_summary', 'like', "%{$keyword}%");
             });
+        }
+
+        if ($request->filled('action_type')) {
+            $query->where('action_type', $request->action_type);
+        } else {
+            $query->whereIn('action_type', ['created', 'updated', 'deleted']);
         }
 
         if ($request->filled('role')) {
@@ -63,6 +77,7 @@ class AdminActivityLogController extends Controller
             'menuSuperadminLogs' => 'active',
             'logs' => $logs,
             'methods' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+            'actions' => ['request', 'created', 'updated', 'deleted'],
         ]);
     }
 }

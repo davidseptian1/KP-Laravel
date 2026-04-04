@@ -36,18 +36,41 @@ class LogAdminActivity
                 $sanitized[$key] = $this->normalizeValue($value);
             }
 
-            AdminActivityLog::create([
+            $payload = [
                 'actor_id' => $user->id,
                 'actor_name' => $user->nama,
                 'actor_role' => $role,
+                'action_type' => 'request',
                 'method' => $request->method(),
                 'route_name' => optional($request->route())->getName(),
                 'path' => $request->path(),
+                'target_model' => null,
+                'target_id' => null,
                 'ip_address' => $request->ip(),
                 'user_agent' => mb_substr((string) $request->userAgent(), 0, 500),
                 'status_code' => (int) $response->getStatusCode(),
+                'change_summary' => 'Akses halaman/endpoint',
                 'request_data' => empty($sanitized) ? null : $sanitized,
-            ]);
+                'before_data' => null,
+                'after_data' => null,
+            ];
+
+            try {
+                AdminActivityLog::create($payload);
+            } catch (\Throwable $exception) {
+                AdminActivityLog::create([
+                    'actor_id' => $user->id,
+                    'actor_name' => $user->nama,
+                    'actor_role' => $role,
+                    'method' => $request->method(),
+                    'route_name' => optional($request->route())->getName(),
+                    'path' => $request->path(),
+                    'ip_address' => $request->ip(),
+                    'user_agent' => mb_substr((string) $request->userAgent(), 0, 500),
+                    'status_code' => (int) $response->getStatusCode(),
+                    'request_data' => empty($sanitized) ? null : $sanitized,
+                ]);
+            }
         } catch (\Throwable $exception) {
         }
 

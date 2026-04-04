@@ -14,17 +14,25 @@ class AdminActivityLog extends Model
         'actor_id',
         'actor_name',
         'actor_role',
+        'action_type',
         'method',
         'route_name',
         'path',
+        'target_model',
+        'target_id',
         'ip_address',
         'user_agent',
         'status_code',
+        'change_summary',
         'request_data',
+        'before_data',
+        'after_data',
     ];
 
     protected $casts = [
         'request_data' => 'array',
+        'before_data' => 'array',
+        'after_data' => 'array',
     ];
 
     public function actor(): BelongsTo
