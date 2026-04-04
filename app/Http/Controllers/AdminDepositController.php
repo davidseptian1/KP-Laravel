@@ -259,7 +259,7 @@ class AdminDepositController extends Controller
             'nama_supplier' => 'nullable|string|max:255',
             'start_date' => 'nullable|date_format:Y-m-d',
             'end_date' => 'nullable|date_format:Y-m-d',
-            'status' => 'nullable|in:pending,approved,rejected,selesai',
+            'status' => 'nullable|in:pending,approved,rejected,selesai,lunas',
             'staff_deleted' => 'nullable|in:yes,no',
             'since' => 'nullable|date',
             'page' => 'nullable|integer|min:1',
@@ -385,7 +385,7 @@ class AdminDepositController extends Controller
             'nama_supplier' => 'nullable|string|max:255',
             'start_date' => 'nullable|date_format:Y-m-d',
             'end_date' => 'nullable|date_format:Y-m-d',
-            'status' => 'nullable|in:pending,approved,rejected,selesai',
+            'status' => 'nullable|in:pending,approved,rejected,selesai,lunas',
             'staff_deleted' => 'nullable|in:yes,no',
             'since' => 'nullable|date',
             'page' => 'nullable|integer|min:1',
@@ -580,7 +580,7 @@ class AdminDepositController extends Controller
             'nama_supplier' => 'nullable|string|max:255',
             'start_date' => 'nullable|date_format:Y-m-d',
             'end_date' => 'nullable|date_format:Y-m-d',
-            'status' => 'nullable|in:pending,approved,rejected,selesai',
+            'status' => 'nullable|in:pending,approved,rejected,selesai,lunas',
             'staff_deleted' => 'nullable|in:yes,no',
             'per_page' => 'nullable|integer|in:10,50,100,200',
             'global_search' => 'nullable|string|max:255',
@@ -676,7 +676,7 @@ class AdminDepositController extends Controller
             'bukti_transfer_admin_type' => 'nullable|in:text,image',
             'bukti_transfer_admin_text' => 'nullable|string',
             'bukti_transfer_admin_image' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:5120',
-            'status' => 'required|in:pending,approved,rejected,selesai',
+            'status' => 'required|in:pending,approved,rejected,selesai,lunas',
         ]);
 
         $item = Deposit::findOrFail($id);
@@ -716,7 +716,7 @@ class AdminDepositController extends Controller
             'bukti_transfer_admin_text' => 'nullable|string',
             'bukti_transfer_admin_image' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:5120',
             'jam' => 'required|date_format:H:i',
-            'status' => 'required|in:approved,rejected,selesai,pending',
+            'status' => 'required|in:approved,rejected,selesai,pending,lunas',
         ]);
 
         $item = Deposit::findOrFail($id);
@@ -747,7 +747,7 @@ class AdminDepositController extends Controller
     public function updateStatus(Request $request, int $id)
     {
         $validated = $request->validate([
-            'status' => 'required|in:approved,rejected,selesai',
+            'status' => 'required|in:approved,rejected,selesai,lunas',
         ]);
 
         $item = Deposit::findOrFail($id);
@@ -867,7 +867,7 @@ class AdminDepositController extends Controller
             'end_date' => 'nullable|date_format:Y-m-d',
             'server' => 'nullable|string|max:100',
             'bank' => 'nullable|string|max:100',
-            'status' => 'nullable|in:pending,approved,rejected,selesai',
+            'status' => 'nullable|in:pending,approved,rejected,selesai,lunas',
             'nama_supplier' => 'nullable|string|max:255',
             'jenis_transaksi' => 'nullable|in:deposit,hutang',
         ]);

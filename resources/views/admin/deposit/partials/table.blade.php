@@ -89,7 +89,7 @@
                         @endif
                     </td>
                     <td>
-                        <span class="badge bg-{{ $item->status === 'approved' ? 'success' : ($item->status === 'rejected' ? 'danger' : ($item->status === 'selesai' ? 'primary' : 'warning')) }}">
+                        <span class="badge bg-{{ $item->status === 'approved' ? 'success' : ($item->status === 'rejected' ? 'danger' : ($item->status === 'selesai' ? 'primary' : ($item->status === 'lunas' ? 'info' : 'warning'))) }}">
                             {{ ucfirst($item->status ?? 'pending') }}
                         </span>
                     </td>
@@ -193,6 +193,7 @@
                                                         <option value="approved" {{ ($item->status ?? 'pending') === 'approved' ? 'selected' : '' }}>ACC</option>
                                                         <option value="rejected" {{ ($item->status ?? 'pending') === 'rejected' ? 'selected' : '' }}>Rejected</option>
                                                         <option value="selesai" {{ ($item->status ?? 'pending') === 'selesai' ? 'selected' : '' }}>Selesai</option>
+                                                        <option value="lunas" {{ ($item->status ?? 'pending') === 'lunas' ? 'selected' : '' }}>Lunas</option>
                                                     </select>
                                                     <button type="submit" class="btn btn-success btn-sm">Simpan Data & Status</button>
                                                     <div class="small mt-1 p-2 rounded bg-warning-subtle border border-warning-subtle text-warning-emphasis">

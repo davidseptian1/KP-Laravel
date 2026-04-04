@@ -225,7 +225,7 @@ class DepositFormController extends Controller
         $request->validate([
             'tanggal' => 'nullable|date_format:Y-m-d',
             'server' => 'nullable|string|max:100',
-            'status' => 'nullable|in:pending,approved,rejected,selesai',
+            'status' => 'nullable|in:pending,approved,rejected,selesai,lunas',
             'search_supplier' => 'nullable|string|max:255',
             'nominal' => 'nullable|string|max:50',
             'since' => 'nullable|date',

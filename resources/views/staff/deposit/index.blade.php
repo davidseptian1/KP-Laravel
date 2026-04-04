@@ -254,6 +254,7 @@
                             <option value="pending" {{ ($status ?? '') === 'pending' ? 'selected' : '' }}>Pending</option>
                             <option value="approved" {{ ($status ?? '') === 'approved' ? 'selected' : '' }}>Approved</option>
                             <option value="selesai" {{ ($status ?? '') === 'selesai' ? 'selected' : '' }}>Selesai</option>
+                            <option value="lunas" {{ ($status ?? '') === 'lunas' ? 'selected' : '' }}>Lunas</option>
                             <option value="rejected" {{ ($status ?? '') === 'rejected' ? 'selected' : '' }}>Rejected</option>
                         </select>
                     </div>
@@ -414,8 +415,8 @@
                                         @endif
                                     </td>
                                     <td class="cell-status">
-                                        <span class="badge bg-{{ $item->status === 'approved' ? 'success' : ($item->status === 'rejected' ? 'danger' : ($item->status === 'selesai' ? 'primary' : 'warning')) }}">
-                                            <i class="ti {{ $item->status === 'approved' ? 'ti-circle-check' : ($item->status === 'rejected' ? 'ti-circle-x' : ($item->status === 'selesai' ? 'ti-checks' : 'ti-hourglass')) }} me-1"></i>
+                                        <span class="badge bg-{{ $item->status === 'approved' ? 'success' : ($item->status === 'rejected' ? 'danger' : ($item->status === 'selesai' ? 'primary' : ($item->status === 'lunas' ? 'info' : 'warning'))) }}">
+                                            <i class="ti {{ $item->status === 'approved' ? 'ti-circle-check' : ($item->status === 'rejected' ? 'ti-circle-x' : ($item->status === 'selesai' ? 'ti-checks' : ($item->status === 'lunas' ? 'ti-cash' : 'ti-hourglass'))) }} me-1"></i>
                                             {{ ucfirst($item->status ?? 'pending') }}
                                         </span>
                                     </td>
@@ -804,6 +805,9 @@
             } else if (normalized === 'selesai') {
                 badgeClass = 'primary';
                 iconClass = 'ti-checks';
+            } else if (normalized === 'lunas') {
+                badgeClass = 'info';
+                iconClass = 'ti-cash';
             }
 
             const label = normalized.charAt(0).toUpperCase() + normalized.slice(1);
