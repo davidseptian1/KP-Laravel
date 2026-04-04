@@ -212,10 +212,21 @@
 @push('scripts')
 <script>
     (function () {
-        document.querySelectorAll('[id^="aksiModal-"]').forEach(function (modalEl) {
+        document.querySelectorAll('[id^="aksiModal-"], [id^="deleteReimburse-"]').forEach(function (modalEl) {
             if (modalEl.parentElement !== document.body) {
                 document.body.appendChild(modalEl);
             }
+
+            modalEl.addEventListener('hidden.bs.modal', function () {
+                const hasOpenModal = document.querySelectorAll('.modal.show').length > 0;
+                if (!hasOpenModal) {
+                    document.body.classList.remove('modal-open');
+                    document.body.style.removeProperty('padding-right');
+                    document.querySelectorAll('.modal-backdrop').forEach(function (backdrop) {
+                        backdrop.remove();
+                    });
+                }
+            });
         });
     })();
 </script>
