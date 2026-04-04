@@ -375,6 +375,7 @@
                                 <th><i class="ti ti-ticket me-1"></i>Reply Tiket</th>
                                 <th><i class="ti ti-file-text me-1"></i>REPLY PENAMBAHAN</th>
                                 <th><i class="ti ti-photo me-1"></i>Bukti Tranfers Admin</th>
+                                <th><i class="ti ti-file-invoice me-1"></i>Bukti Bayar Hutang</th>
                                 <th><i class="ti ti-list-check me-1"></i>STATUS</th>
                                 <th class="col-jam"><i class="ti ti-clock me-1"></i>JAM</th>
                                 <th class="col-aksi"><i class="ti ti-settings me-1"></i>AKSI</th>
@@ -422,6 +423,27 @@
                                             @endif
                                         @endif
                                     </td>
+                                    <td class="cell-bukti-bayar-hutang">
+                                        @if (($item->bukti_bayar_hutang_type ?? 'text') === 'image')
+                                            @if (!empty($item->bukti_bayar_hutang_text))
+                                                <div class="mb-1">{{ $item->bukti_bayar_hutang_text }}</div>
+                                                <button type="button" class="btn btn-outline-secondary btn-sm me-1 js-copy-text" data-copy-text="{{ e($item->bukti_bayar_hutang_text) }}">Copy Teks</button>
+                                            @endif
+                                            @if (!empty($item->bukti_bayar_hutang_image))
+                                                <a href="{{ route('deposit.request.bukti-bayar-hutang-image', $item->id) }}" target="_blank" class="btn btn-outline-primary btn-sm">Lihat Gambar</a>
+                                                <button type="button" class="btn btn-outline-secondary btn-sm mt-1 js-copy-image" data-image-url="{{ route('deposit.request.bukti-bayar-hutang-image', $item->id) }}">Copy Gambar</button>
+                                            @else
+                                                -
+                                            @endif
+                                        @else
+                                            @if (!empty($item->bukti_bayar_hutang_text))
+                                                <span>{{ $item->bukti_bayar_hutang_text }}</span>
+                                                <button type="button" class="btn btn-outline-secondary btn-sm ms-1 js-copy-text" data-copy-text="{{ e($item->bukti_bayar_hutang_text) }}">Copy Teks</button>
+                                            @else
+                                                -
+                                            @endif
+                                        @endif
+                                    </td>
                                     <td class="cell-status">
                                         <span class="badge bg-{{ $item->status === 'approved' ? 'success' : ($item->status === 'rejected' ? 'danger' : ($item->status === 'selesai' ? 'primary' : ($item->status === 'selesai_belum_lunas' ? 'secondary' : ($item->status === 'lunas' ? 'info' : 'warning')))) }}">
                                             <i class="ti {{ $item->status === 'approved' ? 'ti-circle-check' : ($item->status === 'rejected' ? 'ti-circle-x' : ($item->status === 'selesai' ? 'ti-checks' : ($item->status === 'selesai_belum_lunas' ? 'ti-checks' : ($item->status === 'lunas' ? 'ti-cash' : 'ti-hourglass')))) }} me-1"></i>
@@ -430,7 +452,7 @@
                                     </td>
                                     <td class="cell-jam">{{ $item->jam ? \Carbon\Carbon::parse($item->jam)->format('H:i') : '-' }}</td>
                                     <td class="cell-aksi">
-                                        @if (in_array(($item->status ?? 'pending'), ['approved', 'selesai_belum_lunas'], true))
+                                        @if (($item->status ?? 'pending') === 'approved')
                                             <button type="button" class="btn btn-sm btn-primary js-action-input-reply" data-bs-toggle="modal" data-bs-target="#modalInputReply-{{ $item->id }}">Input</button>
 
                                             <div class="modal fade" id="modalInputReply-{{ $item->id }}" tabindex="-1" aria-hidden="true">
@@ -464,6 +486,51 @@
                                                                     </div>
                                                                     <div class="mt-2 js-staff-reply-preview-wrap" data-target="{{ $item->id }}" style="display:none;">
                                                                         <img src="" alt="Preview Reply Penambahan" class="img-fluid rounded border js-staff-reply-preview" data-target="{{ $item->id }}" style="max-height:180px;">
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                                                <button type="submit" class="btn btn-primary">Simpan</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @elseif (($item->status ?? 'pending') === 'selesai_belum_lunas')
+                                            <button type="button" class="btn btn-sm btn-primary js-action-input-bukti-hutang" data-bs-toggle="modal" data-bs-target="#modalInputBuktiHutang-{{ $item->id }}">Input Bukti Bayar Hutang</button>
+
+                                            <div class="modal fade" id="modalInputBuktiHutang-{{ $item->id }}" tabindex="-1" aria-hidden="true">
+                                                <div class="modal-dialog modal-dialog-centered">
+                                                    <div class="modal-content">
+                                                        <form method="POST" action="{{ route('deposit.request.bukti-bayar-hutang.update', $item->id) }}" enctype="multipart/form-data">
+                                                            @csrf
+                                                            @method('PUT')
+                                                            <div class="modal-header">
+                                                                <h5 class="modal-title">Input Bukti Pembayaran Hutang</h5>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <div class="mb-3">
+                                                                    <label class="form-label">Tipe Bukti Pembayaran</label>
+                                                                    <select name="bukti_bayar_hutang_type" class="form-select js-staff-bukti-hutang-type" data-target="{{ $item->id }}" required>
+                                                                        <option value="text" {{ ($item->bukti_bayar_hutang_type ?? 'text') === 'text' ? 'selected' : '' }}>Text</option>
+                                                                        <option value="image" {{ ($item->bukti_bayar_hutang_type ?? 'text') === 'image' ? 'selected' : '' }}>Image</option>
+                                                                    </select>
+                                                                </div>
+                                                                <div class="mb-3 js-staff-bukti-hutang-text-wrap" data-target="{{ $item->id }}" style="display: {{ ($item->bukti_bayar_hutang_type ?? 'text') === 'text' ? 'block' : 'none' }};">
+                                                                    <label class="form-label">Bukti Pembayaran Hutang</label>
+                                                                    <textarea name="bukti_bayar_hutang" class="form-control js-auto-resize-textarea" rows="4" placeholder="Masukkan bukti pembayaran hutang">{{ $item->bukti_bayar_hutang_text }}</textarea>
+                                                                </div>
+                                                                <div class="mb-1 js-staff-bukti-hutang-image-wrap" data-target="{{ $item->id }}" style="display: {{ ($item->bukti_bayar_hutang_type ?? 'text') === 'image' ? 'block' : 'none' }};">
+                                                                    <label class="form-label">Upload / Paste Gambar</label>
+                                                                    <input type="file" name="bukti_bayar_hutang_image" class="form-control js-staff-bukti-hutang-image-input" data-target="{{ $item->id }}" accept="image/png,image/jpeg,image/jpg,image/webp">
+                                                                    <small class="text-muted d-block mt-1">Bisa Ctrl+V dari clipboard saat fokus di area paste.</small>
+                                                                    <div class="border rounded p-2 mt-2 js-staff-bukti-hutang-paste-zone" data-target="{{ $item->id }}" tabindex="0" style="min-height:60px;">
+                                                                        Paste gambar di sini (Ctrl+V)
+                                                                    </div>
+                                                                    <div class="mt-2 js-staff-bukti-hutang-preview-wrap" data-target="{{ $item->id }}" style="display:none;">
+                                                                        <img src="" alt="Preview Bukti Pembayaran Hutang" class="img-fluid rounded border js-staff-bukti-hutang-preview" data-target="{{ $item->id }}" style="max-height:180px;">
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -510,7 +577,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="14" class="text-center text-muted py-4">Belum ada request deposit pada tanggal ini</td>
+                                    <td colspan="15" class="text-center text-muted py-4">Belum ada request deposit pada tanggal ini</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -642,6 +709,7 @@
         let latestUpdatedAt = @json($latestUpdatedAt);
         const pollingUrl = @json(route('deposit.request.changes'));
         const transferImageBaseUrl = @json(url('deposit/request'));
+        const buktiBayarHutangImageBaseUrl = @json(url('deposit/request'));
         const tanggal = @json($tanggal ?? now()->format('Y-m-d'));
         const searchSupplier = @json($searchSupplier ?? '');
         const serverFilter = @json($serverFilter ?? '');
@@ -855,6 +923,34 @@
             return '<span>' + escapeHtml(text) + '</span><button type="button" class="btn btn-outline-secondary btn-sm ms-1 js-copy-text" data-copy-text="' + escapeHtml(text) + '">Copy Teks</button>';
         }
 
+        function buktiBayarHutangHtml(item) {
+            if ((item.bukti_bayar_hutang_type || 'text') === 'image') {
+                let html = '';
+
+                if (item.bukti_bayar_hutang_text) {
+                    html += '<div class="mb-1">' + escapeHtml(item.bukti_bayar_hutang_text) + '</div>';
+                    html += '<button type="button" class="btn btn-outline-secondary btn-sm me-1 js-copy-text" data-copy-text="' + escapeHtml(item.bukti_bayar_hutang_text) + '">Copy Teks</button>';
+                }
+
+                if (item.has_bukti_bayar_hutang_image) {
+                    const imageUrl = buktiBayarHutangImageBaseUrl + '/' + item.id + '/bukti-bayar-hutang-image';
+                    html += '<a href="' + imageUrl + '" target="_blank" class="btn btn-outline-primary btn-sm">Lihat Gambar</a>';
+                    html += '<button type="button" class="btn btn-outline-secondary btn-sm mt-1 js-copy-image" data-image-url="' + imageUrl + '">Copy Gambar</button>';
+                } else {
+                    html += '-';
+                }
+
+                return html;
+            }
+
+            const text = item.bukti_bayar_hutang_text || '';
+            if (!text) {
+                return '-';
+            }
+
+            return '<span>' + escapeHtml(text) + '</span><button type="button" class="btn btn-outline-secondary btn-sm ms-1 js-copy-text" data-copy-text="' + escapeHtml(text) + '">Copy Teks</button>';
+        }
+
         async function copyTextToClipboard(text) {
             const value = String(text || '');
             if (!value.trim()) return;
@@ -945,6 +1041,7 @@
                 const tiketCell = row.querySelector('.cell-reply-tiket');
                 const penambahanCell = row.querySelector('.cell-reply-penambahan');
                 const buktiCell = row.querySelector('.cell-bukti-transfer');
+                const buktiBayarHutangCell = row.querySelector('.cell-bukti-bayar-hutang');
                 const statusCell = row.querySelector('.cell-status');
                 const jamCell = row.querySelector('.cell-jam');
                 const aksiCell = row.querySelector('.cell-aksi');
@@ -954,12 +1051,16 @@
                 if (tiketCell) tiketCell.textContent = item.reply_tiket || '-';
                 if (penambahanCell) penambahanCell.textContent = item.reply_penambahan || 'Menunggu Konfirmasi Admin';
                 if (buktiCell) buktiCell.innerHTML = buktiTransferHtml(item);
+                if (buktiBayarHutangCell) buktiBayarHutangCell.innerHTML = buktiBayarHutangHtml(item);
                 if (statusCell) statusCell.innerHTML = statusBadgeHtml(item.status || 'pending');
                 if (jamCell) jamCell.textContent = formatJamValue(item.jam);
 
                 if (aksiCell) {
                     const normalizedStatus = String(item.status || 'pending').toLowerCase();
-                    if ((normalizedStatus === 'approved' || normalizedStatus === 'selesai_belum_lunas') && !aksiCell.querySelector('.js-action-input-reply')) {
+                    if (normalizedStatus === 'approved' && !aksiCell.querySelector('.js-action-input-reply')) {
+                        hasActionMismatch = true;
+                    }
+                    if (normalizedStatus === 'selesai_belum_lunas' && !aksiCell.querySelector('.js-action-input-bukti-hutang')) {
                         hasActionMismatch = true;
                     }
                     if (normalizedStatus === 'pending' && !aksiCell.querySelector('.js-action-delete-pending')) {
@@ -1556,6 +1657,86 @@
             });
         }
 
+        function initStaffBuktiBayarHutangControls() {
+            function setPreview(targetId, file) {
+                const wrap = document.querySelector('.js-staff-bukti-hutang-preview-wrap[data-target="' + targetId + '"]');
+                const img = document.querySelector('.js-staff-bukti-hutang-preview[data-target="' + targetId + '"]');
+
+                if (!wrap || !img || !file) return;
+
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    img.src = event.target.result;
+                    wrap.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+
+            document.querySelectorAll('.js-staff-bukti-hutang-type').forEach(function (select) {
+                if (select.dataset.bound === '1') return;
+                select.dataset.bound = '1';
+
+                select.addEventListener('change', function () {
+                    const targetId = this.dataset.target;
+                    const textWrap = document.querySelector('.js-staff-bukti-hutang-text-wrap[data-target="' + targetId + '"]');
+                    const imageWrap = document.querySelector('.js-staff-bukti-hutang-image-wrap[data-target="' + targetId + '"]');
+
+                    if (!textWrap || !imageWrap) return;
+
+                    textWrap.style.display = this.value === 'text' ? 'block' : 'none';
+                    imageWrap.style.display = this.value === 'image' ? 'block' : 'none';
+                });
+
+                select.dispatchEvent(new Event('change'));
+            });
+
+            document.querySelectorAll('.js-staff-bukti-hutang-image-input').forEach(function (input) {
+                if (input.dataset.bound === '1') return;
+                input.dataset.bound = '1';
+
+                input.addEventListener('change', function () {
+                    const targetId = this.dataset.target;
+                    const file = this.files && this.files[0] ? this.files[0] : null;
+                    if (file) setPreview(targetId, file);
+                });
+            });
+
+            document.querySelectorAll('.js-staff-bukti-hutang-paste-zone').forEach(function (zone) {
+                if (zone.dataset.bound === '1') return;
+                zone.dataset.bound = '1';
+
+                zone.addEventListener('paste', function (event) {
+                    const targetId = this.dataset.target;
+                    const input = document.querySelector('.js-staff-bukti-hutang-image-input[data-target="' + targetId + '"]');
+                    if (!input) return;
+
+                    const items = (event.clipboardData || window.clipboardData).items;
+                    if (!items) return;
+
+                    for (let i = 0; i < items.length; i++) {
+                        if (items[i].type.indexOf('image') !== -1) {
+                            const file = items[i].getAsFile();
+                            if (!file) continue;
+
+                            const dataTransfer = new DataTransfer();
+                            dataTransfer.items.add(file);
+                            input.files = dataTransfer.files;
+
+                            const typeSelect = document.querySelector('.js-staff-bukti-hutang-type[data-target="' + targetId + '"]');
+                            if (typeSelect) {
+                                typeSelect.value = 'image';
+                                typeSelect.dispatchEvent(new Event('change'));
+                            }
+
+                            setPreview(targetId, file);
+                            event.preventDefault();
+                            break;
+                        }
+                    }
+                });
+            });
+        }
+
         if (replyTiketImageInput) {
             replyTiketImageInput.addEventListener('change', function () {
                 const file = this.files && this.files[0] ? this.files[0] : null;
@@ -1616,6 +1797,7 @@
         initReorderableColumns();
         bindAutoResizeTextareas();
         initStaffReplyPenambahanControls();
+        initStaffBuktiBayarHutangControls();
 
         document.addEventListener('visibilitychange', function () {
             if (!document.hidden) {

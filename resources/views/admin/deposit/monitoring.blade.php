@@ -978,6 +978,108 @@
             }
         }
 
+        async function copyTextToClipboard(text) {
+            const value = String(text || '');
+            if (!value.trim()) return;
+
+            await navigator.clipboard.writeText(value);
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: 'Teks berhasil disalin',
+                showConfirmButton: false,
+                timer: 1400,
+            });
+        }
+
+        async function copyImageToClipboard(imageUrl) {
+            if (!imageUrl) return;
+
+            const response = await fetch(imageUrl, { credentials: 'same-origin' });
+            if (!response.ok) throw new Error('Gagal mengambil gambar');
+
+            const blob = await response.blob();
+            if (!blob.type || !blob.type.startsWith('image/')) {
+                throw new Error('File bukan gambar');
+            }
+
+            await navigator.clipboard.write([
+                new ClipboardItem({ [blob.type]: blob })
+            ]);
+
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: 'Gambar berhasil disalin',
+                showConfirmButton: false,
+                timer: 1400,
+            });
+        }
+
+        document.addEventListener('click', async function (event) {
+            const textButton = event.target.closest('.js-copy-text');
+            if (textButton) {
+                const textValue = textButton.getAttribute('data-copy-text') || '';
+                try {
+                    await copyTextToClipboard(textValue);
+                } catch (error) {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'error',
+                        title: 'Gagal menyalin teks',
+                        showConfirmButton: false,
+                        timer: 1600,
+                    });
+                }
+                return;
+            }
+
+            const imageButton = event.target.closest('.js-copy-image');
+            if (imageButton) {
+                const imageUrl = imageButton.getAttribute('data-image-url') || '';
+                try {
+                    if (!navigator.clipboard || typeof ClipboardItem === 'undefined') {
+                        await copyTextToClipboard(imageUrl);
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'info',
+                            title: 'Clipboard gambar tidak didukung, link disalin',
+                            showConfirmButton: false,
+                            timer: 1800,
+                        });
+                        return;
+                    }
+
+                    await copyImageToClipboard(imageUrl);
+                } catch (error) {
+                    try {
+                        await copyTextToClipboard(imageUrl);
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'info',
+                            title: 'Gagal copy gambar, link disalin',
+                            showConfirmButton: false,
+                            timer: 1800,
+                        });
+                    } catch (_) {
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'error',
+                            title: 'Gagal menyalin gambar',
+                            showConfirmButton: false,
+                            timer: 1600,
+                        });
+                    }
+                }
+            }
+        });
+
         if (enableNotifBtn) {
             enableNotifBtn.addEventListener('click', requestBrowserNotificationPermission);
         }

@@ -19,6 +19,7 @@
                 <th>Bukti Tiket</th>
                 <th>Bukti Penambahan</th>
                 <th>Bukti Transfers Admin</th>
+                <th>Bukti Bayar Hutang</th>
                 <th>Info Staff</th>
                 <th>Status</th>
                 <th>Jam</th>
@@ -69,10 +70,38 @@
                         @if (($item->bukti_transfer_admin_type ?? 'text') === 'image')
                             @if (!empty($item->bukti_transfer_admin_text))
                                 <div class="mb-1">{{ $item->bukti_transfer_admin_text }}</div>
+                                <button type="button" class="btn btn-outline-secondary btn-sm me-1 js-copy-text" data-copy-text="{{ e($item->bukti_transfer_admin_text) }}">Copy Teks</button>
                             @endif
                             <a href="{{ url('admin/deposit/' . $item->id . '/transfer-admin-image') }}" target="_blank" class="btn btn-outline-primary btn-sm">Lihat Gambar</a>
+                            <button type="button" class="btn btn-outline-secondary btn-sm mt-1 js-copy-image" data-image-url="{{ route('admin.deposit.transfer-admin-image', $item->id) }}">Copy Gambar</button>
                         @else
-                            {{ $item->bukti_transfer_admin_text ?? '-' }}
+                            @if (!empty($item->bukti_transfer_admin_text))
+                                <span>{{ $item->bukti_transfer_admin_text }}</span>
+                                <button type="button" class="btn btn-outline-secondary btn-sm ms-1 js-copy-text" data-copy-text="{{ e($item->bukti_transfer_admin_text) }}">Copy Teks</button>
+                            @else
+                                -
+                            @endif
+                        @endif
+                    </td>
+                    <td>
+                        @if (($item->bukti_bayar_hutang_type ?? 'text') === 'image')
+                            @if (!empty($item->bukti_bayar_hutang_text))
+                                <div class="mb-1">{{ $item->bukti_bayar_hutang_text }}</div>
+                                <button type="button" class="btn btn-outline-secondary btn-sm me-1 js-copy-text" data-copy-text="{{ e($item->bukti_bayar_hutang_text) }}">Copy Teks</button>
+                            @endif
+                            @if (!empty($item->bukti_bayar_hutang_image))
+                                <a href="{{ route('admin.deposit.bukti-bayar-hutang-image', $item->id) }}" target="_blank" class="btn btn-outline-primary btn-sm">Lihat Gambar</a>
+                                <button type="button" class="btn btn-outline-secondary btn-sm mt-1 js-copy-image" data-image-url="{{ route('admin.deposit.bukti-bayar-hutang-image', $item->id) }}">Copy Gambar</button>
+                            @else
+                                -
+                            @endif
+                        @else
+                            @if (!empty($item->bukti_bayar_hutang_text))
+                                <span>{{ $item->bukti_bayar_hutang_text }}</span>
+                                <button type="button" class="btn btn-outline-secondary btn-sm ms-1 js-copy-text" data-copy-text="{{ e($item->bukti_bayar_hutang_text) }}">Copy Teks</button>
+                            @else
+                                -
+                            @endif
                         @endif
                     </td>
                     <td>
@@ -212,7 +241,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="13" class="text-center text-muted py-4">Belum ada deposit</td>
+                    <td colspan="14" class="text-center text-muted py-4">Belum ada deposit</td>
                 </tr>
             @endforelse
         </tbody>

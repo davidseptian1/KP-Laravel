@@ -309,6 +309,9 @@ class DepositFormController extends Controller
                     'bukti_transfer_admin_type' => $item->bukti_transfer_admin_type,
                     'bukti_transfer_admin_text' => $item->bukti_transfer_admin_text,
                     'has_bukti_transfer_admin_image' => !empty($item->bukti_transfer_admin_image),
+                    'bukti_bayar_hutang_type' => $item->bukti_bayar_hutang_type,
+                    'bukti_bayar_hutang_text' => $item->bukti_bayar_hutang_text,
+                    'has_bukti_bayar_hutang_image' => !empty($item->bukti_bayar_hutang_image),
                     'status' => $item->status,
                     'jam' => $item->jam ? Carbon::parse((string) $item->jam)->format('H:i') : null,
                 ];
@@ -570,6 +573,66 @@ class DepositFormController extends Controller
             ->with('success', 'Request pending berhasil dihapus dari daftar staff');
     }
 
+    public function updateBuktiBayarHutang(Request $request, int $id)
+    {
+        $validated = $request->validate([
+            'bukti_bayar_hutang_type' => 'nullable|in:text,image',
+            'bukti_bayar_hutang' => 'nullable|string',
+            'bukti_bayar_hutang_image' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:5120',
+        ]);
+
+        $item = Deposit::where('id', $id)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
+
+        if (($item->status ?? 'pending') !== 'selesai_belum_lunas') {
+            return redirect()->route('deposit.request.index')->with('error', 'Bukti bayar hutang hanya bisa diinput saat status Selesai (Belum Lunas)');
+        }
+
+        $replyType = $validated['bukti_bayar_hutang_type'] ?? ($request->hasFile('bukti_bayar_hutang_image') ? 'image' : 'text');
+        $replyText = trim((string) ($validated['bukti_bayar_hutang'] ?? ''));
+
+        if ($replyType === 'image') {
+            if ($request->hasFile('bukti_bayar_hutang_image')) {
+                if ($item->bukti_bayar_hutang_image && Storage::disk('local')->exists($item->bukti_bayar_hutang_image)) {
+                    Storage::disk('local')->delete($item->bukti_bayar_hutang_image);
+                }
+
+                $path = $request->file('bukti_bayar_hutang_image')->store('deposit/bukti-bayar-hutang', 'local');
+                $item->bukti_bayar_hutang_image = $path;
+            }
+
+            if (!$item->bukti_bayar_hutang_image) {
+                throw ValidationException::withMessages([
+                    'bukti_bayar_hutang_image' => 'Pilih atau paste gambar bukti bayar hutang terlebih dahulu untuk tipe image.',
+                ]);
+            }
+
+            $item->bukti_bayar_hutang_type = 'image';
+            $item->bukti_bayar_hutang_text = $replyText !== '' ? $replyText : null;
+            $item->save();
+
+            return redirect()->route('deposit.request.index')->with('success', 'Bukti bayar hutang berhasil diupdate');
+        }
+
+        if ($replyText === '') {
+            throw ValidationException::withMessages([
+                'bukti_bayar_hutang' => 'Bukti bayar hutang wajib diisi untuk tipe text.',
+            ]);
+        }
+
+        if ($item->bukti_bayar_hutang_image && Storage::disk('local')->exists($item->bukti_bayar_hutang_image)) {
+            Storage::disk('local')->delete($item->bukti_bayar_hutang_image);
+            $item->bukti_bayar_hutang_image = null;
+        }
+
+        $item->bukti_bayar_hutang_type = 'text';
+        $item->bukti_bayar_hutang_text = $replyText;
+        $item->save();
+
+        return redirect()->route('deposit.request.index')->with('success', 'Bukti bayar hutang berhasil diupdate');
+    }
+
     public function viewTransferAdminImage(int $id)
     {
         $item = Deposit::where('id', $id)
@@ -581,6 +644,22 @@ class DepositFormController extends Controller
         if (!$path || !Storage::disk('local')->exists($path)) {
             return redirect()->route('deposit.request.index')
                 ->with('error', 'Gambar bukti transfer admin tidak ditemukan');
+        }
+
+        return Storage::disk('local')->response($path);
+    }
+
+    public function viewBuktiBayarHutangImage(int $id)
+    {
+        $item = Deposit::where('id', $id)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
+
+        $path = $item->bukti_bayar_hutang_image;
+
+        if (!$path || !Storage::disk('local')->exists($path)) {
+            return redirect()->route('deposit.request.index')
+                ->with('error', 'Gambar bukti bayar hutang tidak ditemukan');
         }
 
         return Storage::disk('local')->response($path);

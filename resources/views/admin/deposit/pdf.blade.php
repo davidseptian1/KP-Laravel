@@ -61,6 +61,7 @@
                 <th>Bukti Tiket</th>
                 <th>Bukti Penambahan</th>
                 <th>Bukti Transfers Admin</th>
+                <th>Bukti Bayar Hutang</th>
                 <th>Status</th>
                 <th>Jam</th>
             </tr>
@@ -76,6 +77,15 @@
                     } elseif (!empty($item->bukti_transfer_admin_text)) {
                         $buktiTransferAdmin = $item->bukti_transfer_admin_text;
                     }
+
+                    $buktiBayarHutang = '-';
+                    if (($item->bukti_bayar_hutang_type ?? 'text') === 'image') {
+                        $buktiBayarHutang = trim((string) ($item->bukti_bayar_hutang_text ?? '')) !== ''
+                            ? trim((string) $item->bukti_bayar_hutang_text)
+                            : 'Image';
+                    } elseif (!empty($item->bukti_bayar_hutang_text)) {
+                        $buktiBayarHutang = $item->bukti_bayar_hutang_text;
+                    }
                 @endphp
                 <tr>
                     <td>{{ $item->created_at?->format('d/m/Y H:i') }}</td>
@@ -88,12 +98,13 @@
                     <td>{{ $item->reply_tiket ?? '-' }}</td>
                     <td>{{ $item->reply_penambahan ?? '-' }}</td>
                     <td>{{ $buktiTransferAdmin }}</td>
+                    <td>{{ $buktiBayarHutang }}</td>
                     <td>{{ ($item->status ?? 'pending') === 'selesai_belum_lunas' ? 'Selesai (Belum Lunas)' : ucfirst((string) ($item->status ?? 'pending')) }}</td>
                     <td>{{ $item->jam ? date('H:i', strtotime((string) $item->jam)) : '-' }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="12" style="text-align: center;">Tidak ada data.</td>
+                    <td colspan="13" style="text-align: center;">Tidak ada data.</td>
                 </tr>
             @endforelse
         </tbody>

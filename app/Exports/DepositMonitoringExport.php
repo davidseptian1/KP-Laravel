@@ -36,6 +36,7 @@ class DepositMonitoringExport implements FromCollection, WithHeadings, WithMappi
             'Bukti Tiket',
             'Bukti Penambahan',
             'Bukti Transfers Admin',
+            'Bukti Bayar Hutang',
             'Status',
             'Jam',
         ];
@@ -54,6 +55,16 @@ class DepositMonitoringExport implements FromCollection, WithHeadings, WithMappi
         }
         $buktiTransferAdmin = $this->sanitizeForExcel($buktiTransferAdmin);
 
+        $buktiBayarHutang = '-';
+        if (($item->bukti_bayar_hutang_type ?? 'text') === 'image') {
+            $buktiBayarHutang = trim((string) ($item->bukti_bayar_hutang_text ?? '')) !== ''
+                ? trim((string) $item->bukti_bayar_hutang_text)
+                : 'Image';
+        } elseif (!empty($item->bukti_bayar_hutang_text)) {
+            $buktiBayarHutang = $item->bukti_bayar_hutang_text;
+        }
+        $buktiBayarHutang = $this->sanitizeForExcel($buktiBayarHutang);
+
         return [
             optional($item->created_at)->format('d/m/Y H:i'),
             $item->nama_supplier,
@@ -66,6 +77,7 @@ class DepositMonitoringExport implements FromCollection, WithHeadings, WithMappi
             $this->sanitizeForExcel($item->reply_tiket ?? '-'),
             $this->sanitizeForExcel($item->reply_penambahan ?? '-'),
             $buktiTransferAdmin,
+            $buktiBayarHutang,
             ($item->status ?? 'pending') === 'selesai_belum_lunas' ? 'Selesai (Belum Lunas)' : ucfirst((string) ($item->status ?? 'pending')),
             $item->jam ? date('H:i', strtotime((string) $item->jam)) : '-',
         ];

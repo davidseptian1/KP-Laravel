@@ -145,6 +145,8 @@ Route::middleware('checkLogin')->group(function () {
     Route::get('deposit/request/changes', [DepositFormController::class, 'changes'])->name('deposit.request.changes');
     Route::get('deposit/request/{id}/transfer-admin-image', [DepositFormController::class, 'viewTransferAdminImage'])->name('deposit.request.transfer-admin-image');
     Route::put('deposit/request/{id}/reply-penambahan', [DepositFormController::class, 'updateReplyPenambahan'])->name('deposit.request.reply.update');
+    Route::put('deposit/request/{id}/bukti-bayar-hutang', [DepositFormController::class, 'updateBuktiBayarHutang'])->name('deposit.request.bukti-bayar-hutang.update');
+    Route::get('deposit/request/{id}/bukti-bayar-hutang-image', [DepositFormController::class, 'viewBuktiBayarHutangImage'])->name('deposit.request.bukti-bayar-hutang-image');
     Route::put('deposit/request/{id}/delete', [DepositFormController::class, 'deletePending'])->name('deposit.request.delete');
     
     // Import status polling
@@ -256,6 +258,7 @@ Route::middleware('checkLogin')->group(function () {
         Route::get('admin/deposit/{id}/reply-tiket-image', [AdminDepositController::class, 'viewReplyTiketImage'])->name('admin.deposit.reply-tiket-image');
         Route::get('admin/deposit/{id}/reply-image', [AdminDepositController::class, 'viewReplyImage'])->name('admin.deposit.reply-image');
         Route::get('admin/deposit/{id}/transfer-admin-image', [AdminDepositController::class, 'viewTransferAdminImage'])->name('admin.deposit.transfer-admin-image');
+        Route::get('admin/deposit/{id}/bukti-bayar-hutang-image', [AdminDepositController::class, 'viewBuktiBayarHutangImage'])->name('admin.deposit.bukti-bayar-hutang-image');
         Route::put('admin/deposit/{id}', [AdminDepositController::class, 'update'])->name('admin.deposit.update');
         Route::put('admin/deposit/{id}/details', [AdminDepositController::class, 'updateDetails'])->name('admin.deposit.update-details');
         Route::put('admin/deposit/{id}/status', [AdminDepositController::class, 'updateStatus'])->name('admin.deposit.update-status');

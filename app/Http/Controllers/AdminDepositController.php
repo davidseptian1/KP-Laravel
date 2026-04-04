@@ -316,6 +316,12 @@ class AdminDepositController extends Controller
             if (($latestChangedItem->bukti_transfer_admin_type ?? null) === 'image' && !empty($latestChangedItem->bukti_transfer_admin_image)) {
                 $descriptions[] = 'Bukti Transfer Admin: gambar diperbarui';
             }
+            if (($latestChangedItem->bukti_bayar_hutang_type ?? null) === 'text' && !empty($latestChangedItem->bukti_bayar_hutang_text)) {
+                $descriptions[] = 'Bukti Bayar Hutang: ' . mb_strimwidth(trim((string) $latestChangedItem->bukti_bayar_hutang_text), 0, 80, '...');
+            }
+            if (($latestChangedItem->bukti_bayar_hutang_type ?? null) === 'image' && !empty($latestChangedItem->bukti_bayar_hutang_image)) {
+                $descriptions[] = 'Bukti Bayar Hutang: gambar diperbarui';
+            }
 
             $changeDescription = !empty($descriptions)
                 ? implode(' | ', $descriptions)
@@ -442,6 +448,12 @@ class AdminDepositController extends Controller
             }
             if (($latestChangedItem->bukti_transfer_admin_type ?? null) === 'image' && !empty($latestChangedItem->bukti_transfer_admin_image)) {
                 $descriptions[] = 'Bukti Transfer Admin: gambar diperbarui';
+            }
+            if (($latestChangedItem->bukti_bayar_hutang_type ?? null) === 'text' && !empty($latestChangedItem->bukti_bayar_hutang_text)) {
+                $descriptions[] = 'Bukti Bayar Hutang: ' . mb_strimwidth(trim((string) $latestChangedItem->bukti_bayar_hutang_text), 0, 80, '...');
+            }
+            if (($latestChangedItem->bukti_bayar_hutang_type ?? null) === 'image' && !empty($latestChangedItem->bukti_bayar_hutang_image)) {
+                $descriptions[] = 'Bukti Bayar Hutang: gambar diperbarui';
             }
 
             $changeDescription = !empty($descriptions)
@@ -793,6 +805,18 @@ class AdminDepositController extends Controller
         return Storage::disk('local')->response($path);
     }
 
+    public function viewBuktiBayarHutangImage(int $id)
+    {
+        $item = Deposit::findOrFail($id);
+        $path = $item->bukti_bayar_hutang_image;
+
+        if (!$path || !Storage::disk('local')->exists($path)) {
+            return redirect()->route('admin.deposit.monitoring')->with('error', 'Gambar bukti bayar hutang tidak ditemukan');
+        }
+
+        return Storage::disk('local')->response($path);
+    }
+
     public function destroy(int $id)
     {
         $item = Deposit::findOrFail($id);
@@ -807,6 +831,10 @@ class AdminDepositController extends Controller
 
         if ($item->bukti_transfer_admin_image && Storage::disk('local')->exists($item->bukti_transfer_admin_image)) {
             Storage::disk('local')->delete($item->bukti_transfer_admin_image);
+        }
+
+        if ($item->bukti_bayar_hutang_image && Storage::disk('local')->exists($item->bukti_bayar_hutang_image)) {
+            Storage::disk('local')->delete($item->bukti_bayar_hutang_image);
         }
 
         $item->delete();
