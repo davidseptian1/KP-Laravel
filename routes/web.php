@@ -32,7 +32,10 @@ use App\Http\Controllers\ApiManagementController;
 use App\Http\Controllers\PersediaanStokController;
 use App\Http\Controllers\AdminPersediaanStokController;
 use App\Http\Controllers\AdminActivityLogController;
+use App\Models\DataRequest;
 use App\Models\Deposit;
+use App\Models\LoanRequest;
+use App\Models\Reimburse;
 
 
 
@@ -109,6 +112,23 @@ Route::middleware(['checkLogin', 'admin.activity.log'])->group(function () {
 
         return response()->json(['count' => $count]);
     })->name('sidebar.hutang-belum-lunas-count');
+
+    Route::get('sidebar/monitoring-counts', function () {
+        $user = auth()->user();
+        if (!$user || !in_array($user->jabatan, ['Admin', 'Superadmin'], true)) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        return response()->json([
+            'reimburse_pending' => Reimburse::where('status', 'pending')->count(),
+            'data_request_pending' => DataRequest::where('status', 'pending')->count(),
+            'loan_request_pending' => LoanRequest::where('status', 'pending')->count(),
+            'deposit_pending' => Deposit::where('status', 'pending')->count(),
+            'hutang_belum_lunas' => Deposit::whereRaw("LOWER(TRIM(jenis_transaksi)) IN ('hutang','bon')")
+                ->whereRaw("LOWER(REPLACE(REPLACE(REPLACE(REPLACE(status, ' ', ''), '_', ''), '(', ''), ')', '')) = ?", ['selesaibelumlunas'])
+                ->count(),
+        ]);
+    })->name('sidebar.monitoring-counts');
 
     // Minusan
     Route::get('minusan', [MinusanController::class, 'index'])->name('minusan');

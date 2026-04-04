@@ -41,34 +41,62 @@
 
                 <!-- Reimburse (Admin) -->
                 <li class="pc-item {{ $menuAdminReimburse ?? '' }}">
-                    <a href="{{ route('admin.reimburse.index') }}" class="pc-link">
+                    <a href="{{ route('admin.reimburse.index') }}" class="pc-link position-relative">
                         <span class="pc-micon"><i class="ti ti-receipt"></i></span>
                         <span class="pc-mtext">Reimburse Monitoring</span>
+                        <span data-sidebar-counter
+                              data-counter-key="reimburse_pending"
+                              data-counter-url="{{ route('sidebar.monitoring-counts') }}"
+                              class="badge rounded-pill {{ ($jumlahReimbursePending ?? 0) > 0 ? 'bg-danger' : 'bg-secondary' }}"
+                              style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 0.9rem; min-width: 34px; text-align: center; padding: 6px 10px; line-height: 1;">
+                            {{ $jumlahReimbursePending ?? 0 }}
+                        </span>
                     </a>
                 </li>
 
                 <!-- Pengajuan Data Monitoring (Admin) -->
                 <li class="pc-item {{ $menuAdminDataRequest ?? '' }}">
-                    <a href="{{ route('admin.data-request.index') }}" class="pc-link">
+                    <a href="{{ route('admin.data-request.index') }}" class="pc-link position-relative">
                         <span class="pc-micon"><i class="ti ti-file-text"></i></span>
                         <span class="pc-mtext">Monitoring<br>Pengajuan Data</span>
+                        <span data-sidebar-counter
+                              data-counter-key="data_request_pending"
+                              data-counter-url="{{ route('sidebar.monitoring-counts') }}"
+                              class="badge rounded-pill {{ ($jumlahDataRequestPending ?? 0) > 0 ? 'bg-danger' : 'bg-secondary' }}"
+                              style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 0.9rem; min-width: 34px; text-align: center; padding: 6px 10px; line-height: 1;">
+                            {{ $jumlahDataRequestPending ?? 0 }}
+                        </span>
                     </a>
                 </li>
 
                 <!-- Peminjaman Barang Monitoring (Admin) -->
                 <li class="pc-item {{ $menuAdminLoanRequest ?? '' }}">
-                    <a href="{{ route('admin.loan-request.index') }}" class="pc-link">
+                    <a href="{{ route('admin.loan-request.index') }}" class="pc-link position-relative">
                         <span class="pc-micon"><i class="ti ti-file-text"></i></span>
                         <span class="pc-mtext">Monitoring<br>Peminjaman Barang</span>
+                        <span data-sidebar-counter
+                              data-counter-key="loan_request_pending"
+                              data-counter-url="{{ route('sidebar.monitoring-counts') }}"
+                              class="badge rounded-pill {{ ($jumlahLoanRequestPending ?? 0) > 0 ? 'bg-danger' : 'bg-secondary' }}"
+                              style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 0.9rem; min-width: 34px; text-align: center; padding: 6px 10px; line-height: 1;">
+                            {{ $jumlahLoanRequestPending ?? 0 }}
+                        </span>
                     </a>
                 </li>
 
 
                 <!-- Deposit Monitoring (Admin) -->
                 <li class="pc-item {{ $menuAdminDepositMonitoring ?? '' }}">
-                    <a href="{{ route('admin.deposit.monitoring') }}" class="pc-link">
+                    <a href="{{ route('admin.deposit.monitoring') }}" class="pc-link position-relative">
                         <span class="pc-micon"><i class="ti ti-list-check"></i></span>
                         <span class="pc-mtext">Monitoring Deposit</span>
+                        <span data-sidebar-counter
+                              data-counter-key="deposit_pending"
+                              data-counter-url="{{ route('sidebar.monitoring-counts') }}"
+                              class="badge rounded-pill {{ ($jumlahDepositPending ?? 0) > 0 ? 'bg-danger' : 'bg-secondary' }}"
+                              style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 0.9rem; min-width: 34px; text-align: center; padding: 6px 10px; line-height: 1;">
+                            {{ $jumlahDepositPending ?? 0 }}
+                        </span>
                     </a>
                 </li>
 
@@ -78,7 +106,9 @@
                         <span class="pc-micon"><i class="ti ti-wallet"></i></span>
                         <span class="pc-mtext">Monitoring Bon/Hutang</span>
                         <span id="sidebar-hutang-counter"
-                              data-counter-url="{{ route('sidebar.hutang-belum-lunas-count') }}"
+                            data-sidebar-counter
+                            data-counter-key="hutang_belum_lunas"
+                            data-counter-url="{{ route('sidebar.monitoring-counts') }}"
                               class="badge rounded-pill {{ ($jumlahHutangBelumLunas ?? 0) > 0 ? 'bg-danger' : 'bg-secondary' }}"
                               style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 0.9rem; min-width: 34px; text-align: center; padding: 6px 10px; line-height: 1;">
                             {{ $jumlahHutangBelumLunas ?? 0 }}
@@ -387,21 +417,21 @@
 @push('scripts')
 <script>
     (function () {
-        const badge = document.getElementById('sidebar-hutang-counter');
-        if (!badge) {
+        const badges = document.querySelectorAll('[data-sidebar-counter][data-counter-key]');
+        if (!badges.length) {
             return;
         }
 
-        const endpoint = badge.getAttribute('data-counter-url');
+        const endpoint = badges[0].getAttribute('data-counter-url');
         if (!endpoint) {
             return;
         }
 
-        const setValue = function (value) {
+        const setValue = function (badgeEl, value) {
             const count = Number.isFinite(value) ? value : 0;
-            badge.textContent = String(count);
-            badge.classList.remove('bg-danger', 'bg-secondary');
-            badge.classList.add(count > 0 ? 'bg-danger' : 'bg-secondary');
+            badgeEl.textContent = String(count);
+            badgeEl.classList.remove('bg-danger', 'bg-secondary');
+            badgeEl.classList.add(count > 0 ? 'bg-danger' : 'bg-secondary');
         };
 
         const fetchCount = function () {
@@ -418,7 +448,11 @@
                     return response.json();
                 })
                 .then(function (payload) {
-                    setValue(parseInt(payload.count, 10) || 0);
+                    badges.forEach(function (badgeEl) {
+                        const key = badgeEl.getAttribute('data-counter-key');
+                        const value = parseInt(payload[key], 10) || 0;
+                        setValue(badgeEl, value);
+                    });
                 })
                 .catch(function () {
                 });

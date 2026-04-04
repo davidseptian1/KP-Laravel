@@ -6,8 +6,11 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Pagination\Paginator;
+use App\Models\DataRequest;
 use App\Models\Deposit;
+use App\Models\LoanRequest;
 use App\Models\Minusan;
+use App\Models\Reimburse;
 use App\Observers\AdminModelAuditObserver;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\File;
@@ -39,8 +42,17 @@ class AppServiceProvider extends ServiceProvider
                 ->whereRaw("LOWER(REPLACE(REPLACE(REPLACE(REPLACE(status, ' ', ''), '_', ''), '(', ''), ')', '')) = ?", ['selesaibelumlunas'])
                 ->count();
 
+            $jumlahReimbursePending = Reimburse::where('status', 'pending')->count();
+            $jumlahDataRequestPending = DataRequest::where('status', 'pending')->count();
+            $jumlahLoanRequestPending = LoanRequest::where('status', 'pending')->count();
+            $jumlahDepositPending = Deposit::where('status', 'pending')->count();
+
             $view->with('jumlahReportKhusus', $jumlahReportKhusus)
-                ->with('jumlahHutangBelumLunas', $jumlahHutangBelumLunas);
+                ->with('jumlahHutangBelumLunas', $jumlahHutangBelumLunas)
+                ->with('jumlahReimbursePending', $jumlahReimbursePending)
+                ->with('jumlahDataRequestPending', $jumlahDataRequestPending)
+                ->with('jumlahLoanRequestPending', $jumlahLoanRequestPending)
+                ->with('jumlahDepositPending', $jumlahDepositPending);
         });
     }
 }
