@@ -32,13 +32,14 @@ class DepositFormController extends Controller
         return $rules;
     }
 
-    private function buildStaffDepositQuery(Request $request)
+    private function buildStaffDepositQuery(Request $request, ?string $forcedJenisTransaksi = null)
     {
         $tanggal = $request->input('tanggal', now()->format('Y-m-d'));
         $serverFilter = (string) $request->input('server', '');
         $status = (string) $request->input('status', '');
         $searchSupplier = (string) $request->input('search_supplier', '');
         $nominalFilter = (string) $request->input('nominal', '');
+        $jenisTransaksi = $forcedJenisTransaksi ?? (string) $request->input('jenis_transaksi', '');
 
         $query = Deposit::where('user_id', Auth::id())
             ->where(function ($q) {
@@ -66,10 +67,14 @@ class DepositFormController extends Controller
             }
         }
 
+        if ($jenisTransaksi !== '') {
+            $query->where('jenis_transaksi', $jenisTransaksi);
+        }
+
         return $query;
     }
 
-    public function index(Request $request)
+    private function getStaffDepositIndexData(Request $request, ?string $forcedJenisTransaksi = null): array
     {
         $tanggal = $request->input('tanggal', now()->format('Y-m-d'));
         $serverFilter = $request->input('server', '');
@@ -89,7 +94,7 @@ class DepositFormController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
-        $itemsQuery = $this->buildStaffDepositQuery($request);
+        $itemsQuery = $this->buildStaffDepositQuery($request, $forcedJenisTransaksi);
 
         $latestUpdatedAt = (clone $itemsQuery)->max('updated_at');
         $latestActivityItem = (clone $itemsQuery)->orderByDesc('updated_at')->orderByDesc('id')->first();
@@ -104,7 +109,6 @@ class DepositFormController extends Controller
 
         $suppliers = Supplier::orderBy('nama_supplier')->pluck('nama_supplier');
 
-        // Filter banks: if user is Admin or Superadmin show all banks, otherwise show banks assigned to the user or to ALL
         $banksQuery = Bank::query();
         $current = Auth::user();
         if ($current && in_array($current->jabatan, ['Admin', 'Superadmin'])) {
@@ -115,13 +119,11 @@ class DepositFormController extends Controller
                 $q->where('user_email', 'ALL')->orWhere('user_email', $email);
             });
         } else {
-            // not authenticated, default to banks assigned to ALL
             $banksQuery = $banksQuery->where('user_email', 'ALL');
         }
 
         $banks = $banksQuery->orderBy('nama_bank')->pluck('nama_bank');
 
-        // Filter servers similarly: Admin/Superadmin see all, other users see servers assigned to them or ALL
         $serversQuery = Server::query();
         if ($current && in_array($current->jabatan, ['Admin', 'Superadmin'])) {
             $serversQuery = $serversQuery;
@@ -136,14 +138,12 @@ class DepositFormController extends Controller
 
         $servers = $serversQuery->orderBy('nama_server')->pluck('nama_server');
 
-        // determine default server for the current user: prefer a server explicitly assigned to the user's email
         $defaultServer = null;
         if ($current && !in_array($current->jabatan, ['Admin', 'Superadmin'])) {
             $assigned = Server::where('user_email', $current->email)->orderBy('nama_server')->first();
             if ($assigned) {
                 $defaultServer = $assigned->nama_server;
             } elseif ($servers->count() === 1) {
-                // if only one available server for this user (e.g. only ALL or single), default to it
                 $defaultServer = $servers->first();
             }
         }
@@ -167,9 +167,7 @@ class DepositFormController extends Controller
             })
             ->values();
 
-        return view('staff.deposit.index', [
-            'title' => 'Request Deposit',
-            'menuDepositRequest' => 'active',
+        return [
             'activeForms' => $activeForms,
             'items' => $items,
             'suppliers' => $suppliers,
@@ -186,7 +184,47 @@ class DepositFormController extends Controller
             'latestUpdatedAt' => $latestUpdatedAt,
             'latestActivityItem' => $latestActivityItem,
             'todayDepositSummary' => $todayDepositSummary,
-        ]);
+        ];
+    }
+
+    public function index(Request $request)
+    {
+        $data = $this->getStaffDepositIndexData($request);
+
+        return view('staff.deposit.index', array_merge($data, [
+            'title' => 'Request Deposit',
+            'menuDepositRequest' => 'active',
+            'pageLabel' => 'Request Deposit',
+            'showRequestButton' => true,
+            'requestButtonText' => 'Request Deposit',
+            'resetRoute' => 'deposit.request.index',
+            'exportExcelRoute' => 'deposit.request.export-excel',
+            'exportPdfRoute' => 'deposit.request.export-pdf',
+            'changesRoute' => 'deposit.request.changes',
+            'emptyDataMessage' => 'Belum ada request deposit pada tanggal ini',
+            'entityLabel' => 'request deposit',
+            'totalLabel' => 'Deposit',
+        ]));
+    }
+
+    public function hutangBonIndex(Request $request)
+    {
+        $data = $this->getStaffDepositIndexData($request, 'hutang');
+
+        return view('staff.deposit.index', array_merge($data, [
+            'title' => 'Riwayat Hutang/Bon',
+            'menuRiwayatHutangBon' => 'active',
+            'pageLabel' => 'Riwayat Hutang/Bon',
+            'showRequestButton' => false,
+            'requestButtonText' => 'Request Hutang/Bon',
+            'resetRoute' => 'deposit.request.hutang.index',
+            'exportExcelRoute' => 'deposit.request.hutang.export-excel',
+            'exportPdfRoute' => 'deposit.request.hutang.export-pdf',
+            'changesRoute' => 'deposit.request.hutang.changes',
+            'emptyDataMessage' => 'Belum ada riwayat hutang/bon pada tanggal ini',
+            'entityLabel' => 'riwayat hutang/bon',
+            'totalLabel' => 'Hutang/Bon',
+        ]));
     }
 
     public function exportExcel(Request $request)
@@ -218,6 +256,37 @@ class DepositFormController extends Controller
         ])->setPaper('a4', 'landscape');
 
         return $pdf->stream('Request-Deposit-' . $tanggal . '.pdf');
+    }
+
+    public function exportExcelHutang(Request $request)
+    {
+        $items = $this->buildStaffDepositQuery($request, 'hutang')
+            ->orderByDesc('created_at')
+            ->get();
+
+        $tanggal = $request->input('tanggal', now()->format('Y-m-d'));
+
+        return Excel::download(
+            new DepositMonitoringExport($items),
+            'Riwayat-Hutang-Bon-' . $tanggal . '.xlsx'
+        );
+    }
+
+    public function exportPdfHutang(Request $request)
+    {
+        $items = $this->buildStaffDepositQuery($request, 'hutang')
+            ->orderByDesc('created_at')
+            ->get();
+
+        $tanggal = $request->input('tanggal', now()->format('Y-m-d'));
+        $rangeLabel = $tanggal;
+
+        $pdf = Pdf::loadView('admin.deposit.pdf', [
+            'items' => $items,
+            'rangeLabel' => $rangeLabel,
+        ])->setPaper('a4', 'landscape');
+
+        return $pdf->stream('Riwayat-Hutang-Bon-' . $tanggal . '.pdf');
     }
 
     public function changes(Request $request)
@@ -288,6 +357,109 @@ class DepositFormController extends Controller
 
             $todayTotalCardHtml = view('staff.deposit.partials.today-total-card', [
                 'todayDepositSummary' => $todayDepositSummary,
+            ])->render();
+        }
+
+        return response()->json([
+            'has_changes' => $hasChanges,
+            'changes_count' => $changedItems->count(),
+            'latest_updated_at' => $latestUpdatedAt,
+            'change_title' => $changeTitle,
+            'change_description' => $changeDescription,
+            'latest_card_html' => $latestCardHtml,
+            'today_total_card_html' => $todayTotalCardHtml,
+            'changed_items' => $changedItems->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'nama_supplier' => $item->nama_supplier,
+                    'nama_rekening' => $item->nama_rekening,
+                    'reply_tiket' => $item->reply_tiket,
+                    'reply_penambahan' => $item->reply_penambahan,
+                    'bukti_transfer_admin_type' => $item->bukti_transfer_admin_type,
+                    'bukti_transfer_admin_text' => $item->bukti_transfer_admin_text,
+                    'has_bukti_transfer_admin_image' => !empty($item->bukti_transfer_admin_image),
+                    'bukti_bayar_hutang_type' => $item->bukti_bayar_hutang_type,
+                    'bukti_bayar_hutang_text' => $item->bukti_bayar_hutang_text,
+                    'has_bukti_bayar_hutang_image' => !empty($item->bukti_bayar_hutang_image),
+                    'status' => $item->status,
+                    'jam' => $item->jam ? Carbon::parse((string) $item->jam)->format('H:i') : null,
+                ];
+            })->values(),
+            'server_time' => now()->toDateTimeString(),
+        ]);
+    }
+
+    public function changesHutang(Request $request)
+    {
+        $request->validate([
+            'tanggal' => 'nullable|date_format:Y-m-d',
+            'server' => 'nullable|string|max:100',
+            'status' => 'nullable|in:pending,approved,rejected,selesai,selesai_belum_lunas,lunas',
+            'search_supplier' => 'nullable|string|max:255',
+            'nominal' => 'nullable|string|max:50',
+            'since' => 'nullable|date',
+        ]);
+
+        $query = $this->buildStaffDepositQuery($request, 'hutang');
+
+        $latestUpdatedAt = (clone $query)->max('updated_at');
+        $latestActivityItem = (clone $query)->orderByDesc('updated_at')->orderByDesc('id')->first();
+        $todayDepositSummary = (clone $query)
+            ->selectRaw('COUNT(*) as total_request, COALESCE(SUM(nominal), 0) as total_nominal')
+            ->first();
+
+        $since = $request->filled('since') ? Carbon::parse((string) $request->input('since')) : null;
+        $changedItems = collect();
+
+        if ($since) {
+            $changedItems = (clone $query)
+                ->where('updated_at', '>', $since)
+                ->orderByDesc('updated_at')
+                ->limit(50)
+                ->get();
+        }
+
+        $hasChanges = $since ? $changedItems->isNotEmpty() : false;
+
+        $latestChangedItem = $changedItems->first();
+        $changeTitle = null;
+        $changeDescription = null;
+
+        if ($latestChangedItem) {
+            $changeTitle = 'Ada perubahan Hutang/Bon ' . ($latestChangedItem->server ?: '-');
+            $descriptions = [];
+
+            if (!empty($latestChangedItem->status)) {
+                $descriptions[] = 'Status: ' . ucfirst((string) $latestChangedItem->status);
+            }
+            if (!empty($latestChangedItem->reply_penambahan) && $latestChangedItem->reply_penambahan !== 'Menunggu Konfirmasi Admin') {
+                $descriptions[] = 'Bukti Penambahan: ' . mb_strimwidth(trim((string) $latestChangedItem->reply_penambahan), 0, 80, '...');
+            }
+            if (($latestChangedItem->bukti_transfer_admin_type ?? null) === 'text' && !empty($latestChangedItem->bukti_transfer_admin_text)) {
+                $descriptions[] = 'Bukti Transfer Admin: ' . mb_strimwidth(trim((string) $latestChangedItem->bukti_transfer_admin_text), 0, 80, '...');
+            }
+            if (($latestChangedItem->bukti_transfer_admin_type ?? null) === 'image' && !empty($latestChangedItem->bukti_transfer_admin_image)) {
+                $descriptions[] = 'Bukti Transfer Admin: gambar diperbarui';
+            }
+
+            $changeDescription = !empty($descriptions)
+                ? implode(' | ', $descriptions)
+                : 'Ada perubahan data oleh admin.';
+        }
+
+        $latestCardHtml = null;
+        $todayTotalCardHtml = null;
+
+        if ($hasChanges) {
+            $latestCardHtml = view('staff.deposit.partials.latest-activity-card', [
+                'latestActivityItem' => $latestActivityItem,
+                'entityLabel' => 'riwayat hutang/bon',
+            ])->render();
+
+            $todayTotalCardHtml = view('staff.deposit.partials.today-total-card', [
+                'todayDepositSummary' => $todayDepositSummary,
+                'totalLabel' => 'Hutang/Bon',
+                'entityLabel' => 'riwayat hutang/bon',
             ])->render();
         }
 

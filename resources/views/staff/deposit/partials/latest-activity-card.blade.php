@@ -2,6 +2,7 @@
     $status = strtolower((string) ($latestActivityItem->status ?? 'pending'));
     $statusBadgeClass = $status === 'approved' ? 'success' : ($status === 'rejected' ? 'danger' : ($status === 'selesai' ? 'primary' : ($status === 'selesai_belum_lunas' ? 'secondary' : 'warning')));
     $statusLabel = $status === 'selesai_belum_lunas' ? 'Selesai (Belum Lunas)' : ucfirst($status);
+    $entityLabel = $entityLabel ?? 'request deposit';
 @endphp
 
 <div class="card border-0 bg-light mb-3">
@@ -16,7 +17,7 @@
                     Nominal: Rp {{ number_format((float) ($latestActivityItem->nominal ?? 0), 0, ',', '.') }}
                 </small>
             @else
-                <small class="text-muted d-block">Belum ada aktivitas request deposit pada filter ini.</small>
+                <small class="text-muted d-block">Belum ada aktivitas {{ $entityLabel }} pada filter ini.</small>
             @endif
         </div>
         @if (!empty($latestActivityItem))

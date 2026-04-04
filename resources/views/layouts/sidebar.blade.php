@@ -336,6 +336,14 @@
                     </a>
                 </li>
 
+                <!-- Riwayat Hutang/Bon (Staff) -->
+                <li class="pc-item {{ $menuRiwayatHutangBon ?? '' }}">
+                    <a href="{{ route('deposit.request.hutang.index') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-history"></i></span>
+                        <span class="pc-mtext">Riwayat Hutang/Bon</span>
+                    </a>
+                </li>
+
                 <!-- Permintaan Persediaan (Staff) -->
                 <li class="pc-item {{ $menuPersediaanRequest ?? '' }}">
                     <a href="{{ route('persediaan.create') }}" class="pc-link">

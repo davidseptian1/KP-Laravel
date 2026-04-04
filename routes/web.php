@@ -143,6 +143,10 @@ Route::middleware('checkLogin')->group(function () {
     Route::get('deposit/request/export-excel', [DepositFormController::class, 'exportExcel'])->name('deposit.request.export-excel');
     Route::get('deposit/request/export-pdf', [DepositFormController::class, 'exportPdf'])->name('deposit.request.export-pdf');
     Route::get('deposit/request/changes', [DepositFormController::class, 'changes'])->name('deposit.request.changes');
+    Route::get('deposit/request/hutang', [DepositFormController::class, 'hutangBonIndex'])->name('deposit.request.hutang.index');
+    Route::get('deposit/request/hutang/export-excel', [DepositFormController::class, 'exportExcelHutang'])->name('deposit.request.hutang.export-excel');
+    Route::get('deposit/request/hutang/export-pdf', [DepositFormController::class, 'exportPdfHutang'])->name('deposit.request.hutang.export-pdf');
+    Route::get('deposit/request/hutang/changes', [DepositFormController::class, 'changesHutang'])->name('deposit.request.hutang.changes');
     Route::get('deposit/request/{id}/transfer-admin-image', [DepositFormController::class, 'viewTransferAdminImage'])->name('deposit.request.transfer-admin-image');
     Route::put('deposit/request/{id}/reply-penambahan', [DepositFormController::class, 'updateReplyPenambahan'])->name('deposit.request.reply.update');
     Route::put('deposit/request/{id}/bukti-bayar-hutang', [DepositFormController::class, 'updateBuktiBayarHutang'])->name('deposit.request.bukti-bayar-hutang.update');

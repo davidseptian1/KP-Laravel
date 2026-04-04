@@ -4,6 +4,16 @@
 
 @php
     $perPage = (int) ($perPage ?? request('per_page', 10));
+    $pageLabel = $pageLabel ?? 'Request Deposit';
+    $showRequestButton = $showRequestButton ?? true;
+    $requestButtonText = $requestButtonText ?? 'Request Deposit';
+    $resetRoute = $resetRoute ?? 'deposit.request.index';
+    $exportExcelRoute = $exportExcelRoute ?? 'deposit.request.export-excel';
+    $exportPdfRoute = $exportPdfRoute ?? 'deposit.request.export-pdf';
+    $changesRoute = $changesRoute ?? 'deposit.request.changes';
+    $emptyDataMessage = $emptyDataMessage ?? 'Belum ada request deposit pada tanggal ini';
+    $entityLabel = $entityLabel ?? 'request deposit';
+    $totalLabel = $totalLabel ?? 'Deposit';
 @endphp
 
 <style>
@@ -200,12 +210,12 @@
             <div class="col-md-12">
                 <ul class="breadcrumb">
                     <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
-                    <li class="breadcrumb-item active">Request Deposit</li>
+                    <li class="breadcrumb-item active">{{ $pageLabel }}</li>
                 </ul>
             </div>
             <div class="col-md-12">
                 <div class="page-header-title">
-                    <h2 class="mb-0">Request Deposit</h2>
+                    <h2 class="mb-0">{{ $pageLabel }}</h2>
                 </div>
             </div>
         </div>
@@ -217,14 +227,16 @@
         <div class="card shadow-sm">
             <div class="card-header bg-white d-flex justify-content-between align-items-center">
                 <div class="section-title mb-0"><i class="ti ti-adjustments-horizontal me-1"></i>Filter & Aktivitas</div>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalRequestDeposit">
-                    <i class="ti ti-plus me-1"></i>Request Deposit
-                </button>
+                @if ($showRequestButton)
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalRequestDeposit">
+                        <i class="ti ti-plus me-1"></i>{{ $requestButtonText }}
+                    </button>
+                @endif
             </div>
             <div class="card-body">
                 @if ($errors->any())
                     <div class="alert alert-danger mb-3">
-                        <div class="fw-semibold mb-1">Request deposit gagal disimpan:</div>
+                        <div class="fw-semibold mb-1">{{ $pageLabel }} gagal diproses:</div>
                         <ul class="mb-0 ps-3">
                             @foreach ($errors->all() as $error)
                                 <li>{{ $error }}</li>
@@ -277,7 +289,7 @@
                     </div>
                     <div class="col-12 d-flex justify-content-end gap-2">
                         <button type="submit" class="btn btn-primary btn-sm px-4"><i class="ti ti-filter me-1"></i>Filter</button>
-                        <a href="{{ route('deposit.request.index') }}" class="btn btn-outline-secondary btn-sm px-4">Hari Ini</a>
+                        <a href="{{ route($resetRoute) }}" class="btn btn-outline-secondary btn-sm px-4">Hari Ini</a>
                     </div>
                 </form>
 
@@ -289,13 +301,13 @@
                         </div>
                         <div class="d-flex gap-2">
                             <a
-                                href="{{ route('deposit.request.export-excel', ['tanggal' => $tanggal, 'server' => $serverFilter, 'status' => $status, 'search_supplier' => $searchSupplier, 'nominal' => $nominalFilter]) }}"
+                                href="{{ route($exportExcelRoute, ['tanggal' => $tanggal, 'server' => $serverFilter, 'status' => $status, 'search_supplier' => $searchSupplier, 'nominal' => $nominalFilter]) }}"
                                 class="btn btn-success btn-sm"
                             >
                                 <i class="ti ti-file-spreadsheet me-1"></i>Download Excel
                             </a>
                             <a
-                                href="{{ route('deposit.request.export-pdf', ['tanggal' => $tanggal, 'server' => $serverFilter, 'status' => $status, 'search_supplier' => $searchSupplier, 'nominal' => $nominalFilter]) }}"
+                                href="{{ route($exportPdfRoute, ['tanggal' => $tanggal, 'server' => $serverFilter, 'status' => $status, 'search_supplier' => $searchSupplier, 'nominal' => $nominalFilter]) }}"
                                 class="btn btn-danger btn-sm"
                                 target="_blank"
                             >
@@ -320,11 +332,11 @@
                 </div>
 
                 <div id="latestActivityCardContainer">
-                    @include('staff.deposit.partials.latest-activity-card', ['latestActivityItem' => $latestActivityItem ?? null])
+                    @include('staff.deposit.partials.latest-activity-card', ['latestActivityItem' => $latestActivityItem ?? null, 'entityLabel' => $entityLabel])
                 </div>
 
                 <div id="todayTotalCardContainer">
-                    @include('staff.deposit.partials.today-total-card', ['todayDepositSummary' => $todayDepositSummary ?? null])
+                    @include('staff.deposit.partials.today-total-card', ['todayDepositSummary' => $todayDepositSummary ?? null, 'entityLabel' => $entityLabel, 'totalLabel' => $totalLabel])
                 </div>
 
                 <div class="row g-2 mb-3">
@@ -606,7 +618,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="15" class="text-center text-muted py-4">Belum ada request deposit pada tanggal ini</td>
+                                    <td colspan="15" class="text-center text-muted py-4">{{ $emptyDataMessage }}</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -621,6 +633,7 @@
     </div>
 </div>
 
+@if ($showRequestButton)
 <div class="modal fade" id="modalRequestDeposit" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
@@ -729,6 +742,7 @@
         </div>
     </div>
 </div>
+@endif
 
 @endsection
 
@@ -736,7 +750,7 @@
 <script>
     (function () {
         let latestUpdatedAt = @json($latestUpdatedAt);
-        const pollingUrl = @json(route('deposit.request.changes'));
+        const pollingUrl = @json(route($changesRoute));
         const transferImageBaseUrl = @json(url('deposit/request'));
         const buktiBayarHutangImageBaseUrl = @json(url('deposit/request'));
         const tanggal = @json($tanggal ?? now()->format('Y-m-d'));
@@ -816,7 +830,7 @@
             if (!('Notification' in window)) return;
             if (Notification.permission !== 'granted') return;
 
-            new Notification(title || 'Update Request Deposit', {
+            new Notification(title || ('Update ' + @json($pageLabel)), {
                 body: description || ('Ada ' + changesCount + ' perubahan data deposit.'),
                 tag: 'deposit-request-update',
             });
