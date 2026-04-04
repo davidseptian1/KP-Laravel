@@ -78,7 +78,10 @@
                         <span class="pc-micon"><i class="ti ti-wallet"></i></span>
                         <span class="pc-mtext d-flex align-items-center justify-content-between w-100">
                             <span>Monitoring Bon/Hutang</span>
-                            <span class="badge rounded-pill {{ ($jumlahHutangBelumLunas ?? 0) > 0 ? 'bg-danger' : 'bg-secondary' }} ms-2 px-2 py-1" style="font-size: 0.9rem; min-width: 34px; text-align: center;">
+                            <span id="sidebar-hutang-counter"
+                                  data-counter-url="{{ route('sidebar.hutang-belum-lunas-count') }}"
+                                  class="badge rounded-pill {{ ($jumlahHutangBelumLunas ?? 0) > 0 ? 'bg-danger' : 'bg-secondary' }} ms-2 px-2 py-1"
+                                  style="font-size: 0.9rem; min-width: 34px; text-align: center;">
                                 {{ $jumlahHutangBelumLunas ?? 0 }}
                             </span>
                         </span>
@@ -382,3 +385,49 @@
     </div>
 </nav>
 <!-- [ Sidebar Menu ] end -->
+
+@push('scripts')
+<script>
+    (function () {
+        const badge = document.getElementById('sidebar-hutang-counter');
+        if (!badge) {
+            return;
+        }
+
+        const endpoint = badge.getAttribute('data-counter-url');
+        if (!endpoint) {
+            return;
+        }
+
+        const setValue = function (value) {
+            const count = Number.isFinite(value) ? value : 0;
+            badge.textContent = String(count);
+            badge.classList.remove('bg-danger', 'bg-secondary');
+            badge.classList.add(count > 0 ? 'bg-danger' : 'bg-secondary');
+        };
+
+        const fetchCount = function () {
+            fetch(endpoint, {
+                method: 'GET',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin',
+                cache: 'no-store'
+            })
+                .then(function (response) {
+                    if (!response.ok) {
+                        throw new Error('failed');
+                    }
+                    return response.json();
+                })
+                .then(function (payload) {
+                    setValue(parseInt(payload.count, 10) || 0);
+                })
+                .catch(function () {
+                });
+        };
+
+        fetchCount();
+        setInterval(fetchCount, 5000);
+    })();
+</script>
+@endpush

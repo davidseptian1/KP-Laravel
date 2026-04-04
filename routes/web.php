@@ -32,6 +32,7 @@ use App\Http\Controllers\ApiManagementController;
 use App\Http\Controllers\PersediaanStokController;
 use App\Http\Controllers\AdminPersediaanStokController;
 use App\Http\Controllers\AdminActivityLogController;
+use App\Models\Deposit;
 
 
 
@@ -94,6 +95,20 @@ Route::get('/chart/minusan', [MinusanController::class, 'chartMinusan']);
 Route::middleware(['checkLogin', 'admin.activity.log'])->group(function () {
     // Dashboard
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Sidebar counters (live)
+    Route::get('sidebar/hutang-belum-lunas-count', function () {
+        $user = auth()->user();
+        if (!$user || !in_array($user->jabatan, ['Admin', 'Superadmin'], true)) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        $count = Deposit::where('jenis_transaksi', 'hutang')
+            ->where('status', 'selesai_belum_lunas')
+            ->count();
+
+        return response()->json(['count' => $count]);
+    })->name('sidebar.hutang-belum-lunas-count');
 
     // Minusan
     Route::get('minusan', [MinusanController::class, 'index'])->name('minusan');
