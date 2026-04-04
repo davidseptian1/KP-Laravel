@@ -89,8 +89,8 @@
                         @endif
                     </td>
                     <td>
-                        <span class="badge bg-{{ $item->status === 'approved' ? 'success' : ($item->status === 'rejected' ? 'danger' : ($item->status === 'selesai' ? 'primary' : ($item->status === 'lunas' ? 'info' : 'warning'))) }}">
-                            {{ ($item->status ?? 'pending') === 'selesai' ? 'Selesai (Belum Lunas)' : ucfirst($item->status ?? 'pending') }}
+                        <span class="badge bg-{{ $item->status === 'approved' ? 'success' : ($item->status === 'rejected' ? 'danger' : ($item->status === 'selesai' ? 'primary' : ($item->status === 'selesai_belum_lunas' ? 'secondary' : ($item->status === 'lunas' ? 'info' : 'warning')))) }}">
+                            {{ ($item->status ?? 'pending') === 'selesai_belum_lunas' ? 'Selesai (Belum Lunas)' : ucfirst($item->status ?? 'pending') }}
                         </span>
                     </td>
                     <td>{{ $item->jam ? \Carbon\Carbon::parse($item->jam)->format('H:i') : '-' }}</td>
@@ -192,13 +192,14 @@
                                                         <option value="pending" {{ ($item->status ?? 'pending') === 'pending' ? 'selected' : '' }}>Pending</option>
                                                         <option value="approved" {{ ($item->status ?? 'pending') === 'approved' ? 'selected' : '' }}>ACC</option>
                                                         <option value="rejected" {{ ($item->status ?? 'pending') === 'rejected' ? 'selected' : '' }}>Rejected</option>
-                                                        <option value="selesai" {{ ($item->status ?? 'pending') === 'selesai' ? 'selected' : '' }}>Selesai (Belum Lunas)</option>
+                                                        <option value="selesai" {{ ($item->status ?? 'pending') === 'selesai' ? 'selected' : '' }}>Selesai</option>
+                                                        <option value="selesai_belum_lunas" {{ ($item->status ?? 'pending') === 'selesai_belum_lunas' ? 'selected' : '' }}>Selesai (Belum Lunas)</option>
                                                         <option value="lunas" {{ ($item->status ?? 'pending') === 'lunas' ? 'selected' : '' }}>Lunas</option>
                                                     </select>
                                                     <button type="submit" class="btn btn-success btn-sm">Simpan Data & Status</button>
                                                     <div class="small mt-1 p-2 rounded bg-warning-subtle border border-warning-subtle text-warning-emphasis">
                                                         <strong>Note :</strong> jika mau merubah status menjadi ACC, input bukti tranfers nya dengan memilih tipe bukti text ataupun gambar.<br>
-                                                        Jika mau merubah status menjadi Selesai (Belum Lunas), pastikan semua data terisi.
+                                                        Jika mau merubah status menjadi Selesai atau Selesai (Belum Lunas), pastikan semua data terisi.
                                                     </div>
                                                 </div>
                                             </div>

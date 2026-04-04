@@ -58,7 +58,8 @@
                             <option value="pending" {{ ($filters['status'] ?? '') === 'pending' ? 'selected' : '' }}>Pending</option>
                             <option value="approved" {{ ($filters['status'] ?? '') === 'approved' ? 'selected' : '' }}>Approved</option>
                             <option value="rejected" {{ ($filters['status'] ?? '') === 'rejected' ? 'selected' : '' }}>Rejected</option>
-                            <option value="selesai" {{ ($filters['status'] ?? '') === 'selesai' ? 'selected' : '' }}>Selesai (Belum Lunas)</option>
+                            <option value="selesai" {{ ($filters['status'] ?? '') === 'selesai' ? 'selected' : '' }}>Selesai</option>
+                            <option value="selesai_belum_lunas" {{ ($filters['status'] ?? '') === 'selesai_belum_lunas' ? 'selected' : '' }}>Selesai (Belum Lunas)</option>
                             <option value="lunas" {{ ($filters['status'] ?? '') === 'lunas' ? 'selected' : '' }}>Lunas</option>
                         </select>
                     </div>

@@ -254,6 +254,7 @@
                             <option value="pending" {{ ($status ?? '') === 'pending' ? 'selected' : '' }}>Pending</option>
                             <option value="approved" {{ ($status ?? '') === 'approved' ? 'selected' : '' }}>Approved</option>
                             <option value="selesai" {{ ($status ?? '') === 'selesai' ? 'selected' : '' }}>Selesai</option>
+                            <option value="selesai_belum_lunas" {{ ($status ?? '') === 'selesai_belum_lunas' ? 'selected' : '' }}>Selesai (Belum Lunas)</option>
                             <option value="lunas" {{ ($status ?? '') === 'lunas' ? 'selected' : '' }}>Lunas</option>
                             <option value="rejected" {{ ($status ?? '') === 'rejected' ? 'selected' : '' }}>Rejected</option>
                         </select>
@@ -415,9 +416,9 @@
                                         @endif
                                     </td>
                                     <td class="cell-status">
-                                        <span class="badge bg-{{ $item->status === 'approved' ? 'success' : ($item->status === 'rejected' ? 'danger' : ($item->status === 'selesai' ? 'primary' : ($item->status === 'lunas' ? 'info' : 'warning'))) }}">
-                                            <i class="ti {{ $item->status === 'approved' ? 'ti-circle-check' : ($item->status === 'rejected' ? 'ti-circle-x' : ($item->status === 'selesai' ? 'ti-checks' : ($item->status === 'lunas' ? 'ti-cash' : 'ti-hourglass'))) }} me-1"></i>
-                                            {{ ucfirst($item->status ?? 'pending') }}
+                                        <span class="badge bg-{{ $item->status === 'approved' ? 'success' : ($item->status === 'rejected' ? 'danger' : ($item->status === 'selesai' ? 'primary' : ($item->status === 'selesai_belum_lunas' ? 'secondary' : ($item->status === 'lunas' ? 'info' : 'warning')))) }}">
+                                            <i class="ti {{ $item->status === 'approved' ? 'ti-circle-check' : ($item->status === 'rejected' ? 'ti-circle-x' : ($item->status === 'selesai' ? 'ti-checks' : ($item->status === 'selesai_belum_lunas' ? 'ti-checks' : ($item->status === 'lunas' ? 'ti-cash' : 'ti-hourglass')))) }} me-1"></i>
+                                            {{ ($item->status ?? 'pending') === 'selesai_belum_lunas' ? 'Selesai (Belum Lunas)' : ucfirst($item->status ?? 'pending') }}
                                         </span>
                                     </td>
                                     <td class="cell-jam">{{ $item->jam ? \Carbon\Carbon::parse($item->jam)->format('H:i') : '-' }}</td>
@@ -805,12 +806,17 @@
             } else if (normalized === 'selesai') {
                 badgeClass = 'primary';
                 iconClass = 'ti-checks';
+            } else if (normalized === 'selesai_belum_lunas') {
+                badgeClass = 'secondary';
+                iconClass = 'ti-checks';
             } else if (normalized === 'lunas') {
                 badgeClass = 'info';
                 iconClass = 'ti-cash';
             }
 
-            const label = normalized.charAt(0).toUpperCase() + normalized.slice(1);
+            const label = normalized === 'selesai_belum_lunas'
+                ? 'Selesai (Belum Lunas)'
+                : normalized.charAt(0).toUpperCase() + normalized.slice(1);
             return '<span class="badge bg-' + badgeClass + '"><i class="ti ' + iconClass + ' me-1"></i>' + label + '</span>';
         }
 

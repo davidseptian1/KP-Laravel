@@ -11,7 +11,7 @@ class AdminDepositController extends Controller
     public function index(Request $request)
     {
         $validated = $request->validate([
-            'status' => 'nullable|in:pending,approved,rejected,selesai,lunas',
+            'status' => 'nullable|in:pending,approved,rejected,selesai,selesai_belum_lunas,lunas',
             'search' => 'nullable|string|max:100',
             'server' => 'nullable|string|max:100',
             'bank' => 'nullable|string|max:100',
@@ -117,7 +117,7 @@ class AdminDepositController extends Controller
     public function updateStatus(Request $request, int $id)
     {
         $validated = $request->validate([
-            'status' => 'required|in:approved,rejected,selesai,lunas',
+            'status' => 'required|in:approved,rejected,selesai,selesai_belum_lunas,lunas',
         ]);
 
         $item = Deposit::findOrFail($id);

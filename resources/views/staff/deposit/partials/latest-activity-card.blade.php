@@ -1,6 +1,7 @@
 @php
     $status = strtolower((string) ($latestActivityItem->status ?? 'pending'));
-    $statusBadgeClass = $status === 'approved' ? 'success' : ($status === 'rejected' ? 'danger' : ($status === 'selesai' ? 'primary' : 'warning'));
+    $statusBadgeClass = $status === 'approved' ? 'success' : ($status === 'rejected' ? 'danger' : ($status === 'selesai' ? 'primary' : ($status === 'selesai_belum_lunas' ? 'secondary' : 'warning')));
+    $statusLabel = $status === 'selesai_belum_lunas' ? 'Selesai (Belum Lunas)' : ucfirst($status);
 @endphp
 
 <div class="card border-0 bg-light mb-3">
@@ -21,7 +22,7 @@
         @if (!empty($latestActivityItem))
             <div>
                 <span class="badge bg-{{ $statusBadgeClass }}">
-                    {{ ucfirst($status) }}
+                    {{ $statusLabel }}
                 </span>
             </div>
         @endif
