@@ -511,9 +511,38 @@
                                                                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                                             </div>
                                                             <div class="modal-body">
+                                                                <div class="alert alert-info py-2 mb-3">
+                                                                    Semua input di form ini opsional. Bisa isi Reply Penambahan saja, Bukti Bayar Hutang saja, atau keduanya.
+                                                                </div>
+                                                                <div class="mb-2 fw-semibold">Reply Penambahan</div>
+                                                                <div class="mb-3">
+                                                                    <label class="form-label">Tipe Reply Penambahan</label>
+                                                                    <select name="reply_penambahan_type" class="form-select js-staff-reply-type" data-target="{{ $item->id }}">
+                                                                        <option value="text" {{ ($item->reply_penambahan_type ?? 'text') === 'text' ? 'selected' : '' }}>Text</option>
+                                                                        <option value="image" {{ ($item->reply_penambahan_type ?? 'text') === 'image' ? 'selected' : '' }}>Image</option>
+                                                                    </select>
+                                                                </div>
+                                                                <div class="mb-3 js-staff-reply-text-wrap" data-target="{{ $item->id }}" style="display: {{ ($item->reply_penambahan_type ?? 'text') === 'text' ? 'block' : 'none' }};">
+                                                                    <label class="form-label">Reply Penambahan</label>
+                                                                    <textarea name="reply_penambahan" class="form-control js-auto-resize-textarea" rows="3" placeholder="Masukkan reply penambahan">{{ ($item->reply_penambahan ?? '') === 'Menunggu Konfirmasi Admin' ? '' : ($item->reply_penambahan ?? '') }}</textarea>
+                                                                </div>
+                                                                <div class="mb-3 js-staff-reply-image-wrap" data-target="{{ $item->id }}" style="display: {{ ($item->reply_penambahan_type ?? 'text') === 'image' ? 'block' : 'none' }};">
+                                                                    <label class="form-label">Upload / Paste Gambar Reply Penambahan</label>
+                                                                    <input type="file" name="reply_penambahan_image" class="form-control js-staff-reply-image-input" data-target="{{ $item->id }}" accept="image/png,image/jpeg,image/jpg,image/webp">
+                                                                    <small class="text-muted d-block mt-1">Bisa Ctrl+V dari clipboard saat fokus di area paste.</small>
+                                                                    <div class="border rounded p-2 mt-2 js-staff-reply-paste-zone" data-target="{{ $item->id }}" tabindex="0" style="min-height:60px;">
+                                                                        Paste gambar di sini (Ctrl+V)
+                                                                    </div>
+                                                                    <div class="mt-2 js-staff-reply-preview-wrap" data-target="{{ $item->id }}" style="display:none;">
+                                                                        <img src="" alt="Preview Reply Penambahan" class="img-fluid rounded border js-staff-reply-preview" data-target="{{ $item->id }}" style="max-height:180px;">
+                                                                    </div>
+                                                                </div>
+
+                                                                <hr>
+                                                                <div class="mb-2 fw-semibold">Bukti Pembayaran Hutang</div>
                                                                 <div class="mb-3">
                                                                     <label class="form-label">Tipe Bukti Pembayaran</label>
-                                                                    <select name="bukti_bayar_hutang_type" class="form-select js-staff-bukti-hutang-type" data-target="{{ $item->id }}" required>
+                                                                    <select name="bukti_bayar_hutang_type" class="form-select js-staff-bukti-hutang-type" data-target="{{ $item->id }}">
                                                                         <option value="text" {{ ($item->bukti_bayar_hutang_type ?? 'text') === 'text' ? 'selected' : '' }}>Text</option>
                                                                         <option value="image" {{ ($item->bukti_bayar_hutang_type ?? 'text') === 'image' ? 'selected' : '' }}>Image</option>
                                                                     </select>

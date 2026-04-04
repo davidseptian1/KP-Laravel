@@ -576,6 +576,9 @@ class DepositFormController extends Controller
     public function updateBuktiBayarHutang(Request $request, int $id)
     {
         $validated = $request->validate([
+            'reply_penambahan_type' => 'nullable|in:text,image',
+            'reply_penambahan' => 'nullable|string',
+            'reply_penambahan_image' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:5120',
             'bukti_bayar_hutang_type' => 'nullable|in:text,image',
             'bukti_bayar_hutang' => 'nullable|string',
             'bukti_bayar_hutang_image' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:5120',
@@ -589,48 +592,101 @@ class DepositFormController extends Controller
             return redirect()->route('deposit.request.index')->with('error', 'Bukti bayar hutang hanya bisa diinput saat status Selesai (Belum Lunas)');
         }
 
-        $replyType = $validated['bukti_bayar_hutang_type'] ?? ($request->hasFile('bukti_bayar_hutang_image') ? 'image' : 'text');
-        $replyText = trim((string) ($validated['bukti_bayar_hutang'] ?? ''));
+        $hasAnyUpdate = false;
 
-        if ($replyType === 'image') {
-            if ($request->hasFile('bukti_bayar_hutang_image')) {
-                if ($item->bukti_bayar_hutang_image && Storage::disk('local')->exists($item->bukti_bayar_hutang_image)) {
-                    Storage::disk('local')->delete($item->bukti_bayar_hutang_image);
+        $replyPenambahanType = $validated['reply_penambahan_type'] ?? ($request->hasFile('reply_penambahan_image') ? 'image' : 'text');
+        $replyPenambahanText = trim((string) ($validated['reply_penambahan'] ?? ''));
+        $hasReplyPenambahanImageUpload = $request->hasFile('reply_penambahan_image');
+        $hasReplyPenambahanTextInput = $replyPenambahanText !== '';
+
+        if ($hasReplyPenambahanImageUpload || $hasReplyPenambahanTextInput) {
+            $hasAnyUpdate = true;
+
+            if ($replyPenambahanType === 'image') {
+                if ($hasReplyPenambahanImageUpload) {
+                    if ($item->reply_penambahan_image && Storage::disk('local')->exists($item->reply_penambahan_image)) {
+                        Storage::disk('local')->delete($item->reply_penambahan_image);
+                    }
+
+                    $path = $request->file('reply_penambahan_image')->store('deposit/reply-penambahan', 'local');
+                    $item->reply_penambahan_image = $path;
                 }
 
-                $path = $request->file('bukti_bayar_hutang_image')->store('deposit/bukti-bayar-hutang', 'local');
-                $item->bukti_bayar_hutang_image = $path;
+                if (!$item->reply_penambahan_image) {
+                    throw ValidationException::withMessages([
+                        'reply_penambahan_image' => 'Pilih atau paste gambar reply penambahan terlebih dahulu untuk tipe image.',
+                    ]);
+                }
+
+                $item->reply_penambahan_type = 'image';
+                $item->reply_penambahan = $replyPenambahanText !== '' ? $replyPenambahanText : null;
+            } else {
+                if ($replyPenambahanText === '') {
+                    throw ValidationException::withMessages([
+                        'reply_penambahan' => 'Reply penambahan wajib diisi untuk tipe text.',
+                    ]);
+                }
+
+                if ($item->reply_penambahan_image && Storage::disk('local')->exists($item->reply_penambahan_image)) {
+                    Storage::disk('local')->delete($item->reply_penambahan_image);
+                    $item->reply_penambahan_image = null;
+                }
+
+                $item->reply_penambahan_type = 'text';
+                $item->reply_penambahan = $replyPenambahanText;
             }
+        }
 
-            if (!$item->bukti_bayar_hutang_image) {
-                throw ValidationException::withMessages([
-                    'bukti_bayar_hutang_image' => 'Pilih atau paste gambar bukti bayar hutang terlebih dahulu untuk tipe image.',
-                ]);
+        $buktiBayarType = $validated['bukti_bayar_hutang_type'] ?? ($request->hasFile('bukti_bayar_hutang_image') ? 'image' : 'text');
+        $buktiBayarText = trim((string) ($validated['bukti_bayar_hutang'] ?? ''));
+        $hasBuktiBayarImageUpload = $request->hasFile('bukti_bayar_hutang_image');
+        $hasBuktiBayarTextInput = $buktiBayarText !== '';
+
+        if ($hasBuktiBayarImageUpload || $hasBuktiBayarTextInput) {
+            $hasAnyUpdate = true;
+
+            if ($buktiBayarType === 'image') {
+                if ($hasBuktiBayarImageUpload) {
+                    if ($item->bukti_bayar_hutang_image && Storage::disk('local')->exists($item->bukti_bayar_hutang_image)) {
+                        Storage::disk('local')->delete($item->bukti_bayar_hutang_image);
+                    }
+
+                    $path = $request->file('bukti_bayar_hutang_image')->store('deposit/bukti-bayar-hutang', 'local');
+                    $item->bukti_bayar_hutang_image = $path;
+                }
+
+                if (!$item->bukti_bayar_hutang_image) {
+                    throw ValidationException::withMessages([
+                        'bukti_bayar_hutang_image' => 'Pilih atau paste gambar bukti bayar hutang terlebih dahulu untuk tipe image.',
+                    ]);
+                }
+
+                $item->bukti_bayar_hutang_type = 'image';
+                $item->bukti_bayar_hutang_text = $buktiBayarText !== '' ? $buktiBayarText : null;
+            } else {
+                if ($buktiBayarText === '') {
+                    throw ValidationException::withMessages([
+                        'bukti_bayar_hutang' => 'Bukti bayar hutang wajib diisi untuk tipe text.',
+                    ]);
+                }
+
+                if ($item->bukti_bayar_hutang_image && Storage::disk('local')->exists($item->bukti_bayar_hutang_image)) {
+                    Storage::disk('local')->delete($item->bukti_bayar_hutang_image);
+                    $item->bukti_bayar_hutang_image = null;
+                }
+
+                $item->bukti_bayar_hutang_type = 'text';
+                $item->bukti_bayar_hutang_text = $buktiBayarText;
             }
-
-            $item->bukti_bayar_hutang_type = 'image';
-            $item->bukti_bayar_hutang_text = $replyText !== '' ? $replyText : null;
-            $item->save();
-
-            return redirect()->route('deposit.request.index')->with('success', 'Bukti bayar hutang berhasil diupdate');
         }
 
-        if ($replyText === '') {
-            throw ValidationException::withMessages([
-                'bukti_bayar_hutang' => 'Bukti bayar hutang wajib diisi untuk tipe text.',
-            ]);
+        if (!$hasAnyUpdate) {
+            return redirect()->route('deposit.request.index')->with('success', 'Tidak ada perubahan data yang disimpan');
         }
 
-        if ($item->bukti_bayar_hutang_image && Storage::disk('local')->exists($item->bukti_bayar_hutang_image)) {
-            Storage::disk('local')->delete($item->bukti_bayar_hutang_image);
-            $item->bukti_bayar_hutang_image = null;
-        }
-
-        $item->bukti_bayar_hutang_type = 'text';
-        $item->bukti_bayar_hutang_text = $replyText;
         $item->save();
 
-        return redirect()->route('deposit.request.index')->with('success', 'Bukti bayar hutang berhasil diupdate');
+        return redirect()->route('deposit.request.index')->with('success', 'Data Selesai (Belum Lunas) berhasil diupdate');
     }
 
     public function viewTransferAdminImage(int $id)
