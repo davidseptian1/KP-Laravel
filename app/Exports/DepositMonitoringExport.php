@@ -66,7 +66,7 @@ class DepositMonitoringExport implements FromCollection, WithHeadings, WithMappi
             $this->sanitizeForExcel($item->reply_tiket ?? '-'),
             $this->sanitizeForExcel($item->reply_penambahan ?? '-'),
             $buktiTransferAdmin,
-            ucfirst((string) ($item->status ?? 'pending')),
+            ($item->status ?? 'pending') === 'selesai' ? 'Selesai (Belum Lunas)' : ucfirst((string) ($item->status ?? 'pending')),
             $item->jam ? date('H:i', strtotime((string) $item->jam)) : '-',
         ];
     }

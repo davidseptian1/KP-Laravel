@@ -88,7 +88,7 @@
                     <td>{{ $item->reply_tiket ?? '-' }}</td>
                     <td>{{ $item->reply_penambahan ?? '-' }}</td>
                     <td>{{ $buktiTransferAdmin }}</td>
-                    <td>{{ ucfirst((string) ($item->status ?? 'pending')) }}</td>
+                    <td>{{ ($item->status ?? 'pending') === 'selesai' ? 'Selesai (Belum Lunas)' : ucfirst((string) ($item->status ?? 'pending')) }}</td>
                     <td>{{ $item->jam ? date('H:i', strtotime((string) $item->jam)) : '-' }}</td>
                 </tr>
             @empty

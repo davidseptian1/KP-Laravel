@@ -152,7 +152,7 @@
                             <option value="">Semua Status</option>
                             <option value="pending" {{ ($status ?? '') === 'pending' ? 'selected' : '' }}>Pending</option>
                             <option value="approved" {{ ($status ?? '') === 'approved' ? 'selected' : '' }}>Approved</option>
-                            <option value="selesai" {{ ($status ?? '') === 'selesai' ? 'selected' : '' }}>Selesai</option>
+                            <option value="selesai" {{ ($status ?? '') === 'selesai' ? 'selected' : '' }}>Selesai (Belum Lunas)</option>
                             <option value="lunas" {{ ($status ?? '') === 'lunas' ? 'selected' : '' }}>Lunas</option>
                             <option value="rejected" {{ ($status ?? '') === 'rejected' ? 'selected' : '' }}>Rejected</option>
                         </select>
