@@ -20,164 +20,107 @@
     </div>
     <!-- [ breadcrumb ] end -->
 
-    <!-- [ Main Content ] start -->
     <div class="row mt-0">
-        <!-- Statistics Cards -->
-        <div class="col-md-6 col-xl-4">
+        <div class="col-md-6 col-xl-3">
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div>
-                            <p class="text-muted mb-1 f-w-500">Total Transaksi</p>
-                            <h4 class="mb-0 f-w-600">{{ $totalTransaksi }}</h4>
-                        </div>
-                        <div class="avtar avtar-l bg-light-primary">
-                            <i class="ti ti-calendar-event f-24"></i>
-                        </div>
-                    </div>
-                    <div class="d-flex align-items-center mt-3">
-                        <span class="badge bg-light-primary border border-primary me-2">
-                            <i class="ti ti-trending-up"></i>
-                        </span>
-                        <p class="mb-0 text-muted text-sm">Transaksi tercatat</p>
-                    </div>
+                    <p class="text-muted mb-1">Pengguna Aktif</p>
+                    <h4 class="mb-0">{{ $totalUser }}</h4>
                 </div>
             </div>
         </div>
-        
-        <div class="col-md-6 col-xl-4">
+        <div class="col-md-6 col-xl-3">
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div>
-                            <p class="text-muted mb-1 f-w-500">Total Minusan</p>
-                            <h4 class="mb-0 f-w-600">Rp {{ number_format($totalMinusan, 0, ',', '.') }}</h4>
-                        </div>
-                        <div class="avtar avtar-l bg-light-warning">
-                            <i class="ti ti-currency-dollar f-24"></i>
-                        </div>
-                    </div>
-                    <div class="d-flex align-items-center mt-3">
-                        <span class="badge bg-light-warning border border-warning me-2">
-                            <i class="ti ti-cash"></i>
-                        </span>
-                        <p class="mb-0 text-muted text-sm">Total nilai transaksi</p>
-                    </div>
+                    <p class="text-muted mb-1">Admin Action Hari Ini</p>
+                    <h4 class="mb-0">{{ $adminActionsToday }}</h4>
                 </div>
             </div>
         </div>
-        
-        <div class="col-md-6 col-xl-4">
+        <div class="col-md-6 col-xl-3">
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div>
-                            <p class="text-muted mb-1 f-w-500">Pengguna Aktif</p>
-                            <h4 class="mb-0 f-w-600">{{ $totalUser }}</h4>
-                        </div>
-                        <div class="avtar avtar-l bg-light-success">
-                            <i class="ti ti-users f-24"></i>
-                        </div>
-                    </div>
-                    <div class="d-flex align-items-center mt-3">
-                        <span class="badge bg-light-success border border-success me-2">
-                            <i class="ti ti-user-check"></i>
-                        </span>
-                        <p class="mb-0 text-muted text-sm">User terdaftar</p>
-                    </div>
+                    <p class="text-muted mb-1">Total Data Matrix</p>
+                    <h4 class="mb-0">{{ $totalDataMatrix }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Transaksi API</p>
+                    <h4 class="mb-0">{{ $totalTransaksiApi }}</h4>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-xl-3">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Minusan (Transaksi)</p>
+                    <h4 class="mb-0">{{ $totalTransaksiMinusan }}</h4>
+                    <small class="text-muted">Rp {{ number_format($totalMinusan, 0, ',', '.') }}</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Deposit/Hutang</p>
+                    <h4 class="mb-0">{{ $totalDeposit }}</h4>
+                    <small class="text-muted">Hutang: {{ $totalHutang }} | Belum lunas: Rp {{ number_format($nominalHutangBelumLunas, 0, ',', '.') }}</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Reimburse</p>
+                    <h4 class="mb-0">{{ $totalReimburse }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Data Request / Loan / Persediaan</p>
+                    <h4 class="mb-0">{{ $totalDataRequest + $totalLoanRequest + $totalPersediaan }}</h4>
+                    <small class="text-muted">Data: {{ $totalDataRequest }} | Loan: {{ $totalLoanRequest }} | Persediaan: {{ $totalPersediaan }}</small>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Chart Area -->
     <div class="row mt-3">
-        <div class="col-12">
+        <div class="col-xl-12">
             <div class="card shadow-sm">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">
-                        <i class="ti ti-chart-line me-2"></i>
-                        <span>Grafik Total Minusan Per Bulan</span>
-                    </h5>
-                    <div class="d-flex gap-2">
-                        <span class="badge bg-light-primary">Interaktif</span>
-                        <span class="badge bg-light-info">
-                            <i class="ti ti-info-circle me-1"></i>Hover untuk detail
-                        </span>
-                    </div>
+                <div class="card-header">
+                    <h5 class="mb-0">Tren Semua Fitur (6 Bulan)</h5>
                 </div>
-                <div class="card-body">
-                    <div style="height: 400px; position: relative;">
-                        <canvas id="chartMinusan"></canvas>
-                    </div>
+                <div class="card-body" style="height: 360px;">
+                    <canvas id="chartFeatureTrends"></canvas>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Table Minusan-->
-    <div class="row mt-3">
-        <div class="col-12">
+        <div class="col-xl-7">
             <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">Analisa Status per Fitur</h5>
                 </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover" id="dataTable" width="100%" cellspacing="0">
-                            <thead>
-                                <tr>
-                                    <th>No.</th>
-                                    <th>Tanggal</th>
-                                    <th>Server</th>
-                                    <th>Nama</th>
-                                    <th>Supplier</th>
-                                    <th>Produk</th>
-                                    <th>Nomor</th>
-                                    <th>Total</th>
-                                    <th>Qty</th>
-                                    <th>Total/Org</th>
-                                    <th>Keterangan</th>
-                                    <th class="text-center">
-                                        <i class="ti ti-settings"></i>
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($minusan as $item)
-                                    <tr>
-                                        <td>{{ $loop->iteration }}</td>
-                                        <td>{{ $item->tanggal }}</td>
-                                        <td>{{ $item->server }}</td>
-                                        <td>{{ $item->nama }}</td>
-                                        <td>{{ $item->spl }}</td>
-                                        <td>{{ $item->produk }}</td>
-                                        <td>{{ $item->nomor }}</td>
-                                        <td>{{ number_format($item->total, 0, ',', '.') }}</td>
-                                        <td>{{ $item->qty }}</td>
-                                        <td>{{ number_format($item->total_per_orang, 0, ',', '.') }}</td>
-                                        <td><span class="badge bg-light-{{ $item->keterangan == 'Dialihkan' ? 'warning' : 'success' }}">{{ $item->keterangan }}</span></td>
-                                        <td class="text-center">
-                                            @if(auth()->user()->jabatan == 'Admin')
-                                            <a href="{{ route('minusanEdit', $item->id) }}" class="avtar avtar-xs btn-link-warning">
-                                                <i class="ti ti-edit f-18"></i>
-                                            </a>
-                                            <form action="{{ route('minusanDestroy', $item->id) }}" method="POST" style="display:inline;" class="delete-form">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="avtar avtar-xs btn-link-danger" onclick="return confirm('Apakah Anda yakin ingin menghapus data ini?');">
-                                                    <i class="ti ti-trash f-18"></i>
-                                                </button>
-                                            </form>
-                                            @else
-                                            <span class="badge bg-secondary">
-                                                <i class="ti ti-lock"></i> Terkunci
-                                            </span>
-                                            @endif
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+                <div class="card-body" style="height: 360px;">
+                    <canvas id="chartStatusOverview"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-5">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">Komparasi Nominal Utama</h5>
+                </div>
+                <div class="card-body" style="height: 360px;">
+                    <canvas id="chartNominalFeature"></canvas>
                 </div>
             </div>
         </div>
@@ -185,157 +128,94 @@
 
     <script src="{{ asset('sbadmin2/js/chart.js') }}"></script>
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            fetch("/chart/minusan")
-                .then(res => res.json())
-                .then(data => {
-                    const labels = data.map(item => item.bulan);
-                    const totals = data.map(item => item.total_bulanan);
+        document.addEventListener('DOMContentLoaded', function() {
+            const monthlyLabels = @json($chartMonthlyLabels);
+            const monthlySeries = @json($chartMonthlySeries);
+            const statusOverview = @json($chartStatusOverview);
+            const nominalByFeature = @json($chartNominalByFeature);
 
-                    const ctx = document.getElementById("chartMinusan").getContext("2d");
-                    
-                    // Create gradient
-                    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-                    gradient.addColorStop(0, 'rgba(70, 128, 255, 0.3)');
-                    gradient.addColorStop(0.5, 'rgba(70, 128, 255, 0.15)');
-                    gradient.addColorStop(1, 'rgba(70, 128, 255, 0.05)');
+            const featureColors = ['#4680ff', '#2ca87f', '#f39c12', '#e74c3c', '#8e44ad', '#16a085'];
+            const trendDatasets = Object.keys(monthlySeries).map((key, index) => ({
+                label: key,
+                data: monthlySeries[key],
+                borderColor: featureColors[index % featureColors.length],
+                backgroundColor: featureColors[index % featureColors.length],
+                pointRadius: 3,
+                pointHoverRadius: 5,
+                borderWidth: 2,
+                tension: 0.35,
+                fill: false
+            }));
 
-                    new Chart(ctx, {
-                        type: "line",
-                        data: {
-                            labels: labels,
-                            datasets: [{
-                                label: "Total Minusan",
-                                data: totals,
-                                backgroundColor: gradient,
-                                borderColor: "#4680ff",
-                                borderWidth: 3,
-                                pointBackgroundColor: "#fff",
-                                pointBorderColor: "#4680ff",
-                                pointBorderWidth: 3,
-                                pointRadius: 6,
-                                pointHoverRadius: 10,
-                                pointHoverBackgroundColor: "#4680ff",
-                                pointHoverBorderColor: "#fff",
-                                pointHoverBorderWidth: 4,
-                                fill: true,
-                                tension: 0.4
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            interaction: {
-                                intersect: false,
-                                mode: 'index'
-                            },
-                            plugins: {
-                                legend: {
-                                    display: true,
-                                    position: 'top',
-                                    align: 'end',
-                                    labels: {
-                                        usePointStyle: true,
-                                        pointStyle: 'circle',
-                                        padding: 15,
-                                        font: {
-                                            size: 13,
-                                            weight: '600'
-                                        }
-                                    }
-                                },
-                                tooltip: {
-                                    enabled: true,
-                                    backgroundColor: 'rgba(255, 255, 255, 0.98)',
-                                    titleColor: '#1e293b',
-                                    bodyColor: '#475569',
-                                    borderColor: '#4680ff',
-                                    borderWidth: 2,
-                                    padding: 16,
-                                    boxPadding: 8,
-                                    usePointStyle: true,
-                                    cornerRadius: 12,
-                                    titleFont: {
-                                        size: 14,
-                                        weight: '700'
-                                    },
-                                    bodyFont: {
-                                        size: 13,
-                                        weight: '500'
-                                    },
-                                    callbacks: {
-                                        title: function(context) {
-                                            return '📅 ' + context[0].label;
-                                        },
-                                        label: function(context) {
-                                            const value = context.parsed.y;
-                                            const formatted = new Intl.NumberFormat('id-ID', {
-                                                style: 'currency',
-                                                currency: 'IDR',
-                                                minimumFractionDigits: 0,
-                                                maximumFractionDigits: 0
-                                            }).format(value);
-                                            return '💰 Total: ' + formatted;
-                                        },
-                                        afterLabel: function(context) {
-                                            const dataIndex = context.dataIndex;
-                                            if (dataIndex > 0) {
-                                                const currentValue = context.parsed.y;
-                                                const previousValue = context.chart.data.datasets[0].data[dataIndex - 1];
-                                                const diff = currentValue - previousValue;
-                                                const percentage = ((diff / previousValue) * 100).toFixed(1);
-                                                const arrow = diff > 0 ? '↑' : diff < 0 ? '↓' : '→';
-                                                const emoji = diff > 0 ? '📈' : diff < 0 ? '📉' : '➡️';
-                                                return emoji + ' ' + arrow + ' ' + Math.abs(percentage) + '% vs bulan lalu';
-                                            }
-                                            return '🎯 Data bulan pertama';
-                                        }
-                                    }
-                                }
-                            },
-                            scales: {
-                                x: {
-                                    grid: {
-                                        display: false,
-                                        drawBorder: false
-                                    },
-                                    ticks: {
-                                        font: {
-                                            size: 12,
-                                            weight: '500'
-                                        },
-                                        color: '#64748b',
-                                        padding: 10
-                                    }
-                                },
-                                y: {
-                                    beginAtZero: true,
-                                    grid: {
-                                        color: 'rgba(203, 213, 225, 0.4)',
-                                        drawBorder: false
-                                    },
-                                    ticks: {
-                                        font: {
-                                            size: 12,
-                                            weight: '500'
-                                        },
-                                        color: '#64748b',
-                                        padding: 10,
-                                        callback: function(value) {
-                                            if (value >= 1000000) {
-                                                return 'Rp ' + (value / 1000000).toFixed(1) + 'jt';
-                                            } else if (value >= 1000) {
-                                                return 'Rp ' + (value / 1000).toFixed(0) + 'rb';
-                                            }
-                                            return 'Rp ' + value.toLocaleString('id-ID');
-                                        }
-                                    }
+            new Chart(document.getElementById('chartFeatureTrends').getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: monthlyLabels,
+                    datasets: trendDatasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false }
+                }
+            });
+
+            const statusLabels = Object.keys(statusOverview);
+            const pending = statusLabels.map(label => statusOverview[label].pending || 0);
+            const approved = statusLabels.map(label => statusOverview[label].approved || 0);
+            const rejected = statusLabels.map(label => statusOverview[label].rejected || 0);
+            const selesai = statusLabels.map(label => statusOverview[label].selesai || 0);
+            const lunas = statusLabels.map(label => statusOverview[label].lunas || 0);
+
+            new Chart(document.getElementById('chartStatusOverview').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: statusLabels,
+                    datasets: [{ label: 'Pending', data: pending, backgroundColor: '#f39c12' },
+                        { label: 'Approved', data: approved, backgroundColor: '#2ca87f' },
+                        { label: 'Rejected', data: rejected, backgroundColor: '#e74c3c' },
+                        { label: 'Selesai', data: selesai, backgroundColor: '#4680ff' },
+                        { label: 'Lunas', data: lunas, backgroundColor: '#8e44ad' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { stacked: true },
+                        y: { stacked: true, beginAtZero: true }
+                    }
+                }
+            });
+
+            const nominalLabels = Object.keys(nominalByFeature);
+            const nominalValues = nominalLabels.map(label => nominalByFeature[label]);
+
+            new Chart(document.getElementById('chartNominalFeature').getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: nominalLabels,
+                    datasets: [{
+                        data: nominalValues,
+                        backgroundColor: ['#4680ff', '#2ca87f', '#f39c12', '#e74c3c', '#8e44ad'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.parsed || 0;
+                                    return context.label + ': Rp ' + value.toLocaleString('id-ID');
                                 }
                             }
                         }
-                    });
-                })
-                .catch(err => console.error("Error loading chart:", err));
+                    }
+                }
+            });
         });
     </script>
 @endsection
