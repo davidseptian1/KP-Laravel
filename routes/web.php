@@ -31,6 +31,7 @@ use App\Http\Controllers\DataMatrixController;
 use App\Http\Controllers\ApiManagementController;
 use App\Http\Controllers\PersediaanStokController;
 use App\Http\Controllers\AdminPersediaanStokController;
+use App\Http\Controllers\AdminActivityLogController;
 
 
 
@@ -90,7 +91,7 @@ Route::get('reimburse/{id}/payment-proof', [AdminReimburseWebController::class, 
 // Route Area Chart
 Route::get('/chart/minusan', [MinusanController::class, 'chartMinusan']);
 
-Route::middleware('checkLogin')->group(function () {
+Route::middleware(['checkLogin', 'admin.activity.log'])->group(function () {
     // Dashboard
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
@@ -319,6 +320,9 @@ Route::middleware('checkLogin')->group(function () {
         Route::post('admin/rek-manual', [RekManualController::class, 'store'])->name('admin.rek-manual.store');
         Route::put('admin/rek-manual/{id}', [RekManualController::class, 'update'])->name('admin.rek-manual.update');
         Route::delete('admin/rek-manual/{id}', [RekManualController::class, 'destroy'])->name('admin.rek-manual.destroy');
+
+        // Admin Activity Logs (Superadmin only)
+        Route::get('superadmin/logs', [AdminActivityLogController::class, 'index'])->name('superadmin.logs.index');
     });
 
     Route::get('admin/deposit/analysis', [AdminDepositController::class, 'analysis'])->name('admin.deposit.analysis');

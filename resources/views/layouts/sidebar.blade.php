@@ -279,6 +279,13 @@
                         <span class="pc-mtext">Rek Manual Manajement</span>
                     </a>
                 </li>
+
+                <li class="pc-item {{ $menuSuperadminLogs ?? '' }}">
+                    <a href="{{ route('superadmin.logs.index') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-history"></i></span>
+                        <span class="pc-mtext">Lihat Logs</span>
+                    </a>
+                </li>
                 <!-- PERSEDIAAN STOK 
                  1.pembelian stok, ngisi form persatu-->
                 <li class="pc-item pc-caption">

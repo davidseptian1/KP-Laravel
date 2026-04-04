@@ -27,7 +27,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/reimburse', [ReimburseController::class, 'index']);
     Route::post('/reimburse', [ReimburseController::class, 'store']);
 
-    Route::middleware('admin.api')->group(function () {
+    Route::middleware(['admin.api', 'admin.activity.log'])->group(function () {
         Route::get('/admin/reimburse', [AdminReimburseController::class, 'index']);
         Route::get('/admin/reimburse/{id}', [AdminReimburseController::class, 'show']);
         Route::put('/admin/reimburse/{id}', [AdminReimburseController::class, 'update']);
