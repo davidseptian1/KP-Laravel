@@ -94,6 +94,26 @@
     <div class="row mt-3">
         <div class="col-xl-12">
             <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="ti ti-chart-line me-2"></i>
+                        <span>Grafik Total Minusan Per Bulan</span>
+                    </h5>
+                    <div class="d-flex gap-2">
+                        <span class="badge bg-light-primary">Interaktif</span>
+                        <span class="badge bg-light-info">
+                            <i class="ti ti-info-circle me-1"></i>Hover untuk detail
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body" style="height: 360px;">
+                    <canvas id="chartMinusan"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-12">
+            <div class="card shadow-sm">
                 <div class="card-header">
                     <h5 class="mb-0">Tren Semua Fitur (6 Bulan)</h5>
                 </div>
@@ -129,6 +149,60 @@
     <script src="{{ asset('sbadmin2/js/chart.js') }}"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            fetch('/chart/minusan')
+                .then(res => res.json())
+                .then(data => {
+                    const labels = data.map(item => item.bulan);
+                    const totals = data.map(item => Number(item.total_bulanan || 0));
+
+                    const ctxMinusan = document.getElementById('chartMinusan').getContext('2d');
+                    const gradient = ctxMinusan.createLinearGradient(0, 0, 0, 360);
+                    gradient.addColorStop(0, 'rgba(70, 128, 255, 0.30)');
+                    gradient.addColorStop(0.5, 'rgba(70, 128, 255, 0.15)');
+                    gradient.addColorStop(1, 'rgba(70, 128, 255, 0.05)');
+
+                    new Chart(ctxMinusan, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Total Minusan',
+                                data: totals,
+                                backgroundColor: gradient,
+                                borderColor: '#4680ff',
+                                borderWidth: 3,
+                                pointBackgroundColor: '#fff',
+                                pointBorderColor: '#4680ff',
+                                pointBorderWidth: 3,
+                                pointRadius: 6,
+                                pointHoverRadius: 10,
+                                pointHoverBackgroundColor: '#4680ff',
+                                pointHoverBorderColor: '#fff',
+                                pointHoverBorderWidth: 4,
+                                fill: true,
+                                tension: 0.4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            interaction: { intersect: false, mode: 'index' },
+                            plugins: {
+                                legend: { display: true, position: 'top', align: 'end' },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const value = context.parsed.y || 0;
+                                            return 'Total: Rp ' + value.toLocaleString('id-ID');
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                })
+                .catch(() => {});
+
             const monthlyLabels = @json($chartMonthlyLabels);
             const monthlySeries = @json($chartMonthlySeries);
             const statusOverview = @json($chartStatusOverview);
