@@ -498,8 +498,8 @@ class DepositFormController extends Controller
             ->where('user_id', Auth::id())
             ->firstOrFail();
 
-        if (($item->status ?? 'pending') !== 'approved') {
-            return redirect()->route('deposit.request.index')->with('error', 'Request belum approved oleh admin');
+        if (!in_array(($item->status ?? 'pending'), ['approved', 'selesai_belum_lunas'], true)) {
+            return redirect()->route('deposit.request.index')->with('error', 'Request belum masuk status ACC atau Selesai (Belum Lunas)');
         }
 
         $replyType = $validated['reply_penambahan_type'] ?? ($request->hasFile('reply_penambahan_image') ? 'image' : 'text');

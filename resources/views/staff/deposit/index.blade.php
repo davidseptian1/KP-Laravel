@@ -405,14 +405,21 @@
                                         @if (($item->bukti_transfer_admin_type ?? 'text') === 'image')
                                             @if (!empty($item->bukti_transfer_admin_text))
                                                 <div class="mb-1">{{ $item->bukti_transfer_admin_text }}</div>
+                                                <button type="button" class="btn btn-outline-secondary btn-sm me-1 js-copy-text" data-copy-text="{{ e($item->bukti_transfer_admin_text) }}">Copy Teks</button>
                                             @endif
                                             @if (!empty($item->bukti_transfer_admin_image))
                                                 <a href="{{ route('deposit.request.transfer-admin-image', $item->id) }}" target="_blank" class="btn btn-outline-primary btn-sm">Lihat Gambar</a>
+                                                <button type="button" class="btn btn-outline-secondary btn-sm mt-1 js-copy-image" data-image-url="{{ route('deposit.request.transfer-admin-image', $item->id) }}">Copy Gambar</button>
                                             @else
                                                 -
                                             @endif
                                         @else
-                                            {{ $item->bukti_transfer_admin_text ?? '-' }}
+                                            @if (!empty($item->bukti_transfer_admin_text))
+                                                <span>{{ $item->bukti_transfer_admin_text }}</span>
+                                                <button type="button" class="btn btn-outline-secondary btn-sm ms-1 js-copy-text" data-copy-text="{{ e($item->bukti_transfer_admin_text) }}">Copy Teks</button>
+                                            @else
+                                                -
+                                            @endif
                                         @endif
                                     </td>
                                     <td class="cell-status">
@@ -423,7 +430,7 @@
                                     </td>
                                     <td class="cell-jam">{{ $item->jam ? \Carbon\Carbon::parse($item->jam)->format('H:i') : '-' }}</td>
                                     <td class="cell-aksi">
-                                        @if (($item->status ?? 'pending') === 'approved')
+                                        @if (in_array(($item->status ?? 'pending'), ['approved', 'selesai_belum_lunas'], true))
                                             <button type="button" class="btn btn-sm btn-primary js-action-input-reply" data-bs-toggle="modal" data-bs-target="#modalInputReply-{{ $item->id }}">Input</button>
 
                                             <div class="modal fade" id="modalInputReply-{{ $item->id }}" tabindex="-1" aria-hidden="true">
@@ -826,10 +833,13 @@
 
                 if (item.bukti_transfer_admin_text) {
                     html += '<div class="mb-1">' + escapeHtml(item.bukti_transfer_admin_text) + '</div>';
+                    html += '<button type="button" class="btn btn-outline-secondary btn-sm me-1 js-copy-text" data-copy-text="' + escapeHtml(item.bukti_transfer_admin_text) + '">Copy Teks</button>';
                 }
 
                 if (item.has_bukti_transfer_admin_image) {
-                    html += '<a href="' + transferImageBaseUrl + '/' + item.id + '/transfer-admin-image" target="_blank" class="btn btn-outline-primary btn-sm">Lihat Gambar</a>';
+                    const imageUrl = transferImageBaseUrl + '/' + item.id + '/transfer-admin-image';
+                    html += '<a href="' + imageUrl + '" target="_blank" class="btn btn-outline-primary btn-sm">Lihat Gambar</a>';
+                    html += '<button type="button" class="btn btn-outline-secondary btn-sm mt-1 js-copy-image" data-image-url="' + imageUrl + '">Copy Gambar</button>';
                 } else {
                     html += '-';
                 }
@@ -837,7 +847,52 @@
                 return html;
             }
 
-            return escapeHtml(item.bukti_transfer_admin_text || '-');
+            const text = item.bukti_transfer_admin_text || '';
+            if (!text) {
+                return '-';
+            }
+
+            return '<span>' + escapeHtml(text) + '</span><button type="button" class="btn btn-outline-secondary btn-sm ms-1 js-copy-text" data-copy-text="' + escapeHtml(text) + '">Copy Teks</button>';
+        }
+
+        async function copyTextToClipboard(text) {
+            const value = String(text || '');
+            if (!value.trim()) return;
+
+            await navigator.clipboard.writeText(value);
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: 'Teks bukti berhasil disalin',
+                showConfirmButton: false,
+                timer: 1400,
+            });
+        }
+
+        async function copyImageToClipboard(imageUrl) {
+            if (!imageUrl) return;
+
+            const response = await fetch(imageUrl, { credentials: 'same-origin' });
+            if (!response.ok) throw new Error('Gagal mengambil gambar');
+
+            const blob = await response.blob();
+            if (!blob.type || !blob.type.startsWith('image/')) {
+                throw new Error('File bukan gambar');
+            }
+
+            await navigator.clipboard.write([
+                new ClipboardItem({ [blob.type]: blob })
+            ]);
+
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: 'Gambar bukti berhasil disalin',
+                showConfirmButton: false,
+                timer: 1400,
+            });
         }
 
         function escapeHtml(text) {
@@ -904,7 +959,7 @@
 
                 if (aksiCell) {
                     const normalizedStatus = String(item.status || 'pending').toLowerCase();
-                    if (normalizedStatus === 'approved' && !aksiCell.querySelector('.js-action-input-reply')) {
+                    if ((normalizedStatus === 'approved' || normalizedStatus === 'selesai_belum_lunas') && !aksiCell.querySelector('.js-action-input-reply')) {
                         hasActionMismatch = true;
                     }
                     if (normalizedStatus === 'pending' && !aksiCell.querySelector('.js-action-delete-pending')) {
@@ -922,6 +977,68 @@
                 window.location.reload();
             }
         }
+
+        document.addEventListener('click', async function (event) {
+            const textButton = event.target.closest('.js-copy-text');
+            if (textButton) {
+                const textValue = textButton.getAttribute('data-copy-text') || '';
+                try {
+                    await copyTextToClipboard(textValue);
+                } catch (error) {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'error',
+                        title: 'Gagal menyalin teks bukti',
+                        showConfirmButton: false,
+                        timer: 1600,
+                    });
+                }
+                return;
+            }
+
+            const imageButton = event.target.closest('.js-copy-image');
+            if (imageButton) {
+                const imageUrl = imageButton.getAttribute('data-image-url') || '';
+                try {
+                    if (!navigator.clipboard || typeof ClipboardItem === 'undefined') {
+                        await copyTextToClipboard(imageUrl);
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'info',
+                            title: 'Clipboard gambar tidak didukung, link gambar disalin',
+                            showConfirmButton: false,
+                            timer: 1800,
+                        });
+                        return;
+                    }
+
+                    await copyImageToClipboard(imageUrl);
+                } catch (error) {
+                    try {
+                        await copyTextToClipboard(imageUrl);
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'info',
+                            title: 'Gagal copy gambar, link gambar disalin',
+                            showConfirmButton: false,
+                            timer: 1800,
+                        });
+                    } catch (_) {
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'error',
+                            title: 'Gagal menyalin bukti gambar',
+                            showConfirmButton: false,
+                            timer: 1600,
+                        });
+                    }
+                }
+            }
+        });
 
         function bindAutoResizeTextareas() {
             document.querySelectorAll('textarea.js-auto-resize-textarea').forEach(function (textarea) {
