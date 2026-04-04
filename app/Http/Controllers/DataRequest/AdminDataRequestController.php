@@ -4,6 +4,7 @@ namespace App\Http\Controllers\DataRequest;
 
 use App\Http\Controllers\Controller;
 use App\Models\DataRequest;
+use App\Models\DeletionLog;
 use App\Models\NotificationItem;
 use App\Services\WhatsAppMetricService;
 use Illuminate\Http\Request;
@@ -137,9 +138,31 @@ class AdminDataRequestController extends Controller
         return redirect()->route('admin.data-request.index')->with('success', 'Pesan WA terkirim');
     }
 
-    public function destroy(int $id)
+    public function destroy(Request $request, int $id)
     {
+        $validated = $request->validate([
+            'delete_reason' => 'required|string|max:1000',
+        ]);
+
         $dataRequest = DataRequest::findOrFail($id);
+
+        $user = $request->user();
+        DeletionLog::create([
+            'module' => 'monitoring_data_request',
+            'reference_id' => $dataRequest->id,
+            'item_code' => (string) ($dataRequest->kode_pengajuan ?? $dataRequest->id),
+            'reason' => trim((string) $validated['delete_reason']),
+            'deleted_by_id' => $user?->id,
+            'deleted_by_name' => $user?->nama,
+            'deleted_by_role' => $user?->jabatan,
+            'snapshot' => [
+                'kode_pengajuan' => $dataRequest->kode_pengajuan,
+                'nama_pemohon' => $dataRequest->nama_pemohon,
+                'jenis_perubahan' => $dataRequest->jenis_perubahan,
+                'status' => $dataRequest->status,
+            ],
+            'deleted_at' => now(),
+        ]);
 
         foreach ([$dataRequest->foto_ktp, $dataRequest->foto_selfie] as $path) {
             if ($path && Storage::disk('local')->exists($path)) {

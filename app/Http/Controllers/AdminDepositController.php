@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Exports\DepositMonitoringExport;
 use App\Imports\DepositManualImport;
 use App\Models\Bank;
+use App\Models\DeletionLog;
 use App\Models\Deposit;
 use App\Models\NotificationItem;
 use App\Models\Server;
@@ -817,9 +818,33 @@ class AdminDepositController extends Controller
         return Storage::disk('local')->response($path);
     }
 
-    public function destroy(int $id)
+    public function destroy(Request $request, int $id)
     {
+        $validated = $request->validate([
+            'delete_reason' => 'required|string|max:1000',
+        ]);
+
         $item = Deposit::findOrFail($id);
+
+        $user = $request->user();
+        DeletionLog::create([
+            'module' => 'monitoring_deposit',
+            'reference_id' => $item->id,
+            'item_code' => (string) ($item->nama_supplier ?? $item->id),
+            'reason' => trim((string) $validated['delete_reason']),
+            'deleted_by_id' => $user?->id,
+            'deleted_by_name' => $user?->nama,
+            'deleted_by_role' => $user?->jabatan,
+            'snapshot' => [
+                'nama_supplier' => $item->nama_supplier,
+                'jenis_transaksi' => $item->jenis_transaksi,
+                'nominal' => $item->nominal,
+                'bank' => $item->bank,
+                'server' => $item->server,
+                'status' => $item->status,
+            ],
+            'deleted_at' => now(),
+        ]);
 
         if ($item->reply_penambahan_image && Storage::disk('local')->exists($item->reply_penambahan_image)) {
             Storage::disk('local')->delete($item->reply_penambahan_image);

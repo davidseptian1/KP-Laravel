@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\LoanRequest;
 
 use App\Http\Controllers\Controller;
+use App\Models\DeletionLog;
 use App\Models\LoanRequest;
 use App\Models\NotificationItem;
 use App\Services\WhatsAppMetricService;
@@ -103,9 +104,32 @@ class AdminLoanRequestController extends Controller
         return redirect()->route('admin.loan-request.index')->with('success', 'Pesan WA terkirim');
     }
 
-    public function destroy(int $id)
+    public function destroy(Request $request, int $id)
     {
+        $validated = $request->validate([
+            'delete_reason' => 'required|string|max:1000',
+        ]);
+
         $loanRequest = LoanRequest::findOrFail($id);
+
+        $user = $request->user();
+        DeletionLog::create([
+            'module' => 'monitoring_loan_request',
+            'reference_id' => $loanRequest->id,
+            'item_code' => (string) ($loanRequest->kode_pengajuan ?? $loanRequest->id),
+            'reason' => trim((string) $validated['delete_reason']),
+            'deleted_by_id' => $user?->id,
+            'deleted_by_name' => $user?->nama,
+            'deleted_by_role' => $user?->jabatan,
+            'snapshot' => [
+                'kode_pengajuan' => $loanRequest->kode_pengajuan,
+                'nama_server' => $loanRequest->nama_server,
+                'barang_dipinjam' => $loanRequest->barang_dipinjam,
+                'status' => $loanRequest->status,
+            ],
+            'deleted_at' => now(),
+        ]);
+
         $loanRequest->delete();
 
         return redirect()->route('admin.loan-request.index')->with('success', 'Data peminjaman barang berhasil dihapus');

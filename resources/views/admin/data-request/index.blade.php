@@ -70,11 +70,30 @@
                                     <td class="text-center" style="min-width:180px;">
                                         <div class="d-flex gap-2 justify-content-center flex-wrap">
                                             <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#detailDataRequest-{{ $item->id }}">Lihat</button>
-                                            <form method="POST" action="{{ route('admin.data-request.destroy', $item->id) }}" onsubmit="return confirm('Yakin ingin menghapus pengajuan data ini?');">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
-                                            </form>
+                                            <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteDataRequest-{{ $item->id }}">Hapus</button>
+                                        </div>
+
+                                        <div class="modal fade" id="deleteDataRequest-{{ $item->id }}" tabindex="-1" aria-hidden="true">
+                                            <div class="modal-dialog modal-dialog-centered">
+                                                <div class="modal-content text-start">
+                                                    <form method="POST" action="{{ route('admin.data-request.destroy', $item->id) }}">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title">Hapus Pengajuan Data</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <p class="mb-2">Tuliskan alasan penghapusan agar tercatat di log.</p>
+                                                            <textarea name="delete_reason" class="form-control" rows="3" placeholder="Contoh: Data duplikat / pengajuan tidak valid" required></textarea>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                                                            <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
                                         </div>
 
                                         <div class="modal fade" id="detailDataRequest-{{ $item->id }}" tabindex="-1" aria-hidden="true">

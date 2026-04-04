@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\NotificationItem;
+use App\Models\DeletionLog;
 use App\Models\Reimburse;
 use App\Services\WhatsAppMetricService;
 use Illuminate\Http\Request;
@@ -149,9 +150,31 @@ class AdminReimburseWebController extends Controller
         return redirect()->route('admin.reimburse.index')->with('success', 'Pesan WA terkirim');
     }
 
-    public function destroy(int $id)
+    public function destroy(Request $request, int $id)
     {
+        $validated = $request->validate([
+            'delete_reason' => 'required|string|max:1000',
+        ]);
+
         $reimburse = Reimburse::findOrFail($id);
+
+        $user = $request->user();
+        DeletionLog::create([
+            'module' => 'monitoring_reimburse',
+            'reference_id' => $reimburse->id,
+            'item_code' => (string) ($reimburse->kode_reimburse ?? $reimburse->id),
+            'reason' => trim((string) $validated['delete_reason']),
+            'deleted_by_id' => $user?->id,
+            'deleted_by_name' => $user?->nama,
+            'deleted_by_role' => $user?->jabatan,
+            'snapshot' => [
+                'kode_reimburse' => $reimburse->kode_reimburse,
+                'nama' => $reimburse->nama,
+                'nominal' => $reimburse->nominal,
+                'status' => $reimburse->status,
+            ],
+            'deleted_at' => now(),
+        ]);
 
         $paths = [];
         if ($reimburse->bukti_file) {
