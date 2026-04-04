@@ -6,6 +6,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Pagination\Paginator;
+use App\Models\Deposit;
 use App\Models\Minusan;
 use App\Observers\AdminModelAuditObserver;
 use Illuminate\Database\Eloquent\Model;
@@ -34,7 +35,12 @@ class AppServiceProvider extends ServiceProvider
                 ->where('note', '!=', '')
                 ->count();
 
-            $view->with('jumlahReportKhusus', $jumlahReportKhusus);
+            $jumlahHutangBelumLunas = Deposit::where('jenis_transaksi', 'hutang')
+                ->where('status', 'selesai_belum_lunas')
+                ->count();
+
+            $view->with('jumlahReportKhusus', $jumlahReportKhusus)
+                ->with('jumlahHutangBelumLunas', $jumlahHutangBelumLunas);
         });
     }
 }

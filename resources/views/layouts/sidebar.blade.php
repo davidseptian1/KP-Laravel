@@ -76,7 +76,12 @@
                 <li class="pc-item {{ $menuAdminBonHutangMonitoring ?? '' }}">
                     <a href="{{ route('admin.deposit.monitoring-hutang') }}" class="pc-link">
                         <span class="pc-micon"><i class="ti ti-wallet"></i></span>
-                        <span class="pc-mtext">Monitoring Bon/Hutang</span>
+                        <span class="pc-mtext d-flex align-items-center justify-content-between w-100">
+                            <span>Monitoring Bon/Hutang</span>
+                            <span class="badge rounded-pill {{ ($jumlahHutangBelumLunas ?? 0) > 0 ? 'bg-danger' : 'bg-secondary' }} ms-2 px-2 py-1" style="font-size: 0.9rem; min-width: 34px; text-align: center;">
+                                {{ $jumlahHutangBelumLunas ?? 0 }}
+                            </span>
+                        </span>
                     </a>
                 </li>
 
