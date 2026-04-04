@@ -72,6 +72,14 @@
                     </a>
                 </li>
 
+                <!-- Bon/Hutang Monitoring (Admin) -->
+                <li class="pc-item {{ $menuAdminMinusan ?? '' }}">
+                    <a href="{{ route('minusan') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-wallet"></i></span>
+                        <span class="pc-mtext">Monitoring Bon/Hutang</span>
+                    </a>
+                </li>
+
                     <li class="pc-item pc-caption">
                         <label>Form Manajement</label>
                     </li>
