@@ -152,6 +152,81 @@ class AdminDepositController extends Controller
         return view('admin.deposit.monitoring', [
             'title' => 'Monitoring Deposit',
             'menuAdminDepositMonitoring' => 'active',
+            'monitoringLabel' => 'Monitoring Deposit',
+            'monitoringResetRoute' => 'admin.deposit.monitoring',
+            'monitoringExportExcelRoute' => 'admin.deposit.monitoring.export-excel',
+            'monitoringExportPdfRoute' => 'admin.deposit.monitoring.export-pdf',
+            'monitoringChangesRoute' => 'admin.deposit.monitoring.changes',
+            'items' => $items,
+            'server' => $filters['server'] ?? null,
+            'bank' => $filters['bank'] ?? null,
+            'namaSupplier' => $filters['nama_supplier'] ?? null,
+            'startDate' => $filters['start_date'] ?? null,
+            'endDate' => $filters['end_date'] ?? null,
+            'status' => $filters['status'] ?? null,
+            'staffDeleted' => $filters['staff_deleted'] ?? null,
+            'globalSearch' => $filters['global_search'] ?? null,
+            'perPage' => $perPage,
+            'monitoringSummary' => $monitoringSummary,
+            'monitoringByBank' => $monitoringByBank,
+            'latestUpdatedAt' => $latestUpdatedAt,
+            'latestIncomingAt' => $latestIncomingAt,
+            'latestIncomingId' => $latestIncomingId,
+            'latestIncomingServer' => $latestIncomingServer,
+            'latestIncomingServerColor' => $latestIncomingServerColor,
+            'serverColorsMap' => $serverColorsMap,
+            'serverOptions' => $optionLists['serverOptions'],
+            'bankOptions' => $optionLists['bankOptions'],
+            'supplierOptions' => $optionLists['supplierOptions'],
+        ]);
+    }
+
+    public function monitoringHutang(Request $request)
+    {
+        $filters = $this->normalizedMonitoringFilters($request);
+        $filters['jenis_transaksi'] = 'hutang';
+
+        $query = $this->buildMonitoringQuery($filters);
+        $optionLists = $this->getMonitoringOptionLists();
+
+        $perPage = $filters['per_page'] ?? 50;
+        $items = $query->paginate($perPage)->withQueryString();
+        $monitoringSummary = (clone $query)
+            ->selectRaw('COUNT(*) as total_request, COALESCE(SUM(nominal), 0) as total_nominal')
+            ->first();
+        $bankGroupExpression = DB::raw("COALESCE(NULLIF(TRIM(bank), ''), '-')");
+        $monitoringByBank = (clone $query)
+            ->reorder()
+            ->selectRaw("COALESCE(NULLIF(TRIM(bank), ''), '-') as bank_name")
+            ->selectRaw('COUNT(*) as total_request')
+            ->selectRaw('COALESCE(SUM(nominal), 0) as total_nominal')
+            ->groupBy($bankGroupExpression)
+            ->orderByDesc('total_nominal')
+            ->get();
+        $latestUpdatedAt = (clone $query)->max('updated_at');
+        $latestIncomingAt = (clone $query)->max('created_at');
+        $latestIncomingItem = (clone $query)
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->first();
+        $latestIncomingId = $latestIncomingItem?->id;
+
+        $serverColorsMap = Server::query()->pluck('card_color', 'nama_server')->toArray();
+
+        $latestIncomingServer = trim((string) ($latestIncomingItem->server ?? ''));
+        $latestIncomingServerColor = 'primary';
+        if ($latestIncomingServer !== '') {
+            $latestIncomingServerColor = $serverColorsMap[$latestIncomingServer] ?? 'primary';
+        }
+
+        return view('admin.deposit.monitoring', [
+            'title' => 'Monitoring Bon/Hutang',
+            'menuAdminBonHutangMonitoring' => 'active',
+            'monitoringLabel' => 'Monitoring Bon/Hutang',
+            'monitoringResetRoute' => 'admin.deposit.monitoring-hutang',
+            'monitoringExportExcelRoute' => 'admin.deposit.monitoring-hutang.export-excel',
+            'monitoringExportPdfRoute' => 'admin.deposit.monitoring-hutang.export-pdf',
+            'monitoringChangesRoute' => 'admin.deposit.monitoring-hutang.changes',
             'items' => $items,
             'server' => $filters['server'] ?? null,
             'bank' => $filters['bank'] ?? null,
@@ -302,6 +377,133 @@ class AdminDepositController extends Controller
         ]);
     }
 
+    public function changesHutang(Request $request)
+    {
+        $filters = $request->validate([
+            'server' => 'nullable|string|max:100',
+            'bank' => 'nullable|string|max:100',
+            'nama_supplier' => 'nullable|string|max:255',
+            'start_date' => 'nullable|date_format:Y-m-d',
+            'end_date' => 'nullable|date_format:Y-m-d',
+            'status' => 'nullable|in:pending,approved,rejected,selesai',
+            'staff_deleted' => 'nullable|in:yes,no',
+            'since' => 'nullable|date',
+            'page' => 'nullable|integer|min:1',
+        ]);
+
+        $filters = $this->applyDefaultDateRange($filters);
+        $filters['jenis_transaksi'] = 'hutang';
+
+        $query = $this->buildMonitoringQuery($filters);
+
+        $latestUpdatedAt = (clone $query)->max('updated_at');
+        $latestIncomingAt = (clone $query)->max('created_at');
+        $latestIncomingItem = (clone $query)
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->first();
+        $latestIncomingId = $latestIncomingItem?->id;
+
+        $serverColorsMap = Server::query()->pluck('card_color', 'nama_server')->toArray();
+
+        $latestIncomingServer = trim((string) ($latestIncomingItem->server ?? ''));
+        $latestIncomingServerColor = 'primary';
+        if ($latestIncomingServer !== '') {
+            $latestIncomingServerColor = $serverColorsMap[$latestIncomingServer] ?? 'primary';
+        }
+
+        $since = !empty($filters['since']) ? Carbon::parse($filters['since']) : null;
+        $changesCount = 0;
+        $latestChangedItem = null;
+
+        if ($since) {
+            $changedQuery = (clone $query)->where('updated_at', '>', $since);
+            $changesCount = (clone $changedQuery)->count();
+            $latestChangedItem = (clone $changedQuery)->orderByDesc('updated_at')->first();
+        }
+
+        $hasChanges = $since ? $changesCount > 0 : false;
+
+        $changeTitle = null;
+        $changeDescription = null;
+
+        if ($latestChangedItem) {
+            $changeTitle = 'Ada perubahan Hutang ' . ($latestChangedItem->server ?: '-');
+            $descriptions = [];
+
+            if (!empty($latestChangedItem->status)) {
+                $descriptions[] = 'Status: ' . ucfirst((string) $latestChangedItem->status);
+            }
+            if (!empty($latestChangedItem->reply_penambahan) && $latestChangedItem->reply_penambahan !== 'Menunggu Konfirmasi Admin') {
+                $descriptions[] = 'Bukti Penambahan: ' . mb_strimwidth(trim((string) $latestChangedItem->reply_penambahan), 0, 80, '...');
+            }
+            if (($latestChangedItem->bukti_transfer_admin_type ?? null) === 'text' && !empty($latestChangedItem->bukti_transfer_admin_text)) {
+                $descriptions[] = 'Bukti Transfer Admin: ' . mb_strimwidth(trim((string) $latestChangedItem->bukti_transfer_admin_text), 0, 80, '...');
+            }
+            if (($latestChangedItem->bukti_transfer_admin_type ?? null) === 'image' && !empty($latestChangedItem->bukti_transfer_admin_image)) {
+                $descriptions[] = 'Bukti Transfer Admin: gambar diperbarui';
+            }
+
+            $changeDescription = !empty($descriptions)
+                ? implode(' | ', $descriptions)
+                : 'Ada perubahan data oleh admin.';
+        }
+
+        $tableHtml = null;
+        $latestCardHtml = null;
+        $summaryCardHtml = null;
+
+        if ($hasChanges) {
+            $optionLists = $this->getMonitoringOptionLists();
+            $page = $filters['page'] ?? 1;
+            $items = (clone $query)->paginate(15, ['*'], 'page', $page)->withQueryString();
+            $tableHtml = view('admin.deposit.partials.table', [
+                'items' => $items,
+                'latestIncomingId' => $latestIncomingId,
+                'latestIncomingServerColor' => $latestIncomingServerColor,
+                'serverColorsMap' => $serverColorsMap,
+                'serverOptions' => $optionLists['serverOptions'],
+                'bankOptions' => $optionLists['bankOptions'],
+                'supplierOptions' => $optionLists['supplierOptions'],
+            ])->render();
+            $latestCardHtml = view('admin.deposit.partials.latest-incoming-card', [
+                'latestIncomingAt' => $latestIncomingAt,
+                'latestIncomingServer' => $latestIncomingServer,
+                'latestIncomingServerColor' => $latestIncomingServerColor,
+            ])->render();
+            $monitoringSummary = (clone $query)
+                ->selectRaw('COUNT(*) as total_request, COALESCE(SUM(nominal), 0) as total_nominal')
+                ->first();
+            $bankGroupExpression = DB::raw("COALESCE(NULLIF(TRIM(bank), ''), '-')");
+            $monitoringByBank = (clone $query)
+                ->reorder()
+                ->selectRaw("COALESCE(NULLIF(TRIM(bank), ''), '-') as bank_name")
+                ->selectRaw('COUNT(*) as total_request')
+                ->selectRaw('COALESCE(SUM(nominal), 0) as total_nominal')
+                ->groupBy($bankGroupExpression)
+                ->orderByDesc('total_nominal')
+                ->get();
+            $summaryCardHtml = view('admin.deposit.partials.summary-card', [
+                'monitoringSummary' => $monitoringSummary,
+                'monitoringByBank' => $monitoringByBank,
+            ])->render();
+        }
+
+        return response()->json([
+            'has_changes' => $hasChanges,
+            'changes_count' => $changesCount,
+            'latest_updated_at' => $latestUpdatedAt,
+            'latest_incoming_at' => $latestIncomingAt,
+            'latest_incoming_id' => $latestIncomingId,
+            'change_title' => $changeTitle,
+            'change_description' => $changeDescription,
+            'table_html' => $tableHtml,
+            'latest_card_html' => $latestCardHtml,
+            'summary_card_html' => $summaryCardHtml,
+            'server_time' => now()->toDateTimeString(),
+        ]);
+    }
+
     private function buildMonitoringQuery(array $filters)
     {
         $query = Deposit::query()->orderByDesc('created_at')->orderByDesc('id');
@@ -314,6 +516,7 @@ class AdminDepositController extends Controller
         $status = $filters['status'] ?? null;
         $staffDeleted = $filters['staff_deleted'] ?? null;
         $globalSearch = $filters['global_search'] ?? null;
+        $jenisTransaksi = $filters['jenis_transaksi'] ?? null;
 
         if ($server) {
             $query->where('server', 'like', "%{$server}%");
@@ -349,6 +552,10 @@ class AdminDepositController extends Controller
             });
         }
 
+        if ($jenisTransaksi) {
+            $query->where('jenis_transaksi', $jenisTransaksi);
+        }
+
         if ($startDate && $endDate) {
             $query->whereBetween('created_at', [
                 Carbon::parse($startDate)->startOfDay(),
@@ -377,6 +584,7 @@ class AdminDepositController extends Controller
             'staff_deleted' => 'nullable|in:yes,no',
             'per_page' => 'nullable|integer|in:10,50,100,200',
             'global_search' => 'nullable|string|max:255',
+            'jenis_transaksi' => 'nullable|in:deposit,hutang',
         ]);
 
         return $this->applyDefaultDateRange($filters);
@@ -424,6 +632,41 @@ class AdminDepositController extends Controller
         ])->setPaper('a4', 'landscape');
 
         return $pdf->stream('Monitoring-Deposit-' . str_replace(' ', '-', $rangeLabel) . '.pdf');
+    }
+
+    public function exportExcelHutang(Request $request)
+    {
+        $filters = $this->normalizedMonitoringFilters($request);
+        $filters['jenis_transaksi'] = 'hutang';
+        $items = $this->buildMonitoringQuery($filters)->get();
+
+        $startDate = $filters['start_date'];
+        $endDate = $filters['end_date'];
+        $rangeLabel = $startDate === $endDate ? $startDate : ($startDate . '_to_' . $endDate);
+
+        return Excel::download(
+            new DepositMonitoringExport($items),
+            'Monitoring-Bon-Hutang-' . $rangeLabel . '.xlsx'
+        );
+    }
+
+    public function exportPdfHutang(Request $request)
+    {
+        $filters = $this->normalizedMonitoringFilters($request);
+        $filters['jenis_transaksi'] = 'hutang';
+        $items = $this->buildMonitoringQuery($filters)->get();
+
+        $startDate = $filters['start_date'];
+        $endDate = $filters['end_date'];
+        $rangeLabel = $startDate === $endDate ? $startDate : ($startDate . ' s.d. ' . $endDate);
+
+        $pdf = Pdf::loadView('admin.deposit.pdf', [
+            'items' => $items,
+            'filters' => $filters,
+            'rangeLabel' => $rangeLabel,
+        ])->setPaper('a4', 'landscape');
+
+        return $pdf->stream('Monitoring-Bon-Hutang-' . str_replace(' ', '-', $rangeLabel) . '.pdf');
     }
 
     public function update(Request $request, int $id)

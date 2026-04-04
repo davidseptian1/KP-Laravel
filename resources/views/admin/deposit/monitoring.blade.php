@@ -2,6 +2,14 @@
 
 @section('content')
 
+@php
+    $monitoringLabel = $monitoringLabel ?? 'Monitoring Deposit';
+    $monitoringResetRoute = $monitoringResetRoute ?? 'admin.deposit.monitoring';
+    $monitoringExportExcelRoute = $monitoringExportExcelRoute ?? 'admin.deposit.monitoring.export-excel';
+    $monitoringExportPdfRoute = $monitoringExportPdfRoute ?? 'admin.deposit.monitoring.export-pdf';
+    $monitoringChangesRoute = $monitoringChangesRoute ?? 'admin.deposit.monitoring.changes';
+@endphp
+
 <style>
     #monitoringTableContainer .modal-super-xl {
         max-width: min(1400px, 96vw);
@@ -88,12 +96,12 @@
             <div class="col-md-12">
                 <ul class="breadcrumb">
                     <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
-                    <li class="breadcrumb-item active">Monitoring Deposit</li>
+                    <li class="breadcrumb-item active">{{ $monitoringLabel }}</li>
                 </ul>
             </div>
             <div class="col-md-12">
                 <div class="page-header-title">
-                    <h2 class="mb-0">Monitoring Deposit</h2>
+                    <h2 class="mb-0">{{ $monitoringLabel }}</h2>
                 </div>
             </div>
         </div>
@@ -179,7 +187,7 @@
                     </div>
                     <div class="col-md-2 d-flex gap-2">
                         <button type="submit" class="btn btn-primary btn-sm w-100">Filter</button>
-                        <a href="{{ route('admin.deposit.monitoring') }}" class="btn btn-outline-secondary btn-sm w-100">Reset</a>
+                        <a href="{{ route($monitoringResetRoute) }}" class="btn btn-outline-secondary btn-sm w-100">Reset</a>
                     </div>
                 </form>
 
@@ -189,13 +197,13 @@
                     </small>
                     <div class="d-flex gap-2">
                         <a
-                            href="{{ route('admin.deposit.monitoring.export-excel', ['server' => $server, 'bank' => $bank, 'nama_supplier' => $namaSupplier, 'status' => $status, 'staff_deleted' => $staffDeleted, 'start_date' => $startDate, 'end_date' => $endDate]) }}"
+                            href="{{ route($monitoringExportExcelRoute, ['server' => $server, 'bank' => $bank, 'nama_supplier' => $namaSupplier, 'status' => $status, 'staff_deleted' => $staffDeleted, 'start_date' => $startDate, 'end_date' => $endDate]) }}"
                             class="btn btn-success btn-sm"
                         >
                             Download Excel
                         </a>
                         <a
-                            href="{{ route('admin.deposit.monitoring.export-pdf', ['server' => $server, 'bank' => $bank, 'nama_supplier' => $namaSupplier, 'status' => $status, 'staff_deleted' => $staffDeleted, 'start_date' => $startDate, 'end_date' => $endDate]) }}"
+                            href="{{ route($monitoringExportPdfRoute, ['server' => $server, 'bank' => $bank, 'nama_supplier' => $namaSupplier, 'status' => $status, 'staff_deleted' => $staffDeleted, 'start_date' => $startDate, 'end_date' => $endDate]) }}"
                             class="btn btn-danger btn-sm"
                             target="_blank"
                         >
@@ -292,7 +300,7 @@
 @push('scripts')
 <script>
     (function () {
-        const changesUrl = @json(route('admin.deposit.monitoring.changes'));
+        const changesUrl = @json(route($monitoringChangesRoute));
         let latestUpdatedAt = @json($latestUpdatedAt);
         let latestIncomingId = @json($latestIncomingId ?? null);
         const filters = {
