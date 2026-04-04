@@ -74,16 +74,14 @@
 
                 <!-- Bon/Hutang Monitoring (Admin) -->
                 <li class="pc-item {{ $menuAdminBonHutangMonitoring ?? '' }}">
-                    <a href="{{ route('admin.deposit.monitoring-hutang') }}" class="pc-link">
+                    <a href="{{ route('admin.deposit.monitoring-hutang') }}" class="pc-link position-relative">
                         <span class="pc-micon"><i class="ti ti-wallet"></i></span>
-                        <span class="pc-mtext d-flex align-items-center justify-content-between w-100">
-                            <span>Monitoring Bon/Hutang</span>
-                            <span id="sidebar-hutang-counter"
-                                  data-counter-url="{{ route('sidebar.hutang-belum-lunas-count') }}"
-                                  class="badge rounded-pill {{ ($jumlahHutangBelumLunas ?? 0) > 0 ? 'bg-danger' : 'bg-secondary' }} ms-2 px-2 py-1"
-                                  style="font-size: 0.9rem; min-width: 34px; text-align: center;">
-                                {{ $jumlahHutangBelumLunas ?? 0 }}
-                            </span>
+                        <span class="pc-mtext">Monitoring Bon/Hutang</span>
+                        <span id="sidebar-hutang-counter"
+                              data-counter-url="{{ route('sidebar.hutang-belum-lunas-count') }}"
+                              class="badge rounded-pill {{ ($jumlahHutangBelumLunas ?? 0) > 0 ? 'bg-danger' : 'bg-secondary' }}"
+                              style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 0.9rem; min-width: 34px; text-align: center; padding: 6px 10px; line-height: 1;">
+                            {{ $jumlahHutangBelumLunas ?? 0 }}
                         </span>
                     </a>
                 </li>

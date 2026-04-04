@@ -35,8 +35,8 @@ class AppServiceProvider extends ServiceProvider
                 ->where('note', '!=', '')
                 ->count();
 
-            $jumlahHutangBelumLunas = Deposit::where('jenis_transaksi', 'hutang')
-                ->where('status', 'selesai_belum_lunas')
+            $jumlahHutangBelumLunas = Deposit::whereRaw("LOWER(TRIM(jenis_transaksi)) IN ('hutang','bon')")
+                ->whereRaw("LOWER(REPLACE(REPLACE(REPLACE(REPLACE(status, ' ', ''), '_', ''), '(', ''), ')', '')) = ?", ['selesaibelumlunas'])
                 ->count();
 
             $view->with('jumlahReportKhusus', $jumlahReportKhusus)

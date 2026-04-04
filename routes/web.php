@@ -103,8 +103,8 @@ Route::middleware(['checkLogin', 'admin.activity.log'])->group(function () {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
-        $count = Deposit::where('jenis_transaksi', 'hutang')
-            ->where('status', 'selesai_belum_lunas')
+        $count = Deposit::whereRaw("LOWER(TRIM(jenis_transaksi)) IN ('hutang','bon')")
+            ->whereRaw("LOWER(REPLACE(REPLACE(REPLACE(REPLACE(status, ' ', ''), '_', ''), '(', ''), ')', '')) = ?", ['selesaibelumlunas'])
             ->count();
 
         return response()->json(['count' => $count]);
