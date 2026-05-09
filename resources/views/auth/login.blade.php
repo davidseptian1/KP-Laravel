@@ -262,6 +262,17 @@
                 <button type="submit" class="btn-login">Masuk ke Sistem</button>
             </form>
 
+            <div style="margin: 20px 0; display: flex; align-items: center; justify-content: center; opacity: 0.7;">
+                <div style="flex: 1; height: 1px; background: white;"></div>
+                <div style="margin: 0 10px; font-size: 14px;">atau</div>
+                <div style="flex: 1; height: 1px; background: white;"></div>
+            </div>
+
+            <a href="{{ route('google.login') }}" style="display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 12px; background: white; color: #333; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; transition: 0.25s;">
+                <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" style="width: 20px;" alt="Google">
+                Login dengan Google
+            </a>
+
             <div class="forgot-area">
                 <a href="https://wa.me/6287719952225?text=Halo%20Admin,%20saya%20lupa%20password%20e-SMT">
                     Butuh Bantuan?

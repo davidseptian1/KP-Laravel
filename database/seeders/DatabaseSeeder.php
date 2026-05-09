@@ -15,43 +15,53 @@ class DatabaseSeeder extends Seeder
     
     public function run(): void
     {
-        // \App\Models\User::factory(10)->create();
+        // Panggil SuperAdminSeeder
+        $this->call(SuperAdminSeeder::class);
 
         // Admin default
-        User::create([
-            'nama'          => 'Admin',
-            'email'         => 'admin@gmail.com',
-            'jabatan'       => 'Admin',
-            'password'      => Hash::make('admin123'),
-        ]);
+        User::updateOrCreate(
+            ['email' => 'admin@gmail.com'],
+            [
+                'nama'          => 'Admin',
+                'jabatan'       => 'Admin',
+                'password'      => Hash::make('admin123'),
+            ]
+        );
 
-        User::create([
-            'nama'          => 'Alif',
-            'email'         => 'alif@gmail.com',
-            'jabatan'       => 'Admin',
-            'password'      => Hash::make('password1234'),
-        ]);
+        User::updateOrCreate(
+            ['email' => 'alif@gmail.com'],
+            [
+                'nama'          => 'Alif',
+                'jabatan'       => 'Admin',
+                'password'      => Hash::make('password1234'),
+            ]
+        );
 
-        User::create([
-            'nama'          => 'Asep',
-            'email'         => 'asep@gmail.com',
-            'jabatan'       => 'Admin',
-            'password'      => Hash::make('password1234'),
-        ]);
+        User::updateOrCreate(
+            ['email' => 'asep@gmail.com'],
+            [
+                'nama'          => 'Asep',
+                'jabatan'       => 'Admin',
+                'password'      => Hash::make('password1234'),
+            ]
+        );
 
-        User::create([
-            'nama'          => 'Filah',
-            'email'         => 'filah@gmail.com',
-            'jabatan'       => 'Admin',
-            'password'      => Hash::make('password1234'),
-        ]);
+        User::updateOrCreate(
+            ['email' => 'filah@gmail.com'],
+            [
+                'nama'          => 'Filah',
+                'jabatan'       => 'Admin',
+                'password'      => Hash::make('password1234'),
+            ]
+        );
         
-        User::create([
-            'nama'          => 'HRD Chika',
-            'email'         => 'hrdchika@gmail.com',
-            'jabatan'       => 'HRD',
-            'password'      => Hash::make('password1234'),
-        ]);
-
+        User::updateOrCreate(
+            ['email' => 'hrdchika@gmail.com'],
+            [
+                'nama'          => 'HRD Chika',
+                'jabatan'       => 'HRD',
+                'password'      => Hash::make('password1234'),
+            ]
+        );
     }
 }

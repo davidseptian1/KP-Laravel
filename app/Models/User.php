@@ -23,6 +23,9 @@ class User extends Authenticatable
         'no_hp',
         'jabatan',
         'password',
+        'google_id',
+        'otp_code',
+        'otp_expires_at',
     ];
 
     /**

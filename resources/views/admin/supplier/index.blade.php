@@ -33,6 +33,7 @@
                             <tr>
                                 <th style="width:80px;">No</th>
                                 <th>Nama Supplier</th>
+                                <th>Akun User (Opsional)</th>
                                 <th>Dibuat</th>
                                 <th class="text-center" style="width:220px;">Aksi</th>
                             </tr>
@@ -42,6 +43,13 @@
                                 <tr>
                                     <td>{{ $index + 1 }}</td>
                                     <td>{{ $item->nama_supplier }}</td>
+                                    <td>
+                                        @if ($item->user_email)
+                                            <span class="badge bg-light-primary text-primary">{{ $item->user_email }}</span>
+                                        @else
+                                            <span class="badge bg-light-secondary text-secondary">Semua User</span>
+                                        @endif
+                                    </td>
                                     <td>{{ $item->created_at?->format('d/m/Y H:i') }}</td>
                                     <td class="text-center">
                                         <div class="d-flex justify-content-center gap-2">
@@ -75,8 +83,22 @@
                                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                     </div>
                                     <div class="modal-body">
-                                        <label class="form-label">Nama Supplier</label>
-                                        <input type="text" name="nama_supplier" class="form-control" value="{{ $item->nama_supplier }}" required>
+                                        <div class="mb-3">
+                                            <label class="form-label">Nama Supplier</label>
+                                            <input type="text" name="nama_supplier" class="form-control" value="{{ $item->nama_supplier }}" required>
+                                        </div>
+                                        <div class="mb-0">
+                                            <label class="form-label">Akun User (Opsional)</label>
+                                            <select name="user_email" class="form-select">
+                                                <option value="">Muncul untuk Semua User</option>
+                                                @foreach ($users as $u)
+                                                    <option value="{{ $u->email }}" {{ $item->user_email == $u->email ? 'selected' : '' }}>
+                                                        {{ $u->nama }} ({{ $u->email }})
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                            <small class="text-muted">Jika dikosongkan, supplier ini akan muncul di semua akun staff.</small>
+                                        </div>
                                     </div>
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
@@ -102,8 +124,20 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <label class="form-label">Nama Supplier</label>
-                    <input type="text" name="nama_supplier" class="form-control" placeholder="Masukkan nama supplier" required>
+                    <div class="mb-3">
+                        <label class="form-label">Nama Supplier</label>
+                        <input type="text" name="nama_supplier" class="form-control" placeholder="Masukkan nama supplier" required>
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label">Akun User (Opsional)</label>
+                        <select name="user_email" class="form-select">
+                            <option value="">Muncul untuk Semua User</option>
+                            @foreach ($users as $u)
+                                <option value="{{ $u->email }}">{{ $u->nama }} ({{ $u->email }})</option>
+                            @endforeach
+                        </select>
+                        <small class="text-muted">Jika dikosongkan, supplier ini akan muncul di semua akun staff.</small>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>

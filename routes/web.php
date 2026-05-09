@@ -8,6 +8,8 @@ use App\Http\Controllers\MinusanController;
 use App\Http\Controllers\ReportKhususController;
 use App\Http\Controllers\RekapController;
 use App\Http\Controllers\TransaksiController;
+use App\Http\Controllers\Auth\GoogleController;
+use App\Http\Controllers\Auth\OtpController;
 use App\Http\Controllers\ImportStatusController;
 use App\Http\Controllers\ReimburseWebController;
 use App\Http\Controllers\AdminReimburseWebController;
@@ -53,6 +55,15 @@ use App\Models\Reimburse;
 // Route::get('/', function () {
 //     return view('welcome');
 // });
+
+// Google OAuth Routes
+Route::get('auth/google', [GoogleController::class, 'redirectToGoogle'])->name('google.login');
+Route::get('auth/google/callback', [GoogleController::class, 'handleGoogleCallback']);
+
+// OTP Verification Routes
+Route::get('verify-otp', [OtpController::class, 'index'])->name('otp.index');
+Route::post('verify-otp', [OtpController::class, 'verify'])->name('otp.verify');
+Route::post('resend-otp', [OtpController::class, 'resend'])->name('otp.resend');
 
 // Middleware isLogin
 Route::middleware('isLogin')->group(function () {

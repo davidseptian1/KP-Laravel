@@ -107,10 +107,17 @@ class DepositFormController extends Controller
             ->paginate($perPage)
             ->withQueryString();
 
-        $suppliers = Supplier::orderBy('nama_supplier')->pluck('nama_supplier');
+        $current = Auth::user();
+        $suppliersQuery = Supplier::query();
+        if ($current && !in_array($current->jabatan, ['Admin', 'Superadmin'])) {
+            $email = $current->email;
+            $suppliersQuery = $suppliersQuery->where(function ($q) use ($email) {
+                $q->whereNull('user_email')->orWhere('user_email', $email);
+            });
+        }
+        $suppliers = $suppliersQuery->orderBy('nama_supplier')->pluck('nama_supplier');
 
         $banksQuery = Bank::query();
-        $current = Auth::user();
         if ($current && in_array($current->jabatan, ['Admin', 'Superadmin'])) {
             $banksQuery = $banksQuery;
         } else if ($current) {
@@ -579,11 +586,14 @@ class DepositFormController extends Controller
             abort(404, 'Form sudah kedaluwarsa');
         }
 
+        $current = Auth::user();
         return view('staff.deposit.form', [
             'title' => 'Form Deposit',
             'menuDeposit' => 'active',
             'form' => $form,
-            'suppliers' => Supplier::orderBy('nama_supplier')->pluck('nama_supplier'),
+            'suppliers' => Supplier::when($current && !in_array($current->jabatan, ['Admin', 'Superadmin']), function($q) use ($current) {
+                $q->whereNull('user_email')->orWhere('user_email', $current->email);
+            })->orderBy('nama_supplier')->pluck('nama_supplier'),
             'banks' => Bank::orderBy('nama_bank')->pluck('nama_bank'),
             'servers' => Server::orderBy('nama_server')->pluck('nama_server'),
         ]);

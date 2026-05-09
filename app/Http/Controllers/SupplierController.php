@@ -13,6 +13,7 @@ class SupplierController extends Controller
             'title' => 'Supplier Manajemen',
             'menuAdminSupplier' => 'active',
             'items' => Supplier::orderByDesc('created_at')->get(),
+            'users' => \App\Models\User::select('email', 'nama')->orderBy('nama')->get(),
         ]);
     }
 
@@ -20,6 +21,7 @@ class SupplierController extends Controller
     {
         $validated = $request->validate([
             'nama_supplier' => 'required|string|max:255|unique:suppliers,nama_supplier',
+            'user_email'    => 'nullable|string|email|exists:users,email',
         ]);
 
         Supplier::create($validated);
@@ -31,6 +33,7 @@ class SupplierController extends Controller
     {
         $validated = $request->validate([
             'nama_supplier' => 'required|string|max:255|unique:suppliers,nama_supplier,' . $id,
+            'user_email'    => 'nullable|string|email|exists:users,email',
         ]);
 
         $item = Supplier::findOrFail($id);
