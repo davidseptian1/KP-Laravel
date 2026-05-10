@@ -58,7 +58,7 @@ class GoogleController extends Controller
             return redirect()->route('otp.index');
 
         } catch (Exception $e) {
-            return redirect()->route('login')->with('error', 'Terjadi kesalahan saat login Google.');
+            return redirect()->route('login')->with('error', 'Terjadi kesalahan login: ' . $e->getMessage());
         }
     }
 }
