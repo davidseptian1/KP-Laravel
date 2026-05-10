@@ -14,11 +14,16 @@ use App\Models\Reimburse;
 use App\Observers\AdminModelAuditObserver;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\URL;
 
 class AppServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
+        if (config('app.env') === 'production') {
+            URL::forceScheme('https');
+        }
+
         Paginator::useBootstrapFive();
 
         foreach (File::files(app_path('Models')) as $file) {
