@@ -372,5 +372,11 @@ Route::middleware(['checkLogin', 'admin.activity.log'])->group(function () {
     });
 
     Route::get('admin/deposit/analysis', [AdminDepositController::class, 'analysis'])->name('admin.deposit.analysis');
+});
 
+Route::get('/clear-cache', function() {
+    \Illuminate\Support\Facades\Artisan::call('config:clear');
+    \Illuminate\Support\Facades\Artisan::call('cache:clear');
+    \Illuminate\Support\Facades\Artisan::call('view:clear');
+    return "Semua cache berhasil dibersihkan! Silakan coba login lagi.";
 });
