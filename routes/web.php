@@ -259,6 +259,7 @@ Route::middleware(['checkLogin', 'admin.activity.log'])->group(function () {
         Route::get('admin/reimburse', [AdminReimburseWebController::class, 'index'])->name('admin.reimburse.index');
         Route::put('admin/reimburse/{id}', [AdminReimburseWebController::class, 'update'])->name('admin.reimburse.update');
         Route::delete('admin/reimburse/{id}', [AdminReimburseWebController::class, 'destroy'])->name('admin.reimburse.destroy');
+        Route::get('admin/reimburse/export-excel', [AdminReimburseWebController::class, 'exportExcel'])->name('admin.reimburse.export-excel');
         Route::get('admin/reimburse/{id}/download', [AdminReimburseWebController::class, 'download'])->name('admin.reimburse.download');
         Route::get('admin/reimburse/{id}/bukti/{index?}', [AdminReimburseWebController::class, 'view'])->name('admin.reimburse.view');
         Route::post('admin/reimburse/{id}/send-wa', [AdminReimburseWebController::class, 'sendWa'])->name('admin.reimburse.sendWa');

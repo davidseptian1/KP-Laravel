@@ -98,14 +98,25 @@
         <div class="card shadow-sm">
             <div class="card-header bg-white">
                 <form method="GET" class="d-flex flex-wrap gap-2 align-items-center">
-                    <select name="status" class="form-select form-select-sm" style="max-width: 200px;">
+                    <select name="status" class="form-select form-select-sm" style="max-width: 150px;">
                         <option value="">Semua Status</option>
                         @foreach (['pending' => 'Pending', 'approved' => 'Approved', 'rejected' => 'Rejected', 'revision' => 'Revision'] as $key => $label)
                             <option value="{{ $key }}" {{ ($status ?? '') === $key ? 'selected' : '' }}>{{ $label }}</option>
                         @endforeach
                     </select>
-                    <input type="text" name="search" value="{{ $search ?? '' }}" class="form-control form-control-sm" placeholder="Kode / Nama User" style="max-width: 240px;" />
+                    <input type="text" name="search" value="{{ $search ?? '' }}" class="form-control form-control-sm" placeholder="Kode / Nama User" style="max-width: 200px;" />
+                    
+                    <div class="d-flex align-items-center gap-1">
+                        <span class="small text-muted">Dari:</span>
+                        <input type="date" name="start_date" value="{{ $startDate ?? '' }}" class="form-control form-control-sm" style="max-width: 140px;" />
+                    </div>
+                    <div class="d-flex align-items-center gap-1">
+                        <span class="small text-muted">Sampai:</span>
+                        <input type="date" name="end_date" value="{{ $endDate ?? '' }}" class="form-control form-control-sm" style="max-width: 140px;" />
+                    </div>
+
                     <button class="btn btn-primary btn-sm">Filter</button>
+                    <a href="{{ route('admin.reimburse.export-excel', request()->query()) }}" class="btn btn-success btn-sm">Download Excel</a>
                 </form>
             </div>
 

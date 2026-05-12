@@ -10,6 +10,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
+use App\Exports\ReimburseExport;
+use Maatwebsite\Excel\Facades\Excel;
 use Carbon\Carbon;
 
 class AdminReimburseWebController extends Controller
@@ -18,6 +20,8 @@ class AdminReimburseWebController extends Controller
     {
         $status = $request->query('status');
         $search = $request->query('search');
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date');
 
         $query = Reimburse::with(['user', 'form'])->orderByDesc('tanggal_pengajuan');
 
@@ -34,6 +38,14 @@ class AdminReimburseWebController extends Controller
             });
         }
 
+        if ($startDate) {
+            $query->whereDate('tanggal_pengajuan', '>=', $startDate);
+        }
+
+        if ($endDate) {
+            $query->whereDate('tanggal_pengajuan', '<=', $endDate);
+        }
+
         $items = $query->paginate(15)->withQueryString();
 
         return view('admin.reimburse.index', [
@@ -42,6 +54,8 @@ class AdminReimburseWebController extends Controller
             'items' => $items,
             'status' => $status,
             'search' => $search,
+            'startDate' => $startDate,
+            'endDate' => $endDate,
         ]);
     }
 
@@ -221,6 +235,42 @@ class AdminReimburseWebController extends Controller
         }
 
         return Storage::disk('local')->response($path);
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $status = $request->query('status');
+        $search = $request->query('search');
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date');
+
+        $query = Reimburse::with(['user', 'form'])->orderByDesc('tanggal_pengajuan');
+
+        if ($status) {
+            $query->where('status', $status);
+        }
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('kode_reimburse', 'like', "%{$search}%")
+                    ->orWhereHas('user', function ($uq) use ($search) {
+                        $uq->where('nama', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        if ($startDate) {
+            $query->whereDate('tanggal_pengajuan', '>=', $startDate);
+        }
+
+        if ($endDate) {
+            $query->whereDate('tanggal_pengajuan', '<=', $endDate);
+        }
+
+        $items = $query->get();
+
+        $fileName = 'reimburse_export_' . now()->format('YmdHis') . '.xlsx';
+        return Excel::download(new ReimburseExport($items), $fileName);
     }
 
     private function formatPaymentProof(Reimburse $reimburse): string
