@@ -2,6 +2,79 @@
 
 @section('content')
 
+<style>
+    #reimburseTableContainer .modal-super-xl {
+        max-width: min(1400px, 96vw);
+    }
+
+    #adminReimburseColumnSettingsPanel {
+        border: 1px solid var(--bs-border-color, #dee2e6);
+        border-radius: 10px;
+        background: var(--bs-body-bg, #fff);
+    }
+
+    #adminReimburseColumnVisibilityOptions .column-option-item {
+        border: 1px solid var(--bs-border-color, #dee2e6);
+        border-radius: 8px;
+        padding: 4px 8px;
+        background: var(--bs-tertiary-bg, #f8f9fa);
+    }
+
+    #reimburseTableContainer table.js-admin-reorderable-table thead th {
+        position: relative;
+        border-right: 1px solid var(--bs-border-color, #dee2e6);
+        user-select: none;
+    }
+
+    #reimburseTableContainer table.js-admin-reorderable-table thead th:last-child,
+    #reimburseTableContainer table.js-admin-reorderable-table tbody td:last-child {
+        border-right: none;
+    }
+
+    #reimburseTableContainer table.js-admin-reorderable-table tbody td {
+        border-right: 1px solid var(--bs-border-color, #dee2e6);
+    }
+
+    #reimburseTableContainer table.js-admin-reorderable-table thead th.js-col-dragging {
+        opacity: 0.55;
+    }
+
+    #reimburseTableContainer table.js-admin-reorderable-table thead th .js-col-resize-handle {
+        position: absolute;
+        top: 0;
+        right: -5px;
+        width: 12px;
+        height: 100%;
+        cursor: ew-resize;
+        z-index: 3;
+    }
+
+    #reimburseTableContainer table.js-admin-reorderable-table thead th .js-col-resize-handle::before {
+        content: '';
+        position: absolute;
+        top: 8%;
+        bottom: 8%;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 2px;
+        border-radius: 2px;
+        background: var(--bs-border-color, #dee2e6);
+        opacity: 0.9;
+    }
+
+    #reimburseTableContainer table.js-admin-reorderable-table thead th:hover .js-col-resize-handle::before,
+    #reimburseTableContainer table.js-admin-reorderable-table thead th .js-col-resize-handle:hover::before {
+        background: var(--bs-primary, #0d6efd);
+        opacity: 1;
+    }
+
+    #reimburseTableContainer table.js-admin-reorderable-table.js-col-resizing,
+    #reimburseTableContainer table.js-admin-reorderable-table.js-col-resizing * {
+        cursor: ew-resize !important;
+        user-select: none;
+    }
+</style>
+
 <div class="page-header" style="margin: 0; padding: 0;">
     <div class="page-block">
         <div class="row align-items-center">
@@ -37,27 +110,40 @@
             </div>
 
             <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
+                <div class="d-flex justify-content-end mb-2 gap-2">
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="btnToggleAdminColumnSettings">Atur Kolom</button>
+                </div>
+
+                <div id="adminReimburseColumnSettingsPanel" class="p-2 mb-2 d-none">
+                    <div class="small text-muted mb-2">Centang kolom yang ingin ditampilkan.</div>
+                    <div id="adminReimburseColumnVisibilityOptions" class="d-flex flex-wrap gap-2"></div>
+                    <div class="text-end mt-2">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="btnResetAdminTableColumns">Reset Kolom</button>
+                    </div>
+                </div>
+
+                <div class="table-responsive" id="reimburseTableContainer">
+                    <table class="table table-hover align-middle js-admin-reorderable-table">
                         <thead class="table-light">
                             <tr>
-                                <th>Kode</th>
-                                <th>Form</th>
-                                <th>Nama</th>
-                                <th>Divisi</th>
-                                <th>No Rekening</th>
-                                <th>Metode</th>
-                                <th>No/ID</th>
-                                <th>Atas Nama</th>
-                                <th>Barang</th>
-                                <th class="text-end">Nominal</th>
-                                <th>WA Penerima</th>
-                                <th>WA Pengisi</th>
-                                <th>Bukti Pembayaran</th>
-                                <th>Tanggal</th>
-                                <th>Status</th>
-                                <th>Catatan</th>
-                                <th class="text-center" style="position: sticky; right: 0; background: #f8f9fa; z-index: 2; min-width: 120px;">Aksi</th>
+                                <th data-col-id="0">Kode</th>
+                                <th data-col-id="1">Form</th>
+                                <th data-col-id="2">Nama</th>
+                                <th data-col-id="3">Divisi</th>
+                                <th data-col-id="4">No Rekening</th>
+                                <th data-col-id="5">Metode</th>
+                                <th data-col-id="6">No/ID</th>
+                                <th data-col-id="7">Atas Nama</th>
+                                <th data-col-id="8">Barang</th>
+                                <th data-col-id="9">Deskripsi</th>
+                                <th data-col-id="10" class="text-end">Nominal</th>
+                                <th data-col-id="11">WA Penerima</th>
+                                <th data-col-id="12">WA Pengisi</th>
+                                <th data-col-id="13">Bukti Pembayaran</th>
+                                <th data-col-id="14">Tanggal</th>
+                                <th data-col-id="15">Status</th>
+                                <th data-col-id="16">Catatan</th>
+                                <th data-col-id="17" class="text-center" style="position: sticky; right: 0; background: #f8f9fa; z-index: 2; min-width: 120px;">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -81,6 +167,7 @@
                                     <td>{{ $item->payment_account_number ?? '-' }}</td>
                                     <td>{{ $item->payment_account_name ?? '-' }}</td>
                                     <td>{{ $item->nama_barang ?? '-' }}</td>
+                                    <td>{{ $item->keterangan ?? '-' }}</td>
                                     <td class="text-end">Rp {{ number_format($item->nominal, 0, ',', '.') }}</td>
                                     <td>{{ $item->wa_penerima ?? '-' }}</td>
                                     <td>{{ $item->wa_pengisi ?? '-' }}</td>
@@ -228,6 +315,352 @@
                 }
             });
         });
+
+        function initAdminTableColumnControls() {
+            const table = document.querySelector('#reimburseTableContainer .js-admin-reorderable-table');
+            if (!table) return;
+
+            const headerRow = table.querySelector('thead tr');
+            if (!headerRow) return;
+
+            const orderStorageKey = 'admin.reimburse.table.column.order.v1';
+            const visibilityStorageKey = 'admin.reimburse.table.column.visibility.v1';
+            const widthStorageKey = 'admin.reimburse.table.column.width.v1';
+
+            const toggleSettingsBtn = document.getElementById('btnToggleAdminColumnSettings');
+            const settingsPanel = document.getElementById('adminReimburseColumnSettingsPanel');
+            const visibilityOptions = document.getElementById('adminReimburseColumnVisibilityOptions');
+            const resetColumnsBtn = document.getElementById('btnResetAdminTableColumns');
+
+            const headerCells = Array.from(headerRow.cells || []);
+            if (headerCells.length < 2) return;
+
+            headerCells.forEach(function (th, index) {
+                th.classList.add('js-col-draggable');
+                th.setAttribute('draggable', 'true');
+                if (!th.dataset.colId) {
+                    th.dataset.colId = String(index);
+                }
+                th.title = 'Geser untuk pindah kolom';
+            });
+
+            function moveColumn(fromIndex, toIndex) {
+                if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0) return;
+                const rows = Array.from(table.rows || []);
+                rows.forEach(function (row) {
+                    const cells = row.cells;
+                    if (!cells || cells.length <= Math.max(fromIndex, toIndex)) return;
+
+                    const movingCell = cells[fromIndex];
+                    const targetCell = cells[toIndex];
+                    if (!movingCell || !targetCell) return;
+
+                    if (fromIndex < toIndex) {
+                        row.insertBefore(movingCell, targetCell.nextSibling);
+                    } else {
+                        row.insertBefore(movingCell, targetCell);
+                    }
+                });
+            }
+
+            function getCurrentOrder() {
+                return Array.from(headerRow.cells || []).map(function (th) {
+                    return String(th.dataset.colId || '');
+                });
+            }
+
+            function applyOrder(desiredOrder) {
+                if (!Array.isArray(desiredOrder) || desiredOrder.length !== headerCells.length) return;
+
+                const currentOrder = getCurrentOrder();
+                desiredOrder.forEach(function (desiredId, targetIndex) {
+                    const currentIndex = currentOrder.indexOf(String(desiredId));
+                    if (currentIndex === -1 || currentIndex === targetIndex) return;
+
+                    moveColumn(currentIndex, targetIndex);
+                    const moved = currentOrder.splice(currentIndex, 1)[0];
+                    currentOrder.splice(targetIndex, 0, moved);
+                });
+            }
+
+            function getColumnIndexById(colId) {
+                const currentHeaders = Array.from(headerRow.cells || []);
+                return currentHeaders.findIndex(function (th) {
+                    return String(th.dataset.colId || '') === String(colId);
+                });
+            }
+
+            function setColumnVisibilityById(colId, isVisible) {
+                const index = getColumnIndexById(colId);
+                if (index < 0) return;
+
+                Array.from(table.rows || []).forEach(function (row) {
+                    if (!row.cells || !row.cells[index]) return;
+                    row.cells[index].style.display = isVisible ? '' : 'none';
+                });
+            }
+
+            function applyColumnWidthById(colId, widthPx) {
+                const index = getColumnIndexById(colId);
+                if (index < 0) return;
+
+                const safeWidth = Math.max(60, Number(widthPx) || 0);
+                if (!safeWidth) return;
+
+                Array.from(table.rows || []).forEach(function (row) {
+                    if (!row.cells || !row.cells[index]) return;
+                    row.cells[index].style.width = safeWidth + 'px';
+                    row.cells[index].style.minWidth = safeWidth + 'px';
+                    row.cells[index].style.maxWidth = safeWidth + 'px';
+                });
+            }
+
+            function clearColumnWidthById(colId) {
+                const index = getColumnIndexById(colId);
+                if (index < 0) return;
+
+                Array.from(table.rows || []).forEach(function (row) {
+                    if (!row.cells || !row.cells[index]) return;
+                    row.cells[index].style.removeProperty('width');
+                    row.cells[index].style.removeProperty('min-width');
+                    row.cells[index].style.removeProperty('max-width');
+                });
+            }
+
+            function getVisibilityState() {
+                const state = {};
+                Array.from(headerRow.cells || []).forEach(function (th) {
+                    const id = String(th.dataset.colId || '');
+                    if (!id) return;
+                    state[id] = th.style.display !== 'none';
+                });
+                return state;
+            }
+
+            function getWidthState() {
+                const state = {};
+                Array.from(headerRow.cells || []).forEach(function (th) {
+                    const id = String(th.dataset.colId || '');
+                    if (!id) return;
+                    state[id] = Math.round(th.getBoundingClientRect().width || th.offsetWidth || 0);
+                });
+                return state;
+            }
+
+            function lockCurrentColumnWidths() {
+                const widthState = getWidthState();
+                Object.keys(widthState).forEach(function (colId) {
+                    applyColumnWidthById(colId, widthState[colId]);
+                });
+            }
+
+            function saveOrder() {
+                try {
+                    localStorage.setItem(orderStorageKey, JSON.stringify(getCurrentOrder()));
+                } catch (error) {
+                }
+            }
+
+            function saveVisibility() {
+                try {
+                    localStorage.setItem(visibilityStorageKey, JSON.stringify(getVisibilityState()));
+                } catch (error) {
+                }
+            }
+
+            function saveWidths() {
+                try {
+                    localStorage.setItem(widthStorageKey, JSON.stringify(getWidthState()));
+                } catch (error) {
+                }
+            }
+
+            function applySavedOrder() {
+                try {
+                    const raw = localStorage.getItem(orderStorageKey);
+                    if (!raw) return;
+                    const savedOrder = JSON.parse(raw);
+                    applyOrder(savedOrder);
+                } catch (error) {
+                }
+            }
+
+            function applySavedVisibility() {
+                try {
+                    const raw = localStorage.getItem(visibilityStorageKey);
+                    if (!raw) return;
+                    const savedState = JSON.parse(raw);
+                    if (!savedState || typeof savedState !== 'object') return;
+
+                    Object.keys(savedState).forEach(function (colId) {
+                        setColumnVisibilityById(colId, savedState[colId] !== false);
+                    });
+                } catch (error) {
+                }
+            }
+
+            function applySavedWidths() {
+                try {
+                    const raw = localStorage.getItem(widthStorageKey);
+                    if (!raw) return;
+                    const savedState = JSON.parse(raw);
+                    if (!savedState || typeof savedState !== 'object') return;
+
+                    Object.keys(savedState).forEach(function (colId) {
+                        applyColumnWidthById(colId, savedState[colId]);
+                    });
+                } catch (error) {
+                }
+            }
+
+            function renderColumnVisibilityOptions() {
+                if (!visibilityOptions) return;
+                visibilityOptions.innerHTML = '';
+
+                Array.from(headerRow.cells || []).forEach(function (th) {
+                    const colId = String(th.dataset.colId || '');
+                    const labelText = (th.textContent || '').trim();
+                    const checked = th.style.display !== 'none';
+
+                    const wrap = document.createElement('label');
+                    wrap.className = 'column-option-item d-inline-flex align-items-center gap-1';
+
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.className = 'form-check-input m-0';
+                    checkbox.checked = checked;
+                    checkbox.dataset.colId = colId;
+
+                    checkbox.addEventListener('change', function () {
+                        setColumnVisibilityById(this.dataset.colId, this.checked);
+                        saveVisibility();
+                    });
+
+                    const text = document.createElement('span');
+                    text.className = 'small';
+                    text.textContent = labelText;
+
+                    wrap.appendChild(checkbox);
+                    wrap.appendChild(text);
+                    visibilityOptions.appendChild(wrap);
+                });
+            }
+
+            applySavedOrder();
+            applySavedVisibility();
+            applySavedWidths();
+            lockCurrentColumnWidths();
+            renderColumnVisibilityOptions();
+
+            if (toggleSettingsBtn && settingsPanel && !toggleSettingsBtn.dataset.boundColumnSetting) {
+                toggleSettingsBtn.dataset.boundColumnSetting = '1';
+                toggleSettingsBtn.addEventListener('click', function () {
+                    settingsPanel.classList.toggle('d-none');
+                });
+            }
+
+            if (resetColumnsBtn && !resetColumnsBtn.dataset.boundColumnReset) {
+                resetColumnsBtn.dataset.boundColumnReset = '1';
+                resetColumnsBtn.addEventListener('click', function () {
+                    try {
+                        localStorage.removeItem(orderStorageKey);
+                        localStorage.removeItem(visibilityStorageKey);
+                        localStorage.removeItem(widthStorageKey);
+                    } catch (error) {
+                    }
+
+                    const defaultOrder = headerCells
+                        .map(function (th) { return String(th.dataset.colId || ''); })
+                        .sort(function (a, b) { return Number(a) - Number(b); });
+
+                    applyOrder(defaultOrder);
+
+                    defaultOrder.forEach(function (colId) {
+                        setColumnVisibilityById(colId, true);
+                        clearColumnWidthById(colId);
+                    });
+
+                    renderColumnVisibilityOptions();
+                });
+            }
+
+            let dragFromIndex = null;
+            let isResizingColumn = false;
+
+            Array.from(headerRow.cells || []).forEach(function (th) {
+                if (th.querySelector('.js-col-resize-handle')) return;
+
+                const colId = String(th.dataset.colId || '');
+                if (!colId) return;
+
+                const handle = document.createElement('span');
+                handle.className = 'js-col-resize-handle';
+                handle.title = 'Tarik untuk ubah lebar kolom';
+
+                handle.addEventListener('mousedown', function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    isResizingColumn = true;
+                    table.classList.add('js-col-resizing');
+
+                    const startX = event.clientX;
+                    const startWidth = th.getBoundingClientRect().width || th.offsetWidth || 0;
+
+                    function onMouseMove(moveEvent) {
+                        const diffX = moveEvent.clientX - startX;
+                        const nextWidth = Math.max(60, Math.round(startWidth + diffX));
+                        applyColumnWidthById(colId, nextWidth);
+                    }
+
+                    function onMouseUp() {
+                        document.removeEventListener('mousemove', onMouseMove);
+                        document.removeEventListener('mouseup', onMouseUp);
+                        isResizingColumn = false;
+                        table.classList.remove('js-col-resizing');
+                        saveWidths();
+                    }
+
+                    document.addEventListener('mousemove', onMouseMove);
+                    document.addEventListener('mouseup', onMouseUp);
+                });
+
+                th.appendChild(handle);
+
+                th.addEventListener('dragstart', function (event) {
+                    if (isResizingColumn) {
+                        event.preventDefault();
+                        return;
+                    }
+                    dragFromIndex = getColumnIndexById(this.dataset.colId);
+                    this.classList.add('js-col-dragging');
+                });
+
+                th.addEventListener('dragend', function () {
+                    this.classList.remove('js-col-dragging');
+                    dragFromIndex = null;
+                });
+
+                th.addEventListener('dragover', function (event) {
+                    event.preventDefault();
+                });
+
+                th.addEventListener('drop', function (event) {
+                    event.preventDefault();
+                    if (dragFromIndex === null) return;
+
+                    const dragToIndex = getColumnIndexById(this.dataset.colId);
+                    if (dragFromIndex !== dragToIndex) {
+                        moveColumn(dragFromIndex, dragToIndex);
+                        saveOrder();
+                        saveWidths();
+                        renderColumnVisibilityOptions();
+                    }
+                });
+            });
+        }
+
+        initAdminTableColumnControls();
     })();
 </script>
 @endpush
