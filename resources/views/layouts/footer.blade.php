@@ -238,48 +238,78 @@
                 }
 
                 function findNominalHelperFor(input) {
-                    const container = input.closest('.mb-3, .col-md-6, .form-group') || input.parentElement;
-                    return container?.querySelector('.js-nominal-display');
+                    let helper = null;
+                    
+                    const parent = input.parentElement;
+                    if (parent) {
+                        helper = parent.querySelector('.js-nominal-display');
+                        if (helper) return helper;
+                    }
+                    
+                    const container = input.closest('.mb-3, .col-md-6, .form-group, [class*="col-"]');
+                    if (container) {
+                        helper = container.querySelector('.js-nominal-display');
+                        if (helper) return helper;
+                    }
+                    
+                    const next = input.nextElementSibling;
+                    if (next && next.classList && next.classList.contains('js-nominal-display')) {
+                        return next;
+                    }
+                    
+                    const nextSibling = input.parentElement?.nextElementSibling;
+                    if (nextSibling && nextSibling.classList && nextSibling.classList.contains('js-nominal-display')) {
+                        return nextSibling;
+                    }
+                    
+                    return null;
+                }
+
+                function updateNominalHelper(input) {
+                    const helper = findNominalHelperFor(input);
+                    if (!helper) {
+                        console.warn('Helper not found for nominal input:', input);
+                        return;
+                    }
+                    const value = input.value || input.getAttribute('value') || '';
+                    const text = getNominalWords(value);
+                    if (text) {
+                        helper.textContent = 'Nominal dalam kata: ' + text;
+                        helper.style.display = 'block';
+                    } else {
+                        helper.textContent = '';
+                        helper.style.display = 'none';
+                    }
                 }
 
                 function refreshNominalHelpers() {
                     document.querySelectorAll('input[name="nominal"]').forEach(function (input) {
-                        const helper = findNominalHelperFor(input);
-                        if (!helper) {
-                            return;
-                        }
-                        const text = getNominalWords(input.value);
-                        helper.textContent = text ? 'Nominal dalam kata: ' + text : '';
+                        updateNominalHelper(input);
                     });
                 }
 
                 document.addEventListener('DOMContentLoaded', function () {
-                    refreshNominalHelpers();
+                    setTimeout(function () {
+                        refreshNominalHelpers();
+                    }, 100);
+                    
                     document.querySelectorAll('input[name="nominal"]').forEach(function (input) {
                         input.addEventListener('input', function () {
-                            const helper = findNominalHelperFor(input);
-                            if (!helper) {
-                                return;
-                            }
-                            const text = getNominalWords(input.value);
-                            helper.textContent = text ? 'Nominal dalam kata: ' + text : '';
+                            updateNominalHelper(input);
                         });
                     });
                     
                     document.querySelectorAll('.modal').forEach(function (modalEl) {
                         modalEl.addEventListener('shown.bs.modal', function () {
-                            refreshNominalHelpers();
+                            setTimeout(function () {
+                                refreshNominalHelpers();
+                            }, 50);
                             modalEl.querySelectorAll('input[name="nominal"]').forEach(function (input) {
                                 const existingListener = input.__nominalListenerAttached;
                                 if (!existingListener) {
                                     input.__nominalListenerAttached = true;
                                     input.addEventListener('input', function () {
-                                        const helper = findNominalHelperFor(input);
-                                        if (!helper) {
-                                            return;
-                                        }
-                                        const text = getNominalWords(input.value);
-                                        helper.textContent = text ? 'Nominal dalam kata: ' + text : '';
+                                        updateNominalHelper(input);
                                     });
                                 }
                             });
