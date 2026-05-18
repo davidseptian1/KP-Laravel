@@ -265,6 +265,26 @@
                             helper.textContent = text ? 'Nominal dalam kata: ' + text : '';
                         });
                     });
+                    
+                    document.querySelectorAll('.modal').forEach(function (modalEl) {
+                        modalEl.addEventListener('shown.bs.modal', function () {
+                            refreshNominalHelpers();
+                            modalEl.querySelectorAll('input[name="nominal"]').forEach(function (input) {
+                                const existingListener = input.__nominalListenerAttached;
+                                if (!existingListener) {
+                                    input.__nominalListenerAttached = true;
+                                    input.addEventListener('input', function () {
+                                        const helper = findNominalHelperFor(input);
+                                        if (!helper) {
+                                            return;
+                                        }
+                                        const text = getNominalWords(input.value);
+                                        helper.textContent = text ? 'Nominal dalam kata: ' + text : '';
+                                    });
+                                }
+                            });
+                        });
+                    });
                 });
             })();
         </script>
