@@ -241,15 +241,34 @@
                     const parent = input.parentElement;
                     if (!parent) return null;
                     
+                    // Strategy 1: Check direct parent children
                     const allChildren = parent.querySelectorAll('.js-nominal-display');
                     if (allChildren.length > 0) {
                         return allChildren[0];
                     }
                     
-                    const container = input.closest('.mb-3, .col-md-6, .form-group, [class*="col-"]');
+                    // Strategy 2: Check next sibling
+                    let sibling = input.nextElementSibling;
+                    while (sibling) {
+                        if (sibling.classList && sibling.classList.contains('js-nominal-display')) {
+                            return sibling;
+                        }
+                        sibling = sibling.nextElementSibling;
+                    }
+                    
+                    // Strategy 3: Look in common containers
+                    const container = input.closest('.mb-3, .col-md-6, .col-md-12, .form-group, .row, [class*="col-"]');
                     if (container) {
                         const helperInContainer = container.querySelector('.js-nominal-display');
                         if (helperInContainer) return helperInContainer;
+                    }
+                    
+                    // Strategy 4: Look in document for any nominal display (last resort)
+                    const allHelpers = document.querySelectorAll('.js-nominal-display');
+                    for (let i = 0; i < allHelpers.length; i++) {
+                        if (!allHelpers[i].textContent || allHelpers[i].textContent === '') {
+                            return allHelpers[i];
+                        }
                     }
                     
                     return null;
