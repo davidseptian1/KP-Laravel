@@ -119,6 +119,146 @@
             })();
         </script>
 
+        <script>
+            (function () {
+                function normalizeNominalValue(raw) {
+                    if (!raw) {
+                        return '';
+                    }
+
+                    let nominal = raw.trim();
+                    nominal = nominal.replace(/\s+/g, '');
+
+                    if (nominal.includes(',') && nominal.includes('.')) {
+                        nominal = nominal.replace(/\./g, '');
+                        nominal = nominal.replace(/,/g, '.');
+                    } else if (nominal.includes(',')) {
+                        nominal = nominal.replace(/,/g, '.');
+                    } else if (nominal.includes('.')) {
+                        const parts = nominal.split('.');
+                        if (parts.length === 2 && parts[1].length === 3) {
+                            nominal = parts.join('');
+                        }
+                    }
+
+                    nominal = nominal.replace(/[^0-9.]/g, '');
+                    if (nominal === '' || nominal === '.') {
+                        return '';
+                    }
+
+                    return nominal;
+                }
+
+                function numberToWords(n) {
+                    const units = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan'];
+
+                    if (n === 0) {
+                        return 'nol';
+                    }
+
+                    function inWords(value) {
+                        if (value < 10) {
+                            return units[value];
+                        }
+                        if (value < 20) {
+                            if (value === 10) return 'sepuluh';
+                            if (value === 11) return 'sebelas';
+                            return units[value - 10] + ' belas';
+                        }
+                        if (value < 100) {
+                            const tens = Math.floor(value / 10);
+                            const rest = value % 10;
+                            return units[tens] + ' puluh' + (rest ? ' ' + inWords(rest) : '');
+                        }
+                        if (value < 200) {
+                            return 'seratus' + (value > 100 ? ' ' + inWords(value - 100) : '');
+                        }
+                        if (value < 1000) {
+                            const hundreds = Math.floor(value / 100);
+                            const rest = value % 100;
+                            return inWords(hundreds) + ' ratus' + (rest ? ' ' + inWords(rest) : '');
+                        }
+                        if (value < 2000) {
+                            return 'seribu' + (value > 1000 ? ' ' + inWords(value - 1000) : '');
+                        }
+                        if (value < 1000000) {
+                            const thousands = Math.floor(value / 1000);
+                            const rest = value % 1000;
+                            return inWords(thousands) + ' ribu' + (rest ? ' ' + inWords(rest) : '');
+                        }
+                        if (value < 1000000000) {
+                            const millions = Math.floor(value / 1000000);
+                            const rest = value % 1000000;
+                            return inWords(millions) + ' juta' + (rest ? ' ' + inWords(rest) : '');
+                        }
+                        if (value < 1000000000000) {
+                            const billions = Math.floor(value / 1000000000);
+                            const rest = value % 1000000000;
+                            return inWords(billions) + ' miliar' + (rest ? ' ' + inWords(rest) : '');
+                        }
+                        return '';
+                    }
+
+                    return inWords(n).trim();
+                }
+
+                function getNominalWords(rawValue) {
+                    const normalized = normalizeNominalValue(rawValue);
+                    if (!normalized) {
+                        return '';
+                    }
+
+                    const parts = normalized.split('.');
+                    const integerPart = parseInt(parts[0] || '0', 10);
+                    const decimalPart = parts[1] || '';
+
+                    if (Number.isNaN(integerPart)) {
+                        return '';
+                    }
+
+                    const words = numberToWords(integerPart);
+                    if (!words) {
+                        return '';
+                    }
+
+                    if (decimalPart) {
+                        const decimals = decimalPart.split('').map(function (digit) {
+                            const wordsDigit = numberToWords(parseInt(digit, 10));
+                            return wordsDigit || '';
+                        }).filter(Boolean).join(' ');
+                        return words + ' koma ' + decimals + ' rupiah';
+                    }
+
+                    return words + ' rupiah';
+                }
+
+                function refreshNominalHelpers() {
+                    document.querySelectorAll('input[name="nominal"]').forEach(function (input) {
+                        const helper = input.closest('.mb-3')?.querySelector('.js-nominal-display');
+                        if (!helper) {
+                            return;
+                        }
+                        const text = getNominalWords(input.value);
+                        helper.textContent = text ? 'Nominal dalam kata: ' + text : '';
+                    });
+                }
+
+                document.addEventListener('DOMContentLoaded', function () {
+                    refreshNominalHelpers();
+                    document.querySelectorAll('input[name="nominal"]').forEach(function (input) {
+                        input.addEventListener('input', function () {
+                            const helper = input.closest('.mb-3')?.querySelector('.js-nominal-display');
+                            if (!helper) {
+                                return;
+                            }
+                            const text = getNominalWords(input.value);
+                            helper.textContent = text ? 'Nominal dalam kata: ' + text : '';
+                        });
+                    });
+                });
+            })();
+        </script>
+
         <!-- Profile Dropdown Script -->
         <script>
             (function() {

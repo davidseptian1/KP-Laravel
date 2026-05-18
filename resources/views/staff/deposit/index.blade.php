@@ -666,6 +666,7 @@
                             <label class="form-label">Nominal</label>
                             <input type="text" name="nominal" class="form-control" inputmode="numeric" value="{{ old('nominal') }}" placeholder="Contoh: 3.000.000,00 atau 3000000.00" required>
                             <small class="form-text text-muted">Contoh di field: 3.000.000,00 — tiga juta rupiah.</small>
+                            <small class="form-text text-muted js-nominal-display"></small>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Deposit / Hutang</label>
