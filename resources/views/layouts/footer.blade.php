@@ -238,21 +238,18 @@
                 }
 
                 function findNominalHelperFor(input) {
-                    const next = input.nextElementSibling;
-                    if (next && next.classList && next.classList.contains('js-nominal-display')) {
-                        return next;
-                    }
-                    
                     const parent = input.parentElement;
-                    if (parent) {
-                        const helper = parent.querySelector('.js-nominal-display');
-                        if (helper) return helper;
+                    if (!parent) return null;
+                    
+                    const allChildren = parent.querySelectorAll('.js-nominal-display');
+                    if (allChildren.length > 0) {
+                        return allChildren[0];
                     }
                     
                     const container = input.closest('.mb-3, .col-md-6, .form-group, [class*="col-"]');
                     if (container) {
-                        const helper = container.querySelector('.js-nominal-display');
-                        if (helper) return helper;
+                        const helperInContainer = container.querySelector('.js-nominal-display');
+                        if (helperInContainer) return helperInContainer;
                     }
                     
                     return null;
@@ -261,7 +258,7 @@
                 function updateNominalHelper(input) {
                     const helper = findNominalHelperFor(input);
                     if (!helper) {
-                        console.warn('Helper not found for nominal input:', input, 'Next sibling:', input.nextElementSibling);
+                        console.warn('Helper .js-nominal-display not found for input:', input);
                         return;
                     }
                     const value = input.value || input.getAttribute('value') || '';
