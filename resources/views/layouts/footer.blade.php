@@ -238,28 +238,21 @@
                 }
 
                 function findNominalHelperFor(input) {
-                    let helper = null;
-                    
-                    const parent = input.parentElement;
-                    if (parent) {
-                        helper = parent.querySelector('.js-nominal-display');
-                        if (helper) return helper;
-                    }
-                    
-                    const container = input.closest('.mb-3, .col-md-6, .form-group, [class*="col-"]');
-                    if (container) {
-                        helper = container.querySelector('.js-nominal-display');
-                        if (helper) return helper;
-                    }
-                    
                     const next = input.nextElementSibling;
                     if (next && next.classList && next.classList.contains('js-nominal-display')) {
                         return next;
                     }
                     
-                    const nextSibling = input.parentElement?.nextElementSibling;
-                    if (nextSibling && nextSibling.classList && nextSibling.classList.contains('js-nominal-display')) {
-                        return nextSibling;
+                    const parent = input.parentElement;
+                    if (parent) {
+                        const helper = parent.querySelector('.js-nominal-display');
+                        if (helper) return helper;
+                    }
+                    
+                    const container = input.closest('.mb-3, .col-md-6, .form-group, [class*="col-"]');
+                    if (container) {
+                        const helper = container.querySelector('.js-nominal-display');
+                        if (helper) return helper;
                     }
                     
                     return null;
@@ -268,7 +261,7 @@
                 function updateNominalHelper(input) {
                     const helper = findNominalHelperFor(input);
                     if (!helper) {
-                        console.warn('Helper not found for nominal input:', input);
+                        console.warn('Helper not found for nominal input:', input, 'Next sibling:', input.nextElementSibling);
                         return;
                     }
                     const value = input.value || input.getAttribute('value') || '';
