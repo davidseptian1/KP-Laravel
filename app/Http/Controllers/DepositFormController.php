@@ -21,6 +21,67 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class DepositFormController extends Controller
 {
+    /**
+     * Normalize nominal input (Indonesian format: 1.000.000,00)
+     * Removes thousands separator (.) and handles decimal separator (,)
+     * Returns valid float or 0
+     */
+    private function normalizeNominal($nominal): float|int
+    {
+        if (empty($nominal)) {
+            return 0;
+        }
+
+        $nominal = trim((string) $nominal);
+        $hasDot = str_contains($nominal, '.');
+        $hasComma = str_contains($nominal, ',');
+
+        if ($hasComma && $hasDot) {
+            $nominal = str_replace('.', '', $nominal);
+            $nominal = str_replace(',', '.', $nominal);
+        } elseif ($hasComma) {
+            $nominal = str_replace(',', '.', $nominal);
+        } elseif ($hasDot) {
+            $parts = explode('.', $nominal);
+            if (count($parts) > 2) {
+                if (strlen(end($parts)) === 3) {
+                    $nominal = str_replace('.', '', $nominal);
+                } else {
+                    $decimalPart = array_pop($parts);
+                    $integerPart = implode('', $parts);
+                    $nominal = $integerPart . '.' . $decimalPart;
+                }
+            } elseif (count($parts) === 2 && strlen($parts[1]) === 3) {
+                $nominal = str_replace('.', '', $nominal);
+            }
+        }
+
+        $nominal = preg_replace('/[^0-9.]/', '', $nominal);
+
+        if ($nominal === '' || $nominal === '.') {
+            return 0;
+        }
+
+        return (float) $nominal;
+    }
+
+    /**
+     * Normalize numeric fields in request (nominal, no_rek)
+     */
+    private function normalizeNumericFields(Request $request): void
+    {
+        $rawNominal = (string) $request->input('nominal', '');
+        $rawNoRek = (string) $request->input('no_rek', '');
+
+        $normalizedNominal = $this->normalizeNominal($rawNominal);
+        $normalizedNoRek = preg_replace('/[^0-9]/', '', $rawNoRek);
+
+        $request->merge([
+            'nominal' => $normalizedNominal,
+            'no_rek' => $normalizedNoRek,
+        ]);
+    }
+
     private function bankValidationRules(): array
     {
         $rules = ['required', 'string', 'max:100'];
@@ -501,6 +562,8 @@ class DepositFormController extends Controller
 
     public function storeFromRequestPage(Request $request)
     {
+        $this->normalizeNumericFields($request);
+        
         $bankRules = $this->bankValidationRules();
 
         $validated = $request->validate([
@@ -612,6 +675,8 @@ class DepositFormController extends Controller
         if ($form->expires_at && now()->greaterThan($form->expires_at->copy()->endOfDay())) {
             abort(404, 'Form sudah kedaluwarsa');
         }
+
+        $this->normalizeNumericFields($request);
 
         $validated = $request->validate([
             'nama_supplier' => 'required|string|max:255|exists:suppliers,nama_supplier',

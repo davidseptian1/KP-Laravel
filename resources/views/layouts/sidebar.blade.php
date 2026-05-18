@@ -322,6 +322,15 @@
                         <span class="pc-mtext">Lihat Logs</span>
                     </a>
                 </li>
+
+                <!-- Potong Data (Database Maintenance) -->
+                <li class="pc-item {{ $menuDataCutting ?? '' }}">
+                    <a href="{{ route('data-cutting.index') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-database-off"></i></span>
+                        <span class="pc-mtext">Potong Data</span>
+                    </a>
+                </li>
+
                 <!-- PERSEDIAAN STOK 
                  1.pembelian stok, ngisi form persatu-->
                 <li class="pc-item pc-caption">

@@ -34,6 +34,7 @@ use App\Http\Controllers\ApiManagementController;
 use App\Http\Controllers\PersediaanStokController;
 use App\Http\Controllers\AdminPersediaanStokController;
 use App\Http\Controllers\AdminActivityLogController;
+use App\Http\Controllers\DataCuttingController;
 use App\Models\DataRequest;
 use App\Models\Deposit;
 use App\Models\LoanRequest;
@@ -370,6 +371,14 @@ Route::middleware(['checkLogin', 'admin.activity.log'])->group(function () {
 
         // Admin Activity Logs (Superadmin only)
         Route::get('superadmin/logs', [AdminActivityLogController::class, 'index'])->name('superadmin.logs.index');
+
+        // Data Cutting (Potong Data) - Superadmin only
+        Route::get('data-cutting', [DataCuttingController::class, 'index'])->name('data-cutting.index');
+        Route::get('data-cutting/guide', [DataCuttingController::class, 'guide'])->name('data-cutting.guide');
+        Route::get('data-cutting/create', [DataCuttingController::class, 'create'])->name('data-cutting.create');
+        Route::post('data-cutting/preview', [DataCuttingController::class, 'preview'])->name('data-cutting.preview');
+        Route::post('data-cutting', [DataCuttingController::class, 'store'])->name('data-cutting.store');
+        Route::get('data-cutting/{id}/download', [DataCuttingController::class, 'download'])->name('data-cutting.download');
     });
 
     Route::get('admin/deposit/analysis', [AdminDepositController::class, 'analysis'])->name('admin.deposit.analysis');

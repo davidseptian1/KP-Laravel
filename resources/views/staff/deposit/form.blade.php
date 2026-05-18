@@ -84,7 +84,8 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Nominal</label>
-                        <input type="text" name="nominal" class="form-control" inputmode="numeric" placeholder="Contoh: 1.250.000,-" required />
+                        <input type="text" name="nominal" class="form-control" inputmode="numeric" placeholder="Contoh: 1.250.000,00 atau 1000000" required />
+                        <small class="form-text text-muted">Gunakan format nominal Indonesia: titik ribuan dan koma desimal. Contoh: 3.000.000,00 atau 1.250.000</small>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Deposit / Hutang</label>

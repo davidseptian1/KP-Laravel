@@ -172,7 +172,7 @@
                                                     </div>
                                                     <div class="col-md-6">
                                                         <label class="form-label">Nominal</label>
-                                                        <input type="text" name="nominal" class="form-control" value="{{ (int)$item->nominal }}" required>
+                                                        <input type="text" name="nominal" class="form-control" inputmode="numeric" value="{{ old('nominal', $item->nominal) }}" placeholder="Contoh: 1.250.000,00" required>
                                                     </div>
                                                     <div class="col-md-6">
                                                         <label class="form-label">Deposit / Hutang</label>

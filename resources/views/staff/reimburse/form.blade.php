@@ -98,7 +98,8 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Nominal</label>
-                        <input type="number" name="nominal" class="form-control" required />
+                        <input type="text" name="nominal" class="form-control" inputmode="numeric" placeholder="Contoh: 2.500.000,00" required />
+                        <small class="form-text text-muted">Gunakan titik untuk pemisah ribuan dan koma untuk desimal. Contoh: 3.000.000,00 atau 2500000</small>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Nama Barang</label>

@@ -60,12 +60,51 @@ class AdminDepositController extends Controller
         ];
     }
 
+    private function normalizeNominal($nominal): float|int
+    {
+        if (empty($nominal)) {
+            return 0;
+        }
+
+        $nominal = trim((string) $nominal);
+        $hasDot = str_contains($nominal, '.');
+        $hasComma = str_contains($nominal, ',');
+
+        if ($hasComma && $hasDot) {
+            $nominal = str_replace('.', '', $nominal);
+            $nominal = str_replace(',', '.', $nominal);
+        } elseif ($hasComma) {
+            $nominal = str_replace(',', '.', $nominal);
+        } elseif ($hasDot) {
+            $parts = explode('.', $nominal);
+            if (count($parts) > 2) {
+                if (strlen(end($parts)) === 3) {
+                    $nominal = str_replace('.', '', $nominal);
+                } else {
+                    $decimalPart = array_pop($parts);
+                    $integerPart = implode('', $parts);
+                    $nominal = $integerPart . '.' . $decimalPart;
+                }
+            } elseif (count($parts) === 2 && strlen($parts[1]) === 3) {
+                $nominal = str_replace('.', '', $nominal);
+            }
+        }
+
+        $nominal = preg_replace('/[^0-9.]/', '', $nominal);
+
+        if ($nominal === '' || $nominal === '.') {
+            return 0;
+        }
+
+        return (float) $nominal;
+    }
+
     private function normalizeNumericFields(Request $request): void
     {
         $rawNominal = (string) $request->input('nominal', '');
         $rawNoRek = (string) $request->input('no_rek', '');
 
-        $normalizedNominal = preg_replace('/[^0-9]/', '', $rawNominal);
+        $normalizedNominal = $this->normalizeNominal($rawNominal);
         $normalizedNoRek = preg_replace('/[^0-9]/', '', $rawNoRek);
 
         $request->merge([
