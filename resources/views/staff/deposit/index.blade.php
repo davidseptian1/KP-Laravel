@@ -664,8 +664,8 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Nominal</label>
-                            <input type="text" name="nominal" class="form-control" inputmode="numeric" value="{{ old('nominal') }}" placeholder="Contoh: 1.250.000,00 atau 1000000" required>
-                            <small class="form-text text-muted">Format diterima: 1.000.000,00 atau 1000000. Titik ribuan wajib, koma desimal opsional.</small>
+                            <input type="text" name="nominal" class="form-control" inputmode="numeric" value="{{ old('nominal') }}" placeholder="Contoh: 3.000.000,00 atau 3000000.00" required>
+                            <small class="form-text text-muted">Contoh di field: 3.000.000,00 — tiga juta rupiah.</small>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Deposit / Hutang</label>
