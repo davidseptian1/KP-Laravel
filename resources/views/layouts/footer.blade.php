@@ -129,14 +129,19 @@
                     let nominal = raw.trim();
                     nominal = nominal.replace(/\s+/g, '');
 
-                    if (nominal.includes(',') && nominal.includes('.')) {
+                    const hasComma = nominal.includes(',');
+                    const hasDot = nominal.includes('.');
+
+                    if (hasComma && hasDot) {
                         nominal = nominal.replace(/\./g, '');
                         nominal = nominal.replace(/,/g, '.');
-                    } else if (nominal.includes(',')) {
+                    } else if (hasComma) {
                         nominal = nominal.replace(/,/g, '.');
-                    } else if (nominal.includes('.')) {
+                    } else if (hasDot) {
                         const parts = nominal.split('.');
-                        if (parts.length === 2 && parts[1].length === 3) {
+                        if (parts.length > 2) {
+                            nominal = parts.join('');
+                        } else if (parts.length === 2 && parts[1].length === 3) {
                             nominal = parts.join('');
                         }
                     }
@@ -221,7 +226,7 @@
                         return '';
                     }
 
-                    if (decimalPart) {
+                    if (decimalPart && /[^0]/.test(decimalPart)) {
                         const decimals = decimalPart.split('').map(function (digit) {
                             const wordsDigit = numberToWords(parseInt(digit, 10));
                             return wordsDigit || '';
