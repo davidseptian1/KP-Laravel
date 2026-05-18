@@ -265,11 +265,10 @@
                     const text = getNominalWords(value);
                     if (text) {
                         helper.textContent = 'Nominal dalam kata: ' + text;
-                        helper.style.display = 'block';
                     } else {
                         helper.textContent = '';
-                        helper.style.display = 'none';
                     }
+                    helper.style.display = 'block';
                 }
 
                 function refreshNominalHelpers() {
