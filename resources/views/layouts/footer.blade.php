@@ -237,9 +237,14 @@
                     return words + ' rupiah';
                 }
 
+                function findNominalHelperFor(input) {
+                    const container = input.closest('.mb-3, .col-md-6, .form-group') || input.parentElement;
+                    return container?.querySelector('.js-nominal-display');
+                }
+
                 function refreshNominalHelpers() {
                     document.querySelectorAll('input[name="nominal"]').forEach(function (input) {
-                        const helper = input.closest('.mb-3')?.querySelector('.js-nominal-display');
+                        const helper = findNominalHelperFor(input);
                         if (!helper) {
                             return;
                         }
@@ -252,7 +257,7 @@
                     refreshNominalHelpers();
                     document.querySelectorAll('input[name="nominal"]').forEach(function (input) {
                         input.addEventListener('input', function () {
-                            const helper = input.closest('.mb-3')?.querySelector('.js-nominal-display');
+                            const helper = findNominalHelperFor(input);
                             if (!helper) {
                                 return;
                             }
