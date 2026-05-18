@@ -173,7 +173,7 @@
                                                     <div class="col-md-6">
                                                         <label class="form-label">Nominal</label>
                                                         <input type="text" name="nominal" class="form-control" inputmode="numeric" value="{{ old('nominal', $item->nominal) }}" placeholder="Contoh: 1.250.000,00" required>
-                                                        <small class="form-text text-muted d-block mt-2 js-nominal-display"></small>
+                                                        <div class="fw-bold text-dark mt-2 js-nominal-display" style="font-size: 15px;"></div>
                                                     </div>
                                                     <div class="col-md-6">
                                                         <label class="form-label">Deposit / Hutang</label>
