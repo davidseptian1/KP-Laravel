@@ -36,7 +36,7 @@
                     <div class="mb-3">
                         <label class="form-label">Nominal</label>
                         <input type="text" name="nominal" class="form-control" inputmode="numeric" placeholder="Contoh: 3.000.000,00 atau 3000000.00" required />
-                        <div class="fw-bold text-dark mt-2 js-nominal-display" style="font-size: 15px;"></div>
+                        <div class="fw-bold text-dark mt-2 js-nominal-display" style="font-size: 20px;"></div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">BANK</label>

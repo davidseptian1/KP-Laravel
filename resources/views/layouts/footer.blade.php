@@ -275,7 +275,8 @@
                     const value = input.value || input.getAttribute('value') || '';
                     const text = getNominalWords(value);
                     if (text) {
-                        helper.textContent = 'Nominal dalam kata: ' + text;
+                        // Capitalize the first letter for a clean, premium look
+                        helper.textContent = text.charAt(0).toUpperCase() + text.slice(1);
                     } else {
                         helper.textContent = '';
                     }
