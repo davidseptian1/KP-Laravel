@@ -263,14 +263,6 @@
                         if (helperInContainer) return helperInContainer;
                     }
                     
-                    // Strategy 4: Look in document for any nominal display (last resort)
-                    const allHelpers = document.querySelectorAll('.js-nominal-display');
-                    for (let i = 0; i < allHelpers.length; i++) {
-                        if (!allHelpers[i].textContent || allHelpers[i].textContent === '') {
-                            return allHelpers[i];
-                        }
-                    }
-                    
                     return null;
                 }
 
@@ -296,34 +288,37 @@
                     });
                 }
 
-                document.addEventListener('DOMContentLoaded', function () {
-                    setTimeout(function () {
-                        refreshNominalHelpers();
-                    }, 100);
-                    
-                    document.querySelectorAll('input[name="nominal"]').forEach(function (input) {
-                        input.addEventListener('input', function () {
-                            updateNominalHelper(input);
-                        });
+                function initNominalHelpers() {
+                    // Run initial refreshes
+                    setTimeout(refreshNominalHelpers, 100);
+                    setTimeout(refreshNominalHelpers, 500);
+
+                    // Event delegation for input events
+                    document.addEventListener('input', function (event) {
+                        const target = event.target;
+                        if (target && target.matches && target.matches('input[name="nominal"]')) {
+                            updateNominalHelper(target);
+                        }
                     });
-                    
-                    document.querySelectorAll('.modal').forEach(function (modalEl) {
-                        modalEl.addEventListener('shown.bs.modal', function () {
+
+                    // Event delegation for bootstrap modal shown event
+                    document.addEventListener('shown.bs.modal', function (event) {
+                        const modal = event.target;
+                        if (modal) {
                             setTimeout(function () {
-                                refreshNominalHelpers();
+                                modal.querySelectorAll('input[name="nominal"]').forEach(function (input) {
+                                    updateNominalHelper(input);
+                                });
                             }, 50);
-                            modalEl.querySelectorAll('input[name="nominal"]').forEach(function (input) {
-                                const existingListener = input.__nominalListenerAttached;
-                                if (!existingListener) {
-                                    input.__nominalListenerAttached = true;
-                                    input.addEventListener('input', function () {
-                                        updateNominalHelper(input);
-                                    });
-                                }
-                            });
-                        });
+                        }
                     });
-                });
+                }
+
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', initNominalHelpers);
+                } else {
+                    initNominalHelpers();
+                }
             })();
         </script>
 
