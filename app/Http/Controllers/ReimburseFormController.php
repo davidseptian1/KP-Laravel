@@ -104,7 +104,7 @@ class ReimburseFormController extends Controller
             'bank_provider' => 'required_if:payment_method,bank|nullable|string|max:50',
             'bank_account_number' => 'required_if:payment_method,bank|nullable|string|max:50',
             'bank_account_name' => 'required_if:payment_method,bank|nullable|string|max:100',
-            'divisi' => 'required|in:accounting,act,server,hrd,direksi,gudang,sosmed,host live,it',
+            'divisi' => 'required|in:accounting,act,server,hrd,direksi,gudang,sosmed,host live,it,sales',
             'nominal' => 'required|numeric|min:0',
             'nama_barang' => 'required|string|max:255',
             'keperluan' => 'required|string',

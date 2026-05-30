@@ -327,11 +327,24 @@ class AdminReimburseWebController extends Controller
         }
 
         if ($message) {
-            Http::post("https://api.telegram.org/bot{$botToken}/sendMessage", [
+            $payload = [
                 'chat_id' => $chatId,
                 'text' => $message,
                 'parse_mode' => 'Markdown'
-            ]);
+            ];
+            
+            if ($reimburse->status === 'waiting_approval_direksi' && $oldStatus !== 'waiting_approval_direksi') {
+                $payload['reply_markup'] = json_encode([
+                    'inline_keyboard' => [
+                        [
+                            ['text' => '✅ Approve', 'callback_data' => 'reimburse_approve_' . $reimburse->id],
+                            ['text' => '❌ Reject', 'callback_data' => 'reimburse_reject_' . $reimburse->id]
+                        ]
+                    ]
+                ]);
+            }
+
+            Http::post("https://api.telegram.org/bot{$botToken}/sendMessage", $payload);
         }
     }
 }

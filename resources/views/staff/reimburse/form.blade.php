@@ -91,7 +91,7 @@
                         <label class="form-label">Divisi</label>
                         <select name="divisi" class="form-select" required>
                             <option value="">Pilih Divisi</option>
-                            @foreach (['accounting','act','server','hrd','direksi','gudang','sosmed','host live','it'] as $divisi)
+                            @foreach (['accounting','act','server','hrd','direksi','gudang','sosmed','host live','it','sales'] as $divisi)
                                 <option value="{{ $divisi }}">{{ strtoupper($divisi) }}</option>
                             @endforeach
                         </select>
