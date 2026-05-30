@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\URL;
 use App\Exports\ReimburseExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Http;
 
 class AdminReimburseWebController extends Controller
 {
@@ -62,7 +63,7 @@ class AdminReimburseWebController extends Controller
     public function update(Request $request, int $id, WhatsAppMetricService $whatsApp)
     {
         $validated = $request->validate([
-            'status' => 'required|in:pending,approved,rejected,revision',
+            'status' => 'required|in:pending,waiting_approval_direksi,approved,rejected,revision',
             'catatan_admin' => 'nullable|string',
             'payment_proof_type' => 'nullable|in:text,image',
             'payment_proof_text' => 'nullable|string',
@@ -71,7 +72,12 @@ class AdminReimburseWebController extends Controller
 
         $reimburse = Reimburse::with('user')->findOrFail($id);
         $admin = Auth::user();
+        
+        $oldStatus = $reimburse->status;
 
+        // Prevent admin from changing status if it's already approved/waiting and they are not superadmin
+        // But let's handle this in the view and validate it. Actually, we just update what is sent.
+        
         $reimburse->status = $validated['status'];
         $reimburse->catatan_admin = $validated['catatan_admin'] ?? null;
 
@@ -90,7 +96,7 @@ class AdminReimburseWebController extends Controller
             }
         }
 
-        if (in_array($validated['status'], ['approved', 'rejected'], true)) {
+        if (in_array($validated['status'], ['approved', 'rejected', 'waiting_approval_direksi'], true)) {
             $reimburse->approved_by = $admin->id;
             $reimburse->approved_at = now();
         } else {
@@ -122,6 +128,9 @@ class AdminReimburseWebController extends Controller
 
             $whatsApp->sendText($targetNumber, $message);
         }
+
+        // Send to Telegram if needed
+        $this->sendTelegramNotification($reimburse, $oldStatus, $validated);
 
         return redirect()->route('admin.reimburse.index')->with('success', 'Status reimburse berhasil diperbarui');
     }
@@ -284,5 +293,45 @@ class AdminReimburseWebController extends Controller
         }
 
         return '-';
+    }
+
+    private function sendTelegramNotification($reimburse, $oldStatus, $validated)
+    {
+        $botToken = env('TELEGRAM_BOT_TOKEN');
+        $chatId = env('TELEGRAM_CHAT_ID');
+
+        if (!$botToken || !$chatId) {
+            return;
+        }
+
+        $message = null;
+
+        // Condition 1: Admin approved (waiting_approval_direksi)
+        if ($reimburse->status === 'waiting_approval_direksi' && $oldStatus !== 'waiting_approval_direksi') {
+            $message = "⏳ *Menunggu Approval Direksi*\n\n"
+                . "Kode: {$reimburse->kode_reimburse}\n"
+                . "Nama: {$reimburse->nama}\n"
+                . "Nominal: Rp " . number_format($reimburse->nominal, 0, ',', '.') . "\n"
+                . "Keperluan: {$reimburse->nama_barang}\n"
+                . "Mohon Direksi untuk melakukan approval.";
+        }
+
+        // Condition 2: Admin edits/saves transfer proof and it's already approved
+        // The condition for saving transfer proof can be checking if payment proof type is not empty in validated
+        if ($reimburse->status === 'approved' && !empty($validated['payment_proof_type'])) {
+            $message = "✅ *Data Selesai Ditransfer*\n\n"
+                . "Kode: {$reimburse->kode_reimburse}\n"
+                . "Nama: {$reimburse->nama}\n"
+                . "Nominal: Rp " . number_format($reimburse->nominal, 0, ',', '.') . "\n"
+                . "Status: Sudah Ditransfer";
+        }
+
+        if ($message) {
+            Http::post("https://api.telegram.org/bot{$botToken}/sendMessage", [
+                'chat_id' => $chatId,
+                'text' => $message,
+                'parse_mode' => 'Markdown'
+            ]);
+        }
     }
 }

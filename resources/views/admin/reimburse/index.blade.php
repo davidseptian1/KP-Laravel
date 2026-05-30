@@ -100,7 +100,7 @@
                 <form method="GET" class="d-flex flex-wrap gap-2 align-items-center">
                     <select name="status" class="form-select form-select-sm" style="max-width: 150px;">
                         <option value="">Semua Status</option>
-                        @foreach (['pending' => 'Pending', 'approved' => 'Approved', 'rejected' => 'Rejected', 'revision' => 'Revision'] as $key => $label)
+                        @foreach (['pending' => 'Pending', 'waiting_approval_direksi' => 'Waiting Approval Direksi', 'approved' => 'Approval Direksi', 'rejected' => 'Rejected', 'revision' => 'Revision'] as $key => $label)
                             <option value="{{ $key }}" {{ ($status ?? '') === $key ? 'selected' : '' }}>{{ $label }}</option>
                         @endforeach
                     </select>
@@ -193,8 +193,8 @@
                                     </td>
                                     <td>{{ optional($item->tanggal_pengajuan)->format('d M Y H:i') }}</td>
                                     <td>
-                                        <span class="badge bg-{{ $item->status === 'approved' ? 'success' : ($item->status === 'rejected' ? 'danger' : ($item->status === 'revision' ? 'warning' : 'secondary')) }}">
-                                            {{ ucfirst($item->status) }}
+                                        <span class="badge bg-{{ $item->status === 'approved' ? 'success' : ($item->status === 'rejected' ? 'danger' : ($item->status === 'waiting_approval_direksi' ? 'warning' : ($item->status === 'revision' ? 'info' : 'secondary'))) }}">
+                                            {{ $item->status === 'waiting_approval_direksi' ? 'Waiting Approval Direksi' : ($item->status === 'approved' ? 'Approval Direksi' : ucfirst($item->status)) }}
                                         </span>
                                     </td>
                                     <td>{{ $item->catatan_admin ?? '-' }}</td>
@@ -263,11 +263,31 @@
                                                             <form method="POST" action="{{ route('admin.reimburse.update', $item->id) }}" class="d-flex flex-column gap-3" enctype="multipart/form-data">
                                                                 @csrf
                                                                 @method('PUT')
-                                                                <select name="status" class="form-select" required>
-                                                                    @foreach (['pending' => 'Pending', 'approved' => 'Approved', 'rejected' => 'Rejected', 'revision' => 'Revision'] as $key => $label)
+                                                                @php
+                                                                    $isSuperadmin = Auth::user() && in_array(strtolower(Auth::user()->jabatan), ['superadmin', 'direksi']);
+                                                                    $statusOptions = [];
+                                                                    if ($isSuperadmin) {
+                                                                        if ($item->status === 'waiting_approval_direksi') {
+                                                                            $statusOptions = ['waiting_approval_direksi' => 'Waiting Approval Direksi', 'approved' => 'Approval Direksi', 'rejected' => 'Rejected'];
+                                                                        } else {
+                                                                            $statusOptions = [$item->status => $item->status === 'approved' ? 'Approval Direksi' : ucfirst($item->status)];
+                                                                        }
+                                                                    } else {
+                                                                        if (in_array($item->status, ['pending', 'revision'])) {
+                                                                            $statusOptions = ['pending' => 'Pending', 'waiting_approval_direksi' => 'Waiting Approval Direksi', 'rejected' => 'Rejected', 'revision' => 'Revision'];
+                                                                        } else {
+                                                                            $statusOptions = [$item->status => $item->status === 'waiting_approval_direksi' ? 'Waiting Approval Direksi' : ($item->status === 'approved' ? 'Approval Direksi' : ucfirst($item->status))];
+                                                                        }
+                                                                    }
+                                                                @endphp
+                                                                <select name="status" class="form-select" required {{ count($statusOptions) <= 1 ? 'disabled' : '' }}>
+                                                                    @foreach ($statusOptions as $key => $label)
                                                                         <option value="{{ $key }}" {{ $item->status === $key ? 'selected' : '' }}>{{ $label }}</option>
                                                                     @endforeach
                                                                 </select>
+                                                                @if(count($statusOptions) <= 1)
+                                                                    <input type="hidden" name="status" value="{{ $item->status }}">
+                                                                @endif
                                                                 <label class="form-label text-start mb-0">Bukti Pembayaran</label>
                                                                 <select name="payment_proof_type" class="form-select">
                                                                     <option value="">Bukti Pembayaran (opsional)</option>
