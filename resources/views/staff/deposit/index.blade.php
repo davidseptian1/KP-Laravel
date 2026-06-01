@@ -2171,6 +2171,15 @@
                     }
                 }
 
+                // Cek format nama dalam kurung setelah REK=...
+                const kurungMatch = text.match(/REK\s*=\s*[0-9\-\s]+\s*\(\s*([^)]+)\s*\)/i);
+                if (kurungMatch) {
+                    const extracted = kurungMatch[1].trim();
+                    if (extracted && extracted.length > 2 && !parsedNamas.includes(extracted)) {
+                        parsedNamas.unshift(extracted);
+                    }
+                }
+
                 if (parsedNamas.length > 0) {
                     if (namaRekeningInput && !namaRekeningInput.value) {
                         namaRekeningInput.value = parsedNamas[0];
@@ -2192,6 +2201,7 @@
                     /\[(BCA|BNI|BRI|MANDIRI|MNDR|BSI|CIMB|MAYBANK|PERMATA|JENIUS|SEABANK|NEO|BNC|BJB|DANAMON|MEGA|JAGO|ALADIN|OVO|DANA|GOPAY|SHOPEEPAY|LINKAJA|MUAMALAT|BTN|PANIN)(?:\s+\d+)?[^\]]*\]\s*[-:=]?\s*([0-9][0-9\-\s]{4,30})/gi,
                     /\b(BCA|BNI|BRI|MANDIRI|MNDR|BSI|CIMB|MAYBANK|PERMATA|JENIUS|SEABANK|NEO|BNC|BJB|DANAMON|MEGA|JAGO|ALADIN|OVO|DANA|GOPAY|SHOPEEPAY|LINKAJA|MUAMALAT|BTN|PANIN)\b\s*(?:-|:|=)?\s*([0-9][0-9\-\s]{4,30})/gi,
                     /\b(BCA|BNI|BRI|MANDIRI|MNDR|BSI|CIMB|MAYBANK|PERMATA|JENIUS|SEABANK|NEO|BNC|BJB|DANAMON|MEGA|JAGO|ALADIN|OVO|DANA|GOPAY|SHOPEEPAY|LINKAJA|MUAMALAT|BTN|PANIN)\b\s*(?:-|:|=)\s*[A-Z]{2,20}\s*(?:-|:|=)\s*([0-9][0-9\-\s]{4,30})/gi,
+                    /\b(BCA|BNI|BRI|MANDIRI|MNDR|BSI|CIMB|MAYBANK|PERMATA|JENIUS|SEABANK|NEO|BNC|BJB|DANAMON|MEGA|JAGO|ALADIN|OVO|DANA|GOPAY|SHOPEEPAY|LINKAJA|MUAMALAT|BTN|PANIN)\b\s*,\s*REK\s*=\s*([0-9][0-9\-\s]{4,30})/gi,
                 ];
                 const banks = [];
                 const noreks = [];
