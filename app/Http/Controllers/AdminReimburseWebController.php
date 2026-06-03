@@ -63,7 +63,7 @@ class AdminReimburseWebController extends Controller
     public function update(Request $request, int $id, WhatsAppMetricService $whatsApp)
     {
         $validated = $request->validate([
-            'status' => 'required|in:pending,waiting_approval_direksi,approved,rejected,revision',
+            'status' => 'required|in:pending,waiting_approval_direksi,approved,rejected,revision,completed',
             'catatan_admin' => 'nullable|string',
             'payment_proof_type' => 'nullable|in:text,image',
             'payment_proof_text' => 'nullable|string',
@@ -96,7 +96,7 @@ class AdminReimburseWebController extends Controller
             }
         }
 
-        if (in_array($validated['status'], ['approved', 'rejected', 'waiting_approval_direksi'], true)) {
+        if (in_array($validated['status'], ['approved', 'rejected', 'waiting_approval_direksi', 'completed'], true)) {
             $reimburse->approved_by = $admin->id;
             $reimburse->approved_at = now();
         } else {

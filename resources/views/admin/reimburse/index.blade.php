@@ -100,7 +100,7 @@
                 <form method="GET" class="d-flex flex-wrap gap-2 align-items-center">
                     <select name="status" class="form-select form-select-sm" style="max-width: 150px;">
                         <option value="">Semua Status</option>
-                        @foreach (['pending' => 'Pending', 'waiting_approval_direksi' => 'Waiting Approval Direksi', 'approved' => 'Approval Direksi', 'rejected' => 'Rejected', 'revision' => 'Revision'] as $key => $label)
+                        @foreach (['pending' => 'Pending', 'waiting_approval_direksi' => 'Waiting Approval Direksi', 'approved' => 'Approval Direksi', 'completed' => 'Selesai', 'rejected' => 'Rejected', 'revision' => 'Revision'] as $key => $label)
                             <option value="{{ $key }}" {{ ($status ?? '') === $key ? 'selected' : '' }}>{{ $label }}</option>
                         @endforeach
                     </select>
@@ -193,8 +193,8 @@
                                     </td>
                                     <td>{{ optional($item->tanggal_pengajuan)->format('d M Y H:i') }}</td>
                                     <td>
-                                        <span class="badge bg-{{ $item->status === 'approved' ? 'success' : ($item->status === 'rejected' ? 'danger' : ($item->status === 'waiting_approval_direksi' ? 'warning' : ($item->status === 'revision' ? 'info' : 'secondary'))) }}">
-                                            {{ $item->status === 'waiting_approval_direksi' ? 'Waiting Approval Direksi' : ($item->status === 'approved' ? 'Approval Direksi' : ucfirst($item->status)) }}
+                                        <span class="badge bg-{{ $item->status === 'completed' ? 'primary' : ($item->status === 'approved' ? 'success' : ($item->status === 'rejected' ? 'danger' : ($item->status === 'waiting_approval_direksi' ? 'warning' : ($item->status === 'revision' ? 'info' : 'secondary')))) }}">
+                                            {{ $item->status === 'completed' ? 'Selesai' : ($item->status === 'waiting_approval_direksi' ? 'Waiting Approval Direksi' : ($item->status === 'approved' ? 'Approval Direksi' : ucfirst($item->status))) }}
                                         </span>
                                     </td>
                                     <td>{{ $item->catatan_admin ?? '-' }}</td>
@@ -269,14 +269,18 @@
                                                                     if ($isSuperadmin) {
                                                                         if ($item->status === 'waiting_approval_direksi') {
                                                                             $statusOptions = ['waiting_approval_direksi' => 'Waiting Approval Direksi', 'approved' => 'Approval Direksi', 'rejected' => 'Rejected'];
+                                                                        } else if ($item->status === 'approved') {
+                                                                            $statusOptions = ['approved' => 'Approval Direksi', 'completed' => 'Selesai'];
                                                                         } else {
-                                                                            $statusOptions = [$item->status => $item->status === 'approved' ? 'Approval Direksi' : ucfirst($item->status)];
+                                                                            $statusOptions = [$item->status => $item->status === 'completed' ? 'Selesai' : ($item->status === 'approved' ? 'Approval Direksi' : ucfirst($item->status))];
                                                                         }
                                                                     } else {
                                                                         if (in_array($item->status, ['pending', 'revision'])) {
                                                                             $statusOptions = ['pending' => 'Pending', 'waiting_approval_direksi' => 'Waiting Approval Direksi', 'rejected' => 'Rejected', 'revision' => 'Revision'];
+                                                                        } else if ($item->status === 'approved') {
+                                                                            $statusOptions = ['approved' => 'Approval Direksi', 'completed' => 'Selesai'];
                                                                         } else {
-                                                                            $statusOptions = [$item->status => $item->status === 'waiting_approval_direksi' ? 'Waiting Approval Direksi' : ($item->status === 'approved' ? 'Approval Direksi' : ucfirst($item->status))];
+                                                                            $statusOptions = [$item->status => $item->status === 'completed' ? 'Selesai' : ($item->status === 'waiting_approval_direksi' ? 'Waiting Approval Direksi' : ($item->status === 'approved' ? 'Approval Direksi' : ucfirst($item->status)))];
                                                                         }
                                                                     }
                                                                 @endphp
