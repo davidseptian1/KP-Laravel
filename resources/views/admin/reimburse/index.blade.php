@@ -201,6 +201,9 @@
                                         <span class="badge bg-{{ $item->status === 'completed' ? 'primary' : ($item->status === 'approved' ? 'success' : ($item->status === 'rejected' ? 'danger' : ($item->status === 'waiting_approval_direksi' ? 'warning' : ($item->status === 'revision' ? 'info' : 'secondary')))) }}">
                                             {{ $item->status === 'completed' ? 'Selesai' : ($item->status === 'waiting_approval_direksi' ? 'Waiting Approval Direksi' : ($item->status === 'approved' ? 'Approval Direksi' : ucfirst($item->status))) }}
                                         </span>
+                                        <div class="small text-muted mt-1" style="font-size: 11px;">
+                                            Diubah: {{ $item->updated_at ? $item->updated_at->format('d M Y H:i') : '-' }}
+                                        </div>
                                     </td>
                                     <td>{{ $item->catatan_admin ?? '-' }}</td>
                                     <td class="text-center" style="position: sticky; right: 0; background: #fff; z-index: 1; min-width: 170px;">
