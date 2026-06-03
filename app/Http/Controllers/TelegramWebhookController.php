@@ -13,6 +13,9 @@ class TelegramWebhookController extends Controller
     {
         $update = $request->all();
 
+        // Mencatat semua payload (data) dari Telegram ke log
+        \Illuminate\Support\Facades\Log::info('--- TELEGRAM WEBHOOK PAYLOAD ---', $update);
+
         // Cek jika update berupa callback_query (tombol diklik)
         if (isset($update['callback_query'])) {
             $callbackQuery = $update['callback_query'];
@@ -25,6 +28,14 @@ class TelegramWebhookController extends Controller
             // Validasi: Pastikan tombol hanya bisa diklik dari Chat ID yang ditentukan
             // di environment, untuk keamanan (atau bisa dilewati jika butuh public access).
             $allowedChatId = env('TELEGRAM_CHAT_ID');
+
+            // Mencatat perbandingan Chat ID ke log
+            \Illuminate\Support\Facades\Log::info('--- CEK CHAT ID ---', [
+                'ID_Dari_Telegram' => $chatId,
+                'ID_Di_Env_Server' => $allowedChatId,
+                'Apakah_Sama' => ((string)$chatId === (string)$allowedChatId) ? 'YA' : 'TIDAK'
+            ]);
+
             if ((string)$chatId !== (string)$allowedChatId) {
                 return response()->json(['status' => 'unauthorized chat']);
             }
