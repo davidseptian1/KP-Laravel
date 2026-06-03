@@ -49,6 +49,9 @@ class AdminReimburseWebController extends Controller
 
         $items = $query->paginate(15)->withQueryString();
 
+        $waitingApprovalCount = Reimburse::where('status', 'waiting_approval_direksi')->count();
+        $approvedCount = Reimburse::where('status', 'approved')->count();
+
         return view('admin.reimburse.index', [
             'title' => 'Reimburse',
             'menuAdminReimburse' => 'active',
@@ -57,6 +60,8 @@ class AdminReimburseWebController extends Controller
             'search' => $search,
             'startDate' => $startDate,
             'endDate' => $endDate,
+            'waitingApprovalCount' => $waitingApprovalCount,
+            'approvedCount' => $approvedCount,
         ]);
     }
 

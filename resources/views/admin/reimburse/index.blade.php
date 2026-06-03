@@ -97,7 +97,7 @@
     <div class="col-12">
         <div class="card shadow-sm">
             <div class="card-header bg-white">
-                <form method="GET" class="d-flex flex-wrap gap-2 align-items-center">
+                <form method="GET" class="d-flex flex-wrap gap-2 align-items-center mb-3">
                     <select name="status" class="form-select form-select-sm" style="max-width: 150px;">
                         <option value="">Semua Status</option>
                         @foreach (['pending' => 'Pending', 'waiting_approval_direksi' => 'Waiting Approval Direksi', 'approved' => 'Approval Direksi', 'completed' => 'Selesai', 'rejected' => 'Rejected', 'revision' => 'Revision'] as $key => $label)
@@ -118,6 +118,11 @@
                     <button class="btn btn-primary btn-sm">Filter</button>
                     <a href="{{ route('admin.reimburse.export-excel', request()->query()) }}" class="btn btn-success btn-sm">Download Excel</a>
                 </form>
+
+                <div class="d-flex flex-wrap gap-2">
+                    <span class="badge bg-warning text-dark px-3 py-2" style="font-size: 14px;">Waiting Approval Direksi ({{ $waitingApprovalCount ?? 0 }})</span>
+                    <span class="badge bg-success px-3 py-2" style="font-size: 14px;">Approval Direksi ({{ $approvedCount ?? 0 }})</span>
+                </div>
             </div>
 
             <div class="card-body">
