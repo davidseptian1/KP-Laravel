@@ -313,11 +313,28 @@ class AdminReimburseWebController extends Controller
 
         // Condition 1: Admin approved (waiting_approval_direksi)
         if ($reimburse->status === 'waiting_approval_direksi' && $oldStatus !== 'waiting_approval_direksi') {
+            $metode = $reimburse->payment_method === 'ewallet' ? 'E-Wallet' : 'Bank';
+            $provider = strtoupper((string) $reimburse->payment_provider);
+            
+            // Gabungkan data rekening sesuai request
+            $noRekeningLengkap = $reimburse->no_rekening ?: "{$metode} - {$provider} - {$reimburse->payment_account_number} - {$reimburse->payment_account_name}";
+            $buktiLink = route('admin.reimburse.view', [$reimburse->id, 0]);
+            $tanggal = $reimburse->tanggal_pengajuan ? $reimburse->tanggal_pengajuan->format('d M Y H:i') : '-';
+
             $message = "⏳ *Menunggu Approval Direksi*\n\n"
-                . "Kode: {$reimburse->kode_reimburse}\n"
-                . "Nama: {$reimburse->nama}\n"
-                . "Nominal: Rp " . number_format($reimburse->nominal, 0, ',', '.') . "\n"
-                . "Keperluan: {$reimburse->nama_barang}\n"
+                . "FORM REIMBURSE\n"
+                . "Kode          : {$reimburse->kode_reimburse}\n"
+                . "Nama          : {$reimburse->nama}\n"
+                . "Metode        : {$metode}\n"
+                . "Provider      : {$provider}\n"
+                . "No Rekening   : {$noRekeningLengkap}\n"
+                . "Divisi        : {$reimburse->divisi}\n"
+                . "Nominal       : Rp " . number_format($reimburse->nominal, 0, ',', '.') . "\n"
+                . "Nama Barang   : {$reimburse->nama_barang}\n"
+                . "Keperluan     : " . ($reimburse->keterangan ?? $reimburse->keperluan ?? '-') . "\n"
+                . "WA Pengisi    : {$reimburse->wa_pengisi}\n"
+                . "Bukti         : {$buktiLink}\n"
+                . "Tanggal pengajuan dan waktu : {$tanggal}\n\n"
                 . "Mohon Direksi untuk melakukan approval.";
         }
 
