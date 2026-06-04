@@ -86,17 +86,25 @@ class AdminReimburseWebController extends Controller
         $reimburse->status = $validated['status'];
         $reimburse->catatan_admin = $validated['catatan_admin'] ?? null;
 
-        if (!empty($validated['payment_proof_type'])) {
-            $reimburse->payment_proof_type = $validated['payment_proof_type'];
-
-            if ($validated['payment_proof_type'] === 'text') {
-                $reimburse->payment_proof_text = $validated['payment_proof_text'] ?? null;
+        if ($request->hasFile('payment_proof_image')) {
+            $path = $request->file('payment_proof_image')->store('reimburse/payment-proof', 'local');
+            $reimburse->payment_proof_image = $path;
+            $reimburse->payment_proof_type = 'image';
+            $reimburse->payment_proof_text = null;
+        } elseif (!empty($validated['payment_proof_text'])) {
+            $reimburse->payment_proof_text = $validated['payment_proof_text'];
+            $reimburse->payment_proof_type = 'text';
+            $reimburse->payment_proof_image = null;
+        } else {
+            $reimburse->payment_proof_type = $validated['payment_proof_type'] ?? null;
+            
+            if ($reimburse->payment_proof_type === 'text') {
+                $reimburse->payment_proof_text = null;
                 $reimburse->payment_proof_image = null;
-            }
-
-            if ($validated['payment_proof_type'] === 'image' && $request->hasFile('payment_proof_image')) {
-                $path = $request->file('payment_proof_image')->store('reimburse/payment-proof', 'local');
-                $reimburse->payment_proof_image = $path;
+            } elseif ($reimburse->payment_proof_type === 'image') {
+                $reimburse->payment_proof_text = null;
+            } else {
+                $reimburse->payment_proof_image = null;
                 $reimburse->payment_proof_text = null;
             }
         }
