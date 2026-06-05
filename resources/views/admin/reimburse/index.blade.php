@@ -307,7 +307,12 @@
                                                                     <option value="image" {{ $item->payment_proof_type === 'image' ? 'selected' : '' }}>Gambar</option>
                                                                 </select>
                                                                 <input type="text" name="payment_proof_text" value="{{ $item->payment_proof_text }}" class="form-control" placeholder="Isi bukti pembayaran (teks)" />
-                                                                <input type="file" name="payment_proof_image" class="form-control" accept="image/*" />
+                                                                <input type="file" name="payment_proof_image" id="file-input-{{ $item->id }}" class="form-control" accept="image/*" onchange="previewImage(this, '{{ $item->id }}')" />
+                                                                <input type="hidden" name="remove_payment_proof" id="remove-proof-{{ $item->id }}" value="0">
+                                                                <div class="position-relative mt-2 mb-2 d-inline-block" id="proof-preview-container-{{ $item->id }}" style="display: {{ ($item->payment_proof_type === 'image' && $item->payment_proof_image) ? 'inline-block' : 'none !important' }};">
+                                                                    <img src="{{ ($item->payment_proof_type === 'image' && $item->payment_proof_image) ? route('admin.reimburse.payment-proof', $item->id) : '' }}" id="proof-preview-img-{{ $item->id }}" alt="Preview" class="img-thumbnail" style="max-height: 200px;">
+                                                                    <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1" onclick="removePreview('{{ $item->id }}')" title="Hapus Gambar" style="padding: 0 6px; border-radius: 50%;">&times;</button>
+                                                                </div>
                                                                 <label class="form-label text-start mb-0">Catatan Admin</label>
                                                                 <input type="text" name="catatan_admin" value="{{ $item->catatan_admin }}" class="form-control" placeholder="Catatan admin" />
                                                                 <button class="btn btn-success">Update + Kirim WA</button>
@@ -732,6 +737,9 @@
                     typeSelect.value = 'image';
                 }
 
+                // Trigger change event to show preview
+                fileInput.dispatchEvent(new Event('change'));
+
                 // Show a brief notification or visual feedback that the image was pasted
                 fileInput.classList.add('is-valid');
                 setTimeout(() => fileInput.classList.remove('is-valid'), 2000);
@@ -741,5 +749,34 @@
             }
         }
     });
+
+    function previewImage(input, id) {
+        const container = document.getElementById('proof-preview-container-' + id);
+        const img = document.getElementById('proof-preview-img-' + id);
+        const removeInput = document.getElementById('remove-proof-' + id);
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                img.src = e.target.result;
+                container.style.setProperty('display', 'inline-block', 'important');
+                removeInput.value = '0';
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function removePreview(id) {
+        const container = document.getElementById('proof-preview-container-' + id);
+        const fileInput = document.getElementById('file-input-' + id);
+        const removeInput = document.getElementById('remove-proof-' + id);
+        const img = document.getElementById('proof-preview-img-' + id);
+        const typeSelect = document.querySelector('#aksiModal-' + id + ' select[name="payment_proof_type"]');
+        
+        container.style.setProperty('display', 'none', 'important');
+        if(fileInput) fileInput.value = '';
+        removeInput.value = '1';
+        img.src = '';
+        if(typeSelect) typeSelect.value = '';
+    }
 </script>
 @endpush

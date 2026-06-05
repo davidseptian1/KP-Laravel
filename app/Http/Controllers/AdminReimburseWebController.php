@@ -95,6 +95,10 @@ class AdminReimburseWebController extends Controller
             $reimburse->payment_proof_text = $validated['payment_proof_text'];
             $reimburse->payment_proof_type = 'text';
             $reimburse->payment_proof_image = null;
+        } elseif ($request->input('remove_payment_proof') == '1') {
+            $reimburse->payment_proof_type = null;
+            $reimburse->payment_proof_image = null;
+            $reimburse->payment_proof_text = null;
         } else {
             $reimburse->payment_proof_type = $validated['payment_proof_type'] ?? null;
             
