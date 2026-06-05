@@ -705,5 +705,41 @@
 
         initAdminTableColumnControls();
     })();
+
+    document.addEventListener('paste', function(e) {
+        const openModal = document.querySelector('.modal.show');
+        if (!openModal) return;
+
+        const fileInput = openModal.querySelector('input[name="payment_proof_image"]');
+        if (!fileInput) return;
+
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf('image') !== -1) {
+                const file = items[i].getAsFile();
+                
+                // Create a new File with a proper name and extension
+                const date = new Date();
+                const fileName = 'pasted_image_' + date.getTime() + '.png';
+                const renamedFile = new File([file], fileName, { type: file.type });
+
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(renamedFile);
+                fileInput.files = dataTransfer.files;
+                
+                const typeSelect = openModal.querySelector('select[name="payment_proof_type"]');
+                if (typeSelect) {
+                    typeSelect.value = 'image';
+                }
+
+                // Show a brief notification or visual feedback that the image was pasted
+                fileInput.classList.add('is-valid');
+                setTimeout(() => fileInput.classList.remove('is-valid'), 2000);
+                
+                e.preventDefault();
+                break;
+            }
+        }
+    });
 </script>
 @endpush
