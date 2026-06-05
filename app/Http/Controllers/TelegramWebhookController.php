@@ -40,9 +40,9 @@ class TelegramWebhookController extends Controller
                 return response()->json(['status' => 'unauthorized chat']);
             }
 
-            // Pola: reimburse_approve_{id} atau reimburse_reject_{id}
-            if (preg_match('/^reimburse_(approve|reject)_(\d+)$/', $data, $matches)) {
-                $action = $matches[1]; // 'approve' atau 'reject'
+            // Pola: reimburse_approve_{id}, reimburse_reject_{id}, atau reimburse_edit_{id}
+            if (preg_match('/^reimburse_(approve|reject|edit)_(\d+)$/', $data, $matches)) {
+                $action = $matches[1]; // 'approve', 'reject', atau 'edit'
                 $id = $matches[2];
 
                 $reimburse = Reimburse::find($id);
@@ -52,14 +52,29 @@ class TelegramWebhookController extends Controller
                     return response()->json(['status' => 'not found']);
                 }
 
-                if ($reimburse->status !== 'waiting_approval_direksi') {
-                    $this->answerCallbackQuery($callbackQueryId, 'Data ini sudah diproses sebelumnya.');
-                    return response()->json(['status' => 'already processed']);
+                if ($action === 'edit') {
+                    // Kembalikan tombol Approve & Reject
+                    // Hilangkan teks "[STATUS: Telah ...]" dari pesan
+                    $originalText = preg_replace('/\n\n\*\[STATUS: Telah .*? melalui Bot\]\*/', '', $message['text']);
+                    
+                    $this->editMessageTextAndKeyboard(
+                        $chatId,
+                        $messageId,
+                        $originalText,
+                        json_encode([
+                            'inline_keyboard' => [
+                                [
+                                    ['text' => '✅ Approve', 'callback_data' => 'reimburse_approve_' . $id],
+                                    ['text' => '❌ Reject', 'callback_data' => 'reimburse_reject_' . $id]
+                                ]
+                            ]
+                        ])
+                    );
+                    $this->answerCallbackQuery($callbackQueryId, "Silakan pilih ulang status.");
+                    return response()->json(['status' => 'success']);
                 }
 
-                // Kita asumsikan Direksi pertama yang akan menjadi 'approved_by' jika dibutuhkan,
-                // Namun karena ini otomatis, kita bisa gunakan null atau mencari user direksi.
-                // Untuk kesederhanaan, mari kita cari user superadmin pertama.
+                // Untuk approve / reject
                 $superadmin = User::whereIn('jabatan', ['Superadmin', 'Direksi'])->first();
 
                 // Update data reimburse
@@ -72,11 +87,21 @@ class TelegramWebhookController extends Controller
                 $statusText = $action === 'approve' ? 'Di-approve' : 'Di-reject';
                 $this->answerCallbackQuery($callbackQueryId, "Reimburse $id berhasil $statusText!");
 
-                // Hapus tombol dan perbarui pesan agar tidak diklik dua kali
-                $this->editMessageText(
+                // Hapus tombol sebelumnya, tampilkan status dan tombol Edit
+                $originalText = preg_replace('/\n\n\*\[STATUS: Telah .*? melalui Bot\]\*/', '', $message['text']);
+                $newText = "{$originalText}\n\n*[STATUS: Telah $statusText melalui Bot]*";
+
+                $this->editMessageTextAndKeyboard(
                     $chatId, 
                     $messageId, 
-                    "{$message['text']}\n\n*[STATUS: Telah $statusText melalui Bot]*"
+                    $newText,
+                    json_encode([
+                        'inline_keyboard' => [
+                            [
+                                ['text' => '✏️ Edit Status', 'callback_data' => 'reimburse_edit_' . $id]
+                            ]
+                        ]
+                    ])
                 );
 
                 return response()->json(['status' => 'success']);
@@ -96,14 +121,20 @@ class TelegramWebhookController extends Controller
         ]);
     }
 
-    private function editMessageText($chatId, $messageId, $text)
+    private function editMessageTextAndKeyboard($chatId, $messageId, $text, $replyMarkup = null)
     {
         $botToken = env('TELEGRAM_BOT_TOKEN');
-        Http::post("https://api.telegram.org/bot{$botToken}/editMessageText", [
+        $payload = [
             'chat_id' => $chatId,
             'message_id' => $messageId,
             'text' => $text,
             'parse_mode' => 'Markdown'
-        ]);
+        ];
+        
+        if ($replyMarkup) {
+            $payload['reply_markup'] = $replyMarkup;
+        }
+
+        Http::post("https://api.telegram.org/bot{$botToken}/editMessageText", $payload);
     }
 }

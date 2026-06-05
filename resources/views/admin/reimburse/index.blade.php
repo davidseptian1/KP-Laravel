@@ -203,6 +203,9 @@
                                         </span>
                                         <div class="small text-muted mt-1" style="font-size: 11px;">
                                             Diubah: {{ $item->updated_at ? $item->updated_at->format('d M Y H:i') : '-' }}
+                                            @if($item->approver)
+                                                <br>Oleh: {{ $item->approver->nama }}
+                                            @endif
                                         </div>
                                     </td>
                                     <td>{{ $item->catatan_admin ?? '-' }}</td>

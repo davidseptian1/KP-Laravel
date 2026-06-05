@@ -24,7 +24,7 @@ class AdminReimburseWebController extends Controller
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date');
 
-        $query = Reimburse::with(['user', 'form'])->orderByDesc('tanggal_pengajuan');
+        $query = Reimburse::with(['user', 'form', 'approver'])->orderByDesc('tanggal_pengajuan');
 
         if ($status) {
             $query->where('status', $status);
