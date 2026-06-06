@@ -2090,16 +2090,22 @@
         }
 
         if (nominalInput) {
-            nominalInput.addEventListener('change', function () {
+            let hasShown30MWarning = false;
+            nominalInput.addEventListener('input', function () {
                 const val = parseFloat(this.value) || 0;
                 if (val >= 30000000) {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Perhatian!',
-                        text: 'Nominal sebesar Rp ' + val.toLocaleString('id-ID') + ' mencapai 30 Juta atau lebih!',
-                        confirmButtonText: 'Mengerti',
-                        confirmButtonColor: '#f59e0b'
-                    });
+                    if (!hasShown30MWarning) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Perhatian!',
+                            text: 'Nominal sebesar Rp ' + val.toLocaleString('id-ID') + ' mencapai 30 Juta atau lebih!',
+                            confirmButtonText: 'Mengerti',
+                            confirmButtonColor: '#f59e0b'
+                        });
+                        hasShown30MWarning = true;
+                    }
+                } else {
+                    hasShown30MWarning = false;
                 }
             });
         }
