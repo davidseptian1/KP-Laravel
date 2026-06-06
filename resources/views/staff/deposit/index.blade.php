@@ -2138,11 +2138,12 @@
                 const nominalMatch =
                     text.match(/(?:Rp\s*\.?|IDR)\s*([0-9][\d\.,]{2,})/i) ||
                     text.match(/(?:(?:Nominal|Total|Jumlah|Transfer|Sebesar|Senilai|Bayar|Total Pembayaran)[^\d]*?)\s*([\d\.\,]{4,})/i) ||
-                    text.match(/\b(\d{1,3}(?:\.\d{3}){1,3})\b/);
+                    text.match(/\b(\d{1,3}(?:[\.\,]\d{3}){1,3})\b/);
                 if (nominalMatch && nominalInput) {
                     let nom = nominalMatch[1].replace(/[^0-9]/g, '');
                     if (nom && !nominalInput.value) {
                         nominalInput.value = nom;
+                        nominalInput.dispatchEvent(new Event('input', { bubbles: true }));
                     }
                 }
 
