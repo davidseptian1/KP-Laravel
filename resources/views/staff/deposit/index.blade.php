@@ -23,6 +23,11 @@
         background: var(--bs-body-bg, #fff);
     }
 
+    /* Fix SweetAlert2 z-index behind Bootstrap modal */
+    .swal2-container {
+        z-index: 99999 !important;
+    }
+
     .staff-deposit-page .section-title {
         font-size: 0.92rem;
         font-weight: 600;
