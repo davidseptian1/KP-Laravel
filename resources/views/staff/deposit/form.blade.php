@@ -246,10 +246,12 @@
 
         // Auto parse Reply Tiket
         const replyTiketInput = document.querySelector('textarea[name="reply_tiket"]');
+        const namaSupplierInput = document.querySelector('input[name="nama_supplier"]');
         const nominalInput = document.querySelector('input[name="nominal"]');
         const bankTujuanInput = document.querySelector('input[name="bank_tujuan"]');
         const noRekInput = document.querySelector('input[name="no_rek"]');
         const namaRekeningInput = document.querySelector('input[name="nama_rekening"]');
+        const supplierList = document.getElementById('supplierPublicList');
         const bankTujuanList = document.getElementById('bankTujuanPublicList');
         const noRekList = document.getElementById('noRekeningPublicList');
         const namaRekList = document.getElementById('namaRekeningPublicList');
@@ -257,6 +259,10 @@
         const noRekParsedSelect = document.getElementById('noRekParsedSelectPublic');
         const namaRekParsedSelect = document.getElementById('namaRekParsedSelectPublic');
         let parsedBankRekPairs = [];
+        let availableSuppliers = [];
+        if (supplierList) {
+            availableSuppliers = Array.from(supplierList.options).map(opt => opt.value);
+        }
 
         function resetPublicDepositFormFields() {
             if (!form) return;
@@ -375,6 +381,28 @@
             replyTiketInput.addEventListener('input', function() {
                 const text = this.value;
                 if (!text) return;
+
+                // Parse Nama Supplier
+                if (namaSupplierInput && availableSuppliers.length > 0) {
+                    const textUpper = text.toUpperCase();
+                    let matchedSupplier = '';
+                    
+                    if (textUpper.includes('DIGIFLAZZ')) {
+                        matchedSupplier = availableSuppliers.find(s => s.toUpperCase().includes('DIGIFLAZZ')) || 'DIGIFLAZZ BK';
+                    } else {
+                        for (const supplier of availableSuppliers) {
+                            const firstWord = supplier.split(' ')[0].toUpperCase();
+                            if (firstWord.length > 2 && textUpper.includes(firstWord)) {
+                                matchedSupplier = supplier;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (matchedSupplier) {
+                        namaSupplierInput.value = matchedSupplier;
+                    }
+                }
 
                 // Parse Nominal
                 const nominalMatch =
