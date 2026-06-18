@@ -389,6 +389,8 @@
                     
                     if (textUpper.includes('DIGIFLAZZ')) {
                         matchedSupplier = availableSuppliers.find(s => s.toUpperCase().includes('DIGIFLAZZ')) || 'DIGIFLAZZ BK';
+                    } else if (textUpper.includes('SARVENAZ')) {
+                        matchedSupplier = availableSuppliers.find(s => s.toUpperCase().includes('SARVENAZ')) || 'SARVENAZ BK';
                     } else {
                         for (const supplier of availableSuppliers) {
                             const firstWord = supplier.split(' ')[0].toUpperCase();
