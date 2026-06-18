@@ -1019,6 +1019,32 @@
         }
 
         document.addEventListener('click', async function (event) {
+            const nominalButton = event.target.closest('.js-copy-nominal');
+            if (nominalButton) {
+                const modal = nominalButton.closest('.modal');
+                const nominalInput = modal ? modal.querySelector('input[name="nominal"]') : null;
+                let nominalValue = nominalInput ? nominalInput.value : '';
+                
+                const match = nominalValue.trim().match(/^([\d.,]+?)(?:[.,]\d{2})?$/);
+                if (match) {
+                    nominalValue = match[1];
+                }
+                
+                try {
+                    await copyTextToClipboard(nominalValue);
+                } catch (error) {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'error',
+                        title: 'Gagal menyalin nominal',
+                        showConfirmButton: false,
+                        timer: 1600,
+                    });
+                }
+                return;
+            }
+
             const textButton = event.target.closest('.js-copy-text');
             if (textButton) {
                 const textValue = textButton.getAttribute('data-copy-text') || '';
