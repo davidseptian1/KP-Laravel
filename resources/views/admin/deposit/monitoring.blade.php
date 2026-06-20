@@ -1045,6 +1045,27 @@
                 return;
             }
 
+            const norekButton = event.target.closest('.js-copy-norek');
+            if (norekButton) {
+                const modal = norekButton.closest('.modal');
+                const norekInput = modal ? modal.querySelector('input[name="no_rek"]') : null;
+                const norekValue = norekInput ? norekInput.value : '';
+                
+                try {
+                    await copyTextToClipboard(norekValue);
+                } catch (error) {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'error',
+                        title: 'Gagal menyalin no-rek',
+                        showConfirmButton: false,
+                        timer: 1600,
+                    });
+                }
+                return;
+            }
+
             const textButton = event.target.closest('.js-copy-text');
             if (textButton) {
                 const textValue = textButton.getAttribute('data-copy-text') || '';

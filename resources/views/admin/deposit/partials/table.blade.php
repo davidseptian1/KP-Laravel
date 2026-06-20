@@ -190,10 +190,13 @@
                                                         <label class="form-label">Server</label>
                                                         <input type="text" name="server" class="form-control" value="{{ $item->server }}" list="adminServerList" placeholder="Ketik server..." required>
                                                     </div>
-                                                    <div class="col-md-6">
-                                                        <label class="form-label">No-Rek</label>
-                                                        <input type="text" name="no_rek" class="form-control" value="{{ $item->no_rek }}" required>
-                                                    </div>
+                                                     <div class="col-md-6">
+                                                         <label class="form-label">No-Rek</label>
+                                                         <div class="input-group">
+                                                             <input type="text" name="no_rek" class="form-control" value="{{ $item->no_rek }}" required>
+                                                             <button type="button" class="btn btn-outline-secondary js-copy-norek">Copy</button>
+                                                         </div>
+                                                     </div>
                                                     <div class="col-md-6">
                                                         <label class="form-label">Nama Rekening</label>
                                                         <input type="text" name="nama_rekening" class="form-control" value="{{ $item->nama_rekening }}" required>
