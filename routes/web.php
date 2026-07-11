@@ -118,8 +118,14 @@ Route::middleware(['checkLogin', 'admin.activity.log'])->group(function () {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
-        $count = Deposit::whereRaw("LOWER(TRIM(jenis_transaksi)) IN ('hutang','bon')")
-            ->whereRaw("LOWER(REPLACE(REPLACE(REPLACE(REPLACE(status, ' ', ''), '_', ''), '(', ''), ')', '')) = ?", ['selesaibelumlunas'])
+        $count = Deposit::whereIn('jenis_transaksi', ['hutang', 'bon', 'Hutang', 'Bon'])
+            ->whereIn('status', [
+                'selesai_belum_lunas', 
+                'Selesai (Belum Lunas)', 
+                'Selesai Belum Lunas', 
+                'selesai belum lunas',
+                'Selesai_Belum_Lunas'
+            ])
             ->count();
 
         return response()->json(['count' => $count]);
@@ -136,8 +142,14 @@ Route::middleware(['checkLogin', 'admin.activity.log'])->group(function () {
             'data_request_pending' => DataRequest::where('status', 'pending')->count(),
             'loan_request_pending' => LoanRequest::where('status', 'pending')->count(),
             'deposit_pending' => Deposit::where('status', 'pending')->count(),
-            'hutang_belum_lunas' => Deposit::whereRaw("LOWER(TRIM(jenis_transaksi)) IN ('hutang','bon')")
-                ->whereRaw("LOWER(REPLACE(REPLACE(REPLACE(REPLACE(status, ' ', ''), '_', ''), '(', ''), ')', '')) = ?", ['selesaibelumlunas'])
+            'hutang_belum_lunas' => Deposit::whereIn('jenis_transaksi', ['hutang', 'bon', 'Hutang', 'Bon'])
+                ->whereIn('status', [
+                    'selesai_belum_lunas', 
+                    'Selesai (Belum Lunas)', 
+                    'Selesai Belum Lunas', 
+                    'selesai belum lunas',
+                    'Selesai_Belum_Lunas'
+                ])
                 ->count(),
         ]);
     })->name('sidebar.monitoring-counts');
@@ -389,4 +401,11 @@ Route::get('/clear-cache', function() {
     \Illuminate\Support\Facades\Artisan::call('cache:clear');
     \Illuminate\Support\Facades\Artisan::call('view:clear');
     return "Semua cache berhasil dibersihkan! Silakan coba login lagi.";
+});
+
+Route::get('/optimize-app', function() {
+    \Illuminate\Support\Facades\Artisan::call('config:cache');
+    \Illuminate\Support\Facades\Artisan::call('route:cache');
+    \Illuminate\Support\Facades\Artisan::call('view:cache');
+    return "Optimasi caching Laravel berhasil diaktifkan!";
 });
