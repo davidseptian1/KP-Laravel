@@ -252,20 +252,33 @@ class DataCuttingController extends Controller
      */
     private function getMysqldumpPath()
     {
-        // Paths/Patterns untuk Windows
-        $possiblePatterns = [
-            'C:\\laragon\\bin\\mysql\\*\\bin\\mysqldump.exe',
-            'C:\\xampp\\mysql\\bin\\mysqldump.exe',
-            'C:\\Program Files\\MySQL\\MySQL Server *\\bin\\mysqldump.exe',
-            'C:\\Program Files (x86)\\MySQL\\MySQL Server *\\bin\\mysqldump.exe',
-        ];
-
         $possiblePaths = [];
-        foreach ($possiblePatterns as $pattern) {
-            $matches = glob($pattern);
-            if ($matches) {
-                $possiblePaths = array_merge($possiblePaths, $matches);
+
+        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+            // Paths/Patterns untuk Windows
+            $possiblePatterns = [
+                'C:\\laragon\\bin\\mysql\\*\\bin\\mysqldump.exe',
+                'C:\\xampp\\mysql\\bin\\mysqldump.exe',
+                'C:\\Program Files\\MySQL\\MySQL Server *\\bin\\mysqldump.exe',
+                'C:\\Program Files (x86)\\MySQL\\MySQL Server *\\bin\\mysqldump.exe',
+            ];
+
+            foreach ($possiblePatterns as $pattern) {
+                $matches = glob($pattern);
+                if ($matches) {
+                    $possiblePaths = array_merge($possiblePaths, $matches);
+                }
             }
+        } else {
+            // Paths untuk Linux (cPanel, Ubuntu, dll)
+            $possiblePaths = [
+                '/usr/bin/mysqldump',
+                '/usr/local/bin/mysqldump',
+                '/usr/local/mysql/bin/mysqldump',
+                '/usr/sbin/mysqldump',
+                '/usr/local/sbin/mysqldump',
+                '/opt/lampp/bin/mysqldump',
+            ];
         }
 
         // Cek di PATH environment
