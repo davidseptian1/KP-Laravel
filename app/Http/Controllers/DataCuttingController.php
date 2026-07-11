@@ -252,15 +252,21 @@ class DataCuttingController extends Controller
      */
     private function getMysqldumpPath()
     {
-        // Paths untuk Windows
-        $possiblePaths = [
+        // Paths/Patterns untuk Windows
+        $possiblePatterns = [
+            'C:\\laragon\\bin\\mysql\\*\\bin\\mysqldump.exe',
             'C:\\xampp\\mysql\\bin\\mysqldump.exe',
-            'C:\\laragon\\bin\\mysql\\mysql-5.7.26-win32-x64\\bin\\mysqldump.exe',
-            'C:\\laragon\\bin\\mysql\\mysql-5.7.36-winx64\\bin\\mysqldump.exe',
-            'C:\\laragon\\bin\\mysql\\mysql-8.0.1-winx64\\bin\\mysqldump.exe',
-            'C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysqldump.exe',
-            'C:\\Program Files (x86)\\MySQL\\MySQL Server 8.0\\bin\\mysqldump.exe',
+            'C:\\Program Files\\MySQL\\MySQL Server *\\bin\\mysqldump.exe',
+            'C:\\Program Files (x86)\\MySQL\\MySQL Server *\\bin\\mysqldump.exe',
         ];
+
+        $possiblePaths = [];
+        foreach ($possiblePatterns as $pattern) {
+            $matches = glob($pattern);
+            if ($matches) {
+                $possiblePaths = array_merge($possiblePaths, $matches);
+            }
+        }
 
         // Cek di PATH environment
         $command = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN' 
