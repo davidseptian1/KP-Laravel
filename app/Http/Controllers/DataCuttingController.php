@@ -90,7 +90,7 @@ class DataCuttingController extends Controller
 
         $request->validate([
             'cut_date' => 'required|date',
-            'backup_database' => 'required|boolean',
+            'backup_database' => 'boolean',
             'notes' => 'nullable|string|max:1000',
         ]);
 
@@ -107,7 +107,7 @@ class DataCuttingController extends Controller
             ]);
 
             // Backup database jika diminta
-            if ($request->backup_database) {
+            if ($request->boolean('backup_database')) {
                 $log->update(['status' => 'backing_up']);
                 $backupResult = $this->backupDatabase($log);
                 
