@@ -214,6 +214,13 @@ class DataCuttingController extends Controller
             
             $command .= " \"$database\" > \"$filepath\" 2>&1";
 
+            if (!function_exists('exec')) {
+                return [
+                    'success' => false,
+                    'message' => 'Fungsi PHP exec() dinonaktifkan di konfigurasi web server Anda (disable_functions di php.ini). Silakan aktifkan fungsi tersebut untuk melakukan backup database.',
+                ];
+            }
+
             exec($command, $output, $returnVar);
 
             if ($returnVar !== 0) {
@@ -259,6 +266,15 @@ class DataCuttingController extends Controller
         $command = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN' 
             ? 'where mysqldump' 
             : 'which mysqldump';
+        
+        if (!function_exists('exec')) {
+            foreach ($possiblePaths as $path) {
+                if (file_exists($path)) {
+                    return $path;
+                }
+            }
+            return null;
+        }
         
         exec($command, $output, $returnVar);
         
