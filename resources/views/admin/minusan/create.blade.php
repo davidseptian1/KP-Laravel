@@ -40,6 +40,7 @@
                         <option value="AIRA">AIRA</option>
                         <option value="238">238</option>
                         <option value="Belanja Kuota">Belanja Kuota</option>
+                        <option value="ALFI">ALFI</option>
                     </select>
                     @error('server')
                         <small class="text-danger">{{ $message }}</small>
@@ -142,9 +143,13 @@
                     </label>
                     <select name="keterangan" class="form-control @error('keterangan') is-invalid @enderror">
                         <option selected disabled>Pilih Keterangan</option>
-                        <option value="Dialihkan">Menunggu Jawaban -> Alihkan</option>
-                        <option value="Digagalkan">Menunggu Jawaban -> Digagalkan</option>
-                        <option value="Gagal">Sukses -> Gagal</option>
+                        <option value="Menunggu Jawaban -> Alihkan">Menunggu Jawaban -> Alihkan</option>
+                        <option value="Menunggu Jawaban -> Digagalkan">Menunggu Jawaban -> Digagalkan</option>
+                        <option value="Menunggu Jawaban -> Proses Ulang">Menunggu Jawaban -> Proses Ulang</option>
+                        <option value="Menunggu Jawaban -> Gagal">Menunggu Jawaban -> Gagal</option>
+                        <option value="Menunggu Jawaban -> Tujuan Salah">Menunggu Jawaban -> Tujuan Salah</option>
+                        <option value="Salah Parsing">Salah Parsing</option>
+                        <option value="Sukses -> Gagal">Sukses -> Gagal</option>
                     </select>
                     @error('keterangan')
                         <small class="text-danger">{{ $message }}</small>

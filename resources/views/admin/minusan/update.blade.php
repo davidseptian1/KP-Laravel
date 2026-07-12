@@ -41,6 +41,7 @@
                         <option value="238" {{ old('server', $minusan->server) == '238' ? 'selected' : '' }}>238</option>
                         <option value="AIRA" {{ old('server', $minusan->server) == 'AIRA' ? 'selected' : '' }}>AIRA</option>
                         <option value="BELANJA KUOTA" {{ old('server', $minusan->server) == 'BELANJA KUOTA' ? 'selected' : '' }}>Belanja Kuota</option>
+                        <option value="ALFI" {{ old('server', $minusan->server) == 'ALFI' ? 'selected' : '' }}>ALFI</option>
                     </select>
                     @error('server')
                     <small class="text-danger">
@@ -156,9 +157,13 @@
                     </label>
                     <select name="keterangan" class="form-control @error('keterangan') is-invalid @enderror">
                         <option disabled {{ old('keterangan', $minusan->keterangan) ? '' : 'selected' }}>Pilih Keterangan</option>
-                        <option value="Menunggu Jawaban -> Alihkan" {{ old('keterangan', $minusan->keterangan) == 'Dialihkan' ? 'selected' : '' }}>Menunggu Jawaban -> Alihkan</option>
-                        <option value="Menunggu Jawaban -> Digagalkan" {{ old('keterangan', $minusan->keterangan) == 'Digagalkan' ? 'selected' : '' }}>Menunggu Jawaban -> Digagalkan</option>
-                        <option value="Sukses -> Gagal" {{ old('keterangan', $minusan->keterangan) == 'Sukses -> Gagal' ? 'selected' : '' }}>Sukses -> Gagal</option>
+                        <option value="Menunggu Jawaban -> Alihkan" {{ old('keterangan', $minusan->keterangan) == 'Menunggu Jawaban -> Alihkan' || old('keterangan', $minusan->keterangan) == 'Dialihkan' ? 'selected' : '' }}>Menunggu Jawaban -> Alihkan</option>
+                        <option value="Menunggu Jawaban -> Digagalkan" {{ old('keterangan', $minusan->keterangan) == 'Menunggu Jawaban -> Digagalkan' || old('keterangan', $minusan->keterangan) == 'Digagalkan' ? 'selected' : '' }}>Menunggu Jawaban -> Digagalkan</option>
+                        <option value="Menunggu Jawaban -> Proses Ulang" {{ old('keterangan', $minusan->keterangan) == 'Menunggu Jawaban -> Proses Ulang' ? 'selected' : '' }}>Menunggu Jawaban -> Proses Ulang</option>
+                        <option value="Menunggu Jawaban -> Gagal" {{ old('keterangan', $minusan->keterangan) == 'Menunggu Jawaban -> Gagal' ? 'selected' : '' }}>Menunggu Jawaban -> Gagal</option>
+                        <option value="Menunggu Jawaban -> Tujuan Salah" {{ old('keterangan', $minusan->keterangan) == 'Menunggu Jawaban -> Tujuan Salah' ? 'selected' : '' }}>Menunggu Jawaban -> Tujuan Salah</option>
+                        <option value="Salah Parsing" {{ old('keterangan', $minusan->keterangan) == 'Salah Parsing' ? 'selected' : '' }}>Salah Parsing</option>
+                        <option value="Sukses -> Gagal" {{ old('keterangan', $minusan->keterangan) == 'Sukses -> Gagal' || old('keterangan', $minusan->keterangan) == 'Gagal' ? 'selected' : '' }}>Sukses -> Gagal</option>
                     </select>
                     @error('keterangan')
                     <small class="text-danger">{{ $message }}</small>
