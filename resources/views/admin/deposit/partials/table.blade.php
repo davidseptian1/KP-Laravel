@@ -18,7 +18,10 @@
                 <th>Nama Server</th>
                 <th>Bukti Tiket</th>
                 <th>Bukti Penambahan</th>
-                <th>Bukti Transfers Admin</th>
+                <th id="thBuktiTransferAdmin" style="cursor:pointer; user-select:none; white-space:nowrap;">
+                    Bukti Transfers Admin
+                    <span id="buktiTransferFilterBadge" class="badge ms-1 rounded-pill" style="font-size:0.7em; vertical-align:middle; display:none;"></span>
+                </th>
                 <th>Bukti Bayar Hutang</th>
                 <th>Info Staff</th>
                 <th>Status</th>
@@ -66,7 +69,7 @@
                             -
                         @endif
                     </td>
-                    <td>
+                    <td data-has-bukti-transfer="{{ (!empty($item->bukti_transfer_admin_text) || ($item->bukti_transfer_admin_type ?? 'text') === 'image') ? '1' : '0' }}">
                         @if (($item->bukti_transfer_admin_type ?? 'text') === 'image')
                             @if (!empty($item->bukti_transfer_admin_text))
                                 <div class="mb-1">{{ $item->bukti_transfer_admin_text }}</div>

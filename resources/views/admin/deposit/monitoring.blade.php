@@ -1147,4 +1147,88 @@
         setInterval(checkChanges, pollIntervalMs);
     })();
 </script>
+
+<script>
+    // ============================================================
+    // Filter Toggle: Bukti Transfers Admin
+    // State: 0 = Semua, 1 = Ada isi (aktif), 2 = Kosong (non-aktif)
+    // ============================================================
+    (function () {
+        let filterState = 0; // 0=semua, 1=ada isi, 2=kosong
+
+        const th = document.getElementById('thBuktiTransferAdmin');
+        const badge = document.getElementById('buktiTransferFilterBadge');
+
+        if (!th) return;
+
+        function applyFilter() {
+            const table = document.querySelector('#monitoringTableContainer table tbody');
+            if (!table) return;
+
+            const rows = table.querySelectorAll('tr');
+            rows.forEach(function (row) {
+                // Cari td yang memiliki data-has-bukti-transfer
+                const td = row.querySelector('td[data-has-bukti-transfer]');
+                if (!td) return;
+
+                const hasContent = td.getAttribute('data-has-bukti-transfer') === '1';
+
+                if (filterState === 0) {
+                    row.style.display = '';
+                } else if (filterState === 1) {
+                    row.style.display = hasContent ? '' : 'none';
+                } else {
+                    row.style.display = hasContent ? 'none' : '';
+                }
+            });
+        }
+
+        function updateThStyle() {
+            if (filterState === 0) {
+                th.style.background = '';
+                th.style.color = '';
+                badge.style.display = 'none';
+                badge.textContent = '';
+                th.title = 'Klik untuk filter berdasarkan Bukti Transfers Admin';
+            } else if (filterState === 1) {
+                th.style.background = 'var(--bs-success, #198754)';
+                th.style.color = '#fff';
+                badge.style.display = 'inline-block';
+                badge.style.background = '#fff';
+                badge.style.color = 'var(--bs-success, #198754)';
+                badge.textContent = 'Ada';
+                th.title = 'Filter aktif: menampilkan yang ADA isi. Klik untuk tampilkan yang kosong.';
+            } else {
+                th.style.background = 'var(--bs-warning, #ffc107)';
+                th.style.color = '#212529';
+                badge.style.display = 'inline-block';
+                badge.style.background = '#fff';
+                badge.style.color = '#856404';
+                badge.textContent = 'Kosong';
+                th.title = 'Filter aktif: menampilkan yang KOSONG. Klik untuk reset filter.';
+            }
+        }
+
+        th.addEventListener('click', function () {
+            filterState = (filterState + 1) % 3;
+            updateThStyle();
+            applyFilter();
+        });
+
+        // Set initial state
+        updateThStyle();
+
+        // Re-apply filter after table content is replaced (polled refresh)
+        const tableContainer = document.getElementById('monitoringTableContainer');
+        if (tableContainer && window.MutationObserver) {
+            const observer = new MutationObserver(function () {
+                if (filterState !== 0) {
+                    applyFilter();
+                }
+            });
+            observer.observe(tableContainer, { childList: true, subtree: true });
+        }
+    })();
+</script>
 @endpush
+
