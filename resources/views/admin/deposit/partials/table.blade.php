@@ -17,7 +17,10 @@
                 <th>Bank Tujuan</th>
                 <th>Nama Server</th>
                 <th>Bukti Tiket</th>
-                <th>Bukti Penambahan</th>
+                <th id="thBuktiPenambahan" style="cursor:pointer; user-select:none; white-space:nowrap;">
+                    Bukti Penambahan
+                    <span id="buktiPenambahanFilterBadge" class="badge ms-1 rounded-pill" style="font-size:0.7em; vertical-align:middle; display:none;"></span>
+                </th>
                 <th id="thBuktiTransferAdmin" style="cursor:pointer; user-select:none; white-space:nowrap;">
                     Bukti Transfers Admin
                     <span id="buktiTransferFilterBadge" class="badge ms-1 rounded-pill" style="font-size:0.7em; vertical-align:middle; display:none;"></span>
@@ -59,7 +62,7 @@
                             -
                         @endif
                     </td>
-                    <td>
+                    <td data-has-bukti-penambahan="{{ (!empty($item->reply_penambahan) || !empty($item->reply_penambahan_image)) ? '1' : '0' }}">
                         @if (!empty($item->reply_penambahan))
                             <div class="mb-1">{{ $item->reply_penambahan }}</div>
                         @endif
