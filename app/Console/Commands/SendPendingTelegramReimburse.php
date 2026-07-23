@@ -27,8 +27,8 @@ class SendPendingTelegramReimburse extends Command
      */
     public function handle(): int
     {
-        $botToken = env('TELEGRAM_BOT_TOKEN');
-        $chatId = env('TELEGRAM_CHAT_ID');
+        $botToken = config('services.telegram.bot_token') ?: env('TELEGRAM_BOT_TOKEN');
+        $chatId = config('services.telegram.chat_id') ?: env('TELEGRAM_CHAT_ID');
 
         if (!$botToken || !$chatId) {
             $this->error('TELEGRAM_BOT_TOKEN atau TELEGRAM_CHAT_ID belum di-set di .env');

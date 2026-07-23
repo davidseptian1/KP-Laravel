@@ -27,7 +27,7 @@ class TelegramWebhookController extends Controller
             
             // Validasi: Pastikan tombol hanya bisa diklik dari Chat ID yang ditentukan
             // di environment, untuk keamanan (atau bisa dilewati jika butuh public access).
-            $allowedChatId = env('TELEGRAM_CHAT_ID');
+            $allowedChatId = config('services.telegram.chat_id') ?: env('TELEGRAM_CHAT_ID');
 
             // Mencatat perbandingan Chat ID ke log
             \Illuminate\Support\Facades\Log::info('--- CEK CHAT ID ---', [
@@ -113,7 +113,7 @@ class TelegramWebhookController extends Controller
 
     private function answerCallbackQuery($callbackQueryId, $text)
     {
-        $botToken = env('TELEGRAM_BOT_TOKEN');
+        $botToken = config('services.telegram.bot_token') ?: env('TELEGRAM_BOT_TOKEN');
         Http::post("https://api.telegram.org/bot{$botToken}/answerCallbackQuery", [
             'callback_query_id' => $callbackQueryId,
             'text' => $text,
@@ -123,7 +123,7 @@ class TelegramWebhookController extends Controller
 
     private function editMessageTextAndKeyboard($chatId, $messageId, $text, $replyMarkup = null)
     {
-        $botToken = env('TELEGRAM_BOT_TOKEN');
+        $botToken = config('services.telegram.bot_token') ?: env('TELEGRAM_BOT_TOKEN');
         $payload = [
             'chat_id' => $chatId,
             'message_id' => $messageId,
