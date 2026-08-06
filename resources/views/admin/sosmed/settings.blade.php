@@ -80,6 +80,24 @@
                         @enderror
                     </div>
 
+                    <!-- Link Tugas Postingan -->
+                    <div class="mb-4">
+                        <label for="task_links" class="form-label fw-bold">
+                            Link Tugas Postingan (Untuk Diberikan ke User)
+                        </label>
+                        <textarea name="task_links" 
+                                  id="task_links" 
+                                  class="form-control font-monospace fs-7 @error('task_links') is-invalid @enderror" 
+                                  rows="5" 
+                                  placeholder="Masukkan URL postingan yang harus dikerjakan user...&#10;Jika lebih dari 1 link, pisahkan dengan tekan Enter (1 link per baris)&#10;Contoh:&#10;https://www.instagram.com/p/C12345/&#10;https://www.tiktok.com/@user/video/67890">{{ old('task_links', $taskLinksText) }}</textarea>
+                        <small class="text-muted mt-1 d-block">
+                            <i class="ti ti-link me-1"></i>Link ini akan tampil secara otomatis di halaman form user sebagai instruksi untuk di-like, komen, share, & repost. Pisahkan link dengan Enter jika lebih dari 1 postingan (Postingan 1, Postingan 2, dst).
+                        </small>
+                        @error('task_links')
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                        @enderror
+                    </div>
+
                     <button type="submit" class="btn btn-primary">
                         <i class="ti ti-device-floppy me-1"></i> Simpan Pengaturan
                     </button>

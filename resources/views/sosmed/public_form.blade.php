@@ -182,6 +182,36 @@
                     </div>
                 @endif
 
+                <!-- Section Task Links dari Admin -->
+                @if(!empty($taskLinks) && count($taskLinks) > 0)
+                    <div class="card border border-primary border-2 shadow-sm mb-4 rounded-3 overflow-hidden">
+                        <div class="card-header bg-light-primary border-bottom border-primary py-2 px-3">
+                            <h6 class="fw-bold text-primary mb-0 d-flex align-items-center">
+                                <i class="ti ti-flame me-2 fs-4 text-primary"></i>TUGAS POSTINGAN SOSMED HARI INI
+                            </h6>
+                        </div>
+                        <div class="card-body p-3">
+                            <p class="mb-2 text-dark fs-7">
+                                Silakan klik link postingan di bawah ini dan lakukan <strong>Like, Komen, Share, & Repost</strong>:
+                            </p>
+
+                            <div class="d-flex flex-column gap-2">
+                                @foreach($taskLinks as $index => $link)
+                                    <div class="d-flex align-items-center justify-content-between p-2 rounded bg-light border">
+                                        <div class="d-flex align-items-center me-2 overflow-hidden">
+                                            <span class="badge bg-primary me-2 flex-shrink-0">Postingan {{ $index + 1 }}</span>
+                                            <small class="text-truncate font-monospace text-muted" style="max-width: 280px;">{{ $link }}</small>
+                                        </div>
+                                        <a href="{{ $link }}" target="_blank" class="btn btn-sm btn-primary flex-shrink-0">
+                                            <i class="ti ti-external-link me-1"></i> Buka Link {{ count($taskLinks) > 1 ? ($index + 1) : '' }}
+                                        </a>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
                 <!-- Info Note khusus fee & nama -->
                 <div class="info-fee-box">
                     <div class="d-flex align-items-start">

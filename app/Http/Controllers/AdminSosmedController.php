@@ -193,22 +193,31 @@ class AdminSosmedController extends Controller
         $isFormActive = SosmedSetting::getByKey('form_is_active', '1');
         $publicFormUrl = route('sosmed.form.show');
 
-        return view('admin.sosmed.settings', compact('feePerSubmission', 'isFormActive', 'publicFormUrl'));
+        $rawTaskLinks = SosmedSetting::getByKey('task_links', '[]');
+        $taskLinksArray = json_decode($rawTaskLinks, true) ?? [];
+        $taskLinksText = is_array($taskLinksArray) ? implode("\n", $taskLinksArray) : '';
+
+        return view('admin.sosmed.settings', compact('feePerSubmission', 'isFormActive', 'publicFormUrl', 'taskLinksText'));
     }
 
     /**
-     * Update Pengaturan Fee & Form Status
+     * Update Pengaturan Fee, Form Status & Link Tugas
      */
     public function updateSettings(Request $request)
     {
         $request->validate([
             'fee_per_submission' => 'required|numeric|min:0',
             'form_is_active' => 'required|in:0,1',
+            'task_links' => 'nullable|string',
         ]);
+
+        $taskLinksInput = $request->task_links ?? '';
+        $links = array_values(array_filter(array_map('trim', explode("\n", str_replace("\r", "", $taskLinksInput)))));
 
         SosmedSetting::setByKey('fee_per_submission', $request->fee_per_submission);
         SosmedSetting::setByKey('form_is_active', $request->form_is_active);
+        SosmedSetting::setByKey('task_links', json_encode($links));
 
-        return back()->with('success', 'Pengaturan fee dan status form sosmed berhasil diperbarui.');
+        return back()->with('success', 'Pengaturan fee, status form, dan link tugas sosmed berhasil diperbarui.');
     }
 }

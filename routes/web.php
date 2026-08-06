@@ -101,6 +101,15 @@ Route::post('deposit/form/{token}', [DepositFormController::class, 'submit'])->n
 Route::get('sosmed/form', [SosmedPublicFormController::class, 'index'])->name('sosmed.form.show');
 Route::post('sosmed/form', [SosmedPublicFormController::class, 'store'])->name('sosmed.form.submit');
 
+// Public route for viewing uploaded sosmed photos (fallback if storage symlink missing)
+Route::get('storage/sosmed_photos/{filename}', function ($filename) {
+    $path = storage_path('app/public/sosmed_photos/' . $filename);
+    if (!file_exists($path)) {
+        abort(404);
+    }
+    return response()->file($path);
+})->name('sosmed.photo.view');
+
 // Public signed download for recap PDFs
 Route::get('recap/download/{file}', [RecapDownloadController::class, 'download'])
     ->middleware('signed')

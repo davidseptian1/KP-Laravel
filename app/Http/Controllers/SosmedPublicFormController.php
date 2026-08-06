@@ -30,7 +30,13 @@ class SosmedPublicFormController extends Controller
             'Facebook'
         ];
 
-        return view('sosmed.public_form', compact('isFormActive', 'divisiList', 'sosmedPlatforms'));
+        $rawTaskLinks = SosmedSetting::getByKey('task_links', '[]');
+        $taskLinks = json_decode($rawTaskLinks, true) ?? [];
+        if (!is_array($taskLinks)) {
+            $taskLinks = [];
+        }
+
+        return view('sosmed.public_form', compact('isFormActive', 'divisiList', 'sosmedPlatforms', 'taskLinks'));
     }
 
     public function store(Request $request)
