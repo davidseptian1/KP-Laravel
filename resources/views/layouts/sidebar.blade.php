@@ -2,7 +2,7 @@
 <nav class="pc-sidebar">
     <div class="navbar-wrapper">
         <div class="m-header">
-            <a href="{{ route('dashboard') }}" class="b-brand text-primary">
+            <a href="{{ auth()->check() && in_array(strtolower(trim(auth()->user()->jabatan ?? '')), ['admin sosmed', 'admin_sosmed'], true) ? route('admin.sosmed.dashboard') : route('dashboard') }}" class="b-brand text-primary">
                 <!-- ========   Logo   ============ -->
                 <div class="logo-icon">
                     <i class="ti ti-activity"></i>
@@ -15,13 +15,55 @@
 
                 <!-- Dashboard -->
                 <li class="pc-item {{ $menuDashboard ?? '' }}">
-                    <a href="{{ route('dashboard') }}" class="pc-link">
+                    <a href="{{ auth()->check() && in_array(strtolower(trim(auth()->user()->jabatan ?? '')), ['admin sosmed', 'admin_sosmed'], true) ? route('admin.sosmed.dashboard') : route('dashboard') }}" class="pc-link">
                         <span class="pc-micon"><i class="ti ti-dashboard"></i></span>
                         <span class="pc-mtext">Dashboard</span>
                     </a>
                 </li>
 
+                <!-- Section Khusus Fitur Sosmed (Untuk Admin Sosmed, Admin, Superadmin) -->
                 @if (auth()->check() && in_array(auth()->user()->jabatan, ['Admin', 'Superadmin', 'Admin Sosmed']))
+
+                <li class="pc-item pc-caption">
+                    <label>Sosmed Management</label>
+                </li>
+
+                <!-- Admin Sosmed Dashboard -->
+                <li class="pc-item {{ request()->routeIs('admin.sosmed.dashboard') ? 'active' : '' }}">
+                    <a href="{{ route('admin.sosmed.dashboard') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-brand-instagram"></i></span>
+                        <span class="pc-mtext">Dashboard Sosmed</span>
+                    </a>
+                </li>
+
+                <!-- Admin Sosmed Moderasi -->
+                <li class="pc-item {{ request()->routeIs('admin.sosmed.submissions') ? 'active' : '' }}">
+                    <a href="{{ route('admin.sosmed.submissions') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-list-check"></i></span>
+                        <span class="pc-mtext">Moderasi Posting</span>
+                    </a>
+                </li>
+
+                <!-- Fee Terkumpul User -->
+                <li class="pc-item {{ request()->routeIs('admin.sosmed.user-fees') ? 'active' : '' }}">
+                    <a href="{{ route('admin.sosmed.user-fees') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-coin"></i></span>
+                        <span class="pc-mtext">Fee Terkumpul User</span>
+                    </a>
+                </li>
+
+                <!-- Pengaturan Fee Sosmed -->
+                <li class="pc-item {{ request()->routeIs('admin.sosmed.settings') ? 'active' : '' }}">
+                    <a href="{{ route('admin.sosmed.settings') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-settings"></i></span>
+                        <span class="pc-mtext">Pengaturan Fee & Form</span>
+                    </a>
+                </li>
+
+                @endif
+
+                <!-- Section Admin Umum & Superadmin (Hanya muncul jika bukan Admin Sosmed saja) -->
+                @if (auth()->check() && in_array(auth()->user()->jabatan, ['Admin', 'Superadmin']))
 
                 <li class="pc-item pc-caption">
                     <label>Data Management</label>
@@ -35,9 +77,9 @@
                     </a>
                 </li>
 
-                    <li class="pc-item pc-caption">
-                        <label>Monitoring Manajemen</label>
-                    </li>
+                <li class="pc-item pc-caption">
+                    <label>Monitoring Manajemen</label>
+                </li>
 
                 <!-- Reimburse (Admin) -->
                 <li class="pc-item {{ $menuAdminReimburse ?? '' }}">
@@ -84,7 +126,6 @@
                     </a>
                 </li>
 
-
                 <!-- Deposit Monitoring (Admin) -->
                 <li class="pc-item {{ $menuAdminDepositMonitoring ?? '' }}">
                     <a href="{{ route('admin.deposit.monitoring') }}" class="pc-link position-relative">
@@ -116,75 +157,39 @@
                     </a>
                 </li>
 
-                    <li class="pc-item pc-caption">
-                        <label>Form Manajement</label>
-                    </li>
-
-                    <!-- Reimburse Form (Admin) -->
-                    <li class="pc-item {{ $menuAdminReimburseForm ?? '' }}">
-                        <a href="{{ route('admin.reimburse.forms') }}" class="pc-link">
-                            <span class="pc-micon"><i class="ti ti-link"></i></span>
-                            <span class="pc-mtext">Reimburse Form</span>
-                        </a>
-                    </li>
-
-                    <!-- Pengajuan Data Form (Admin) -->
-                    <li class="pc-item {{ $menuAdminDataRequestForm ?? '' }}">
-                        <a href="{{ route('admin.data-request.forms') }}" class="pc-link">
-                            <span class="pc-micon"><i class="ti ti-link"></i></span>
-                            <span class="pc-mtext">Form Pengajuan Data</span>
-                        </a>
-                    </li>
-
-                    <!-- Peminjaman Barang Form (Admin) -->
-                    <li class="pc-item {{ $menuAdminLoanRequestForm ?? '' }}">
-                        <a href="{{ route('admin.loan-request.forms') }}" class="pc-link">
-                            <span class="pc-micon"><i class="ti ti-link"></i></span>
-                            <span class="pc-mtext">Form Peminjaman<br>Barang</span>
-                        </a>
-                    </li>
-
-                    <!-- Deposit Form (Admin) -->
-                    <li class="pc-item {{ $menuAdminDepositForm ?? '' }}">
-                        <a href="{{ route('admin.deposit.forms') }}" class="pc-link">
-                            <span class="pc-micon"><i class="ti ti-clipboard"></i></span>
-                            <span class="pc-mtext">Form Deposit</span>
-                        </a>
-                    </li>
-
                 <li class="pc-item pc-caption">
-                    <label>Sosmed Management</label>
+                    <label>Form Manajement</label>
                 </li>
 
-                <!-- Admin Sosmed Dashboard -->
-                <li class="pc-item {{ request()->routeIs('admin.sosmed.dashboard') ? 'active' : '' }}">
-                    <a href="{{ route('admin.sosmed.dashboard') }}" class="pc-link">
-                        <span class="pc-micon"><i class="ti ti-brand-instagram"></i></span>
-                        <span class="pc-mtext">Dashboard Sosmed</span>
+                <!-- Reimburse Form (Admin) -->
+                <li class="pc-item {{ $menuAdminReimburseForm ?? '' }}">
+                    <a href="{{ route('admin.reimburse.forms') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-link"></i></span>
+                        <span class="pc-mtext">Reimburse Form</span>
                     </a>
                 </li>
 
-                <!-- Admin Sosmed Moderasi -->
-                <li class="pc-item {{ request()->routeIs('admin.sosmed.submissions') ? 'active' : '' }}">
-                    <a href="{{ route('admin.sosmed.submissions') }}" class="pc-link">
-                        <span class="pc-micon"><i class="ti ti-list-check"></i></span>
-                        <span class="pc-mtext">Moderasi Posting</span>
+                <!-- Pengajuan Data Form (Admin) -->
+                <li class="pc-item {{ $menuAdminDataRequestForm ?? '' }}">
+                    <a href="{{ route('admin.data-request.forms') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-link"></i></span>
+                        <span class="pc-mtext">Form Pengajuan Data</span>
                     </a>
                 </li>
 
-                <!-- Fee Terkumpul User -->
-                <li class="pc-item {{ request()->routeIs('admin.sosmed.user-fees') ? 'active' : '' }}">
-                    <a href="{{ route('admin.sosmed.user-fees') }}" class="pc-link">
-                        <span class="pc-micon"><i class="ti ti-coin"></i></span>
-                        <span class="pc-mtext">Fee Terkumpul User</span>
+                <!-- Peminjaman Barang Form (Admin) -->
+                <li class="pc-item {{ $menuAdminLoanRequestForm ?? '' }}">
+                    <a href="{{ route('admin.loan-request.forms') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-link"></i></span>
+                        <span class="pc-mtext">Form Peminjaman<br>Barang</span>
                     </a>
                 </li>
 
-                <!-- Pengaturan Fee Sosmed -->
-                <li class="pc-item {{ request()->routeIs('admin.sosmed.settings') ? 'active' : '' }}">
-                    <a href="{{ route('admin.sosmed.settings') }}" class="pc-link">
-                        <span class="pc-micon"><i class="ti ti-settings"></i></span>
-                        <span class="pc-mtext">Pengaturan Fee & Form</span>
+                <!-- Deposit Form (Admin) -->
+                <li class="pc-item {{ $menuAdminDepositForm ?? '' }}">
+                    <a href="{{ route('admin.deposit.forms') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-clipboard"></i></span>
+                        <span class="pc-mtext">Form Deposit</span>
                     </a>
                 </li>
 
@@ -367,8 +372,6 @@
                     </a>
                 </li>
 
-                <!-- PERSEDIAAN STOK 
-                 1.pembelian stok, ngisi form persatu-->
                 <li class="pc-item pc-caption">
                     <label>Persediaan Stok</label>
                 </li>

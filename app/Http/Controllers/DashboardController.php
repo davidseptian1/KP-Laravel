@@ -21,6 +21,10 @@ class DashboardController extends Controller
 {
     public function index()
     {
+        if (auth()->check() && in_array(strtolower(trim(auth()->user()->jabatan ?? '')), ['admin sosmed', 'admin_sosmed'], true)) {
+            return redirect()->route('admin.sosmed.dashboard');
+        }
+
         $monthlyLabels = collect(range(5, 0))
             ->map(fn ($offset) => Carbon::now()->subMonths($offset)->format('Y-m'))
             ->push(Carbon::now()->format('Y-m'))
