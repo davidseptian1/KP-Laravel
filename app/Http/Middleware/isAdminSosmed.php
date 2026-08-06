@@ -1,0 +1,30 @@
+<?php
+
+namespace App\Http\Middleware;
+
+use Closure;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Support\Facades\Auth;
+
+class isAdminSosmed
+{
+    /**
+     * Handle an incoming request.
+     *
+     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     */
+    public function handle(Request $request, Closure $next): Response
+    {
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
+
+        $role = strtolower(trim(Auth::user()->jabatan ?? ''));
+        if (in_array($role, ['admin sosmed', 'admin_sosmed', 'admin', 'superadmin'], true)) {
+            return $next($request);
+        }
+
+        return redirect()->route('dashboard')->with('error', 'Anda Tidak Memiliki Akses Admin Sosmed');
+    }
+}

@@ -21,7 +21,7 @@
                     </a>
                 </li>
 
-                @if (auth()->check() && in_array(auth()->user()->jabatan, ['Admin','Superadmin']))
+                @if (auth()->check() && in_array(auth()->user()->jabatan, ['Admin', 'Superadmin', 'Admin Sosmed']))
 
                 <li class="pc-item pc-caption">
                     <label>Data Management</label>
@@ -151,6 +151,42 @@
                             <span class="pc-mtext">Form Deposit</span>
                         </a>
                     </li>
+
+                <li class="pc-item pc-caption">
+                    <label>Sosmed Management</label>
+                </li>
+
+                <!-- Admin Sosmed Dashboard -->
+                <li class="pc-item {{ request()->routeIs('admin.sosmed.dashboard') ? 'active' : '' }}">
+                    <a href="{{ route('admin.sosmed.dashboard') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-brand-instagram"></i></span>
+                        <span class="pc-mtext">Dashboard Sosmed</span>
+                    </a>
+                </li>
+
+                <!-- Admin Sosmed Moderasi -->
+                <li class="pc-item {{ request()->routeIs('admin.sosmed.submissions') ? 'active' : '' }}">
+                    <a href="{{ route('admin.sosmed.submissions') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-list-check"></i></span>
+                        <span class="pc-mtext">Moderasi Posting</span>
+                    </a>
+                </li>
+
+                <!-- Fee Terkumpul User -->
+                <li class="pc-item {{ request()->routeIs('admin.sosmed.user-fees') ? 'active' : '' }}">
+                    <a href="{{ route('admin.sosmed.user-fees') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-coin"></i></span>
+                        <span class="pc-mtext">Fee Terkumpul User</span>
+                    </a>
+                </li>
+
+                <!-- Pengaturan Fee Sosmed -->
+                <li class="pc-item {{ request()->routeIs('admin.sosmed.settings') ? 'active' : '' }}">
+                    <a href="{{ route('admin.sosmed.settings') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-settings"></i></span>
+                        <span class="pc-mtext">Pengaturan Fee & Form</span>
+                    </a>
+                </li>
 
                 <li class="pc-item pc-caption">
                     <label>Data Matrix</label>

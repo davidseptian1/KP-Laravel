@@ -35,6 +35,8 @@ use App\Http\Controllers\PersediaanStokController;
 use App\Http\Controllers\AdminPersediaanStokController;
 use App\Http\Controllers\AdminActivityLogController;
 use App\Http\Controllers\DataCuttingController;
+use App\Http\Controllers\SosmedPublicFormController;
+use App\Http\Controllers\AdminSosmedController;
 use App\Models\DataRequest;
 use App\Models\Deposit;
 use App\Models\LoanRequest;
@@ -94,6 +96,10 @@ Route::post('peminjaman-barang/form/{token}', [LoanRequestFormController::class,
 // Public Deposit Form (no login required)
 Route::get('deposit/form/{token}', [DepositFormController::class, 'show'])->name('deposit.form.show');
 Route::post('deposit/form/{token}', [DepositFormController::class, 'submit'])->name('deposit.form.submit');
+
+// Public Sosmed Form (no login required)
+Route::get('sosmed/form', [SosmedPublicFormController::class, 'index'])->name('sosmed.form.show');
+Route::post('sosmed/form', [SosmedPublicFormController::class, 'store'])->name('sosmed.form.submit');
 
 // Public signed download for recap PDFs
 Route::get('recap/download/{file}', [RecapDownloadController::class, 'download'])
@@ -394,6 +400,17 @@ Route::middleware(['checkLogin', 'admin.activity.log'])->group(function () {
     });
 
     Route::get('admin/deposit/analysis', [AdminDepositController::class, 'analysis'])->name('admin.deposit.analysis');
+
+    // Admin Sosmed Routes
+    Route::middleware('isAdminSosmed')->group(function () {
+        Route::get('admin/sosmed/dashboard', [AdminSosmedController::class, 'dashboard'])->name('admin.sosmed.dashboard');
+        Route::get('admin/sosmed/submissions', [AdminSosmedController::class, 'submissions'])->name('admin.sosmed.submissions');
+        Route::post('admin/sosmed/submissions/{id}/status', [AdminSosmedController::class, 'updateStatus'])->name('admin.sosmed.submissions.status');
+        Route::delete('admin/sosmed/submissions/{id}', [AdminSosmedController::class, 'destroySubmission'])->name('admin.sosmed.submissions.destroy');
+        Route::get('admin/sosmed/user-fees', [AdminSosmedController::class, 'userFees'])->name('admin.sosmed.user-fees');
+        Route::get('admin/sosmed/settings', [AdminSosmedController::class, 'settings'])->name('admin.sosmed.settings');
+        Route::post('admin/sosmed/settings', [AdminSosmedController::class, 'updateSettings'])->name('admin.sosmed.settings.update');
+    });
 });
 
 Route::get('/clear-cache', function() {

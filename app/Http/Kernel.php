@@ -74,6 +74,7 @@ class Kernel extends HttpKernel
         'admin.api' => \App\Http\Middleware\EnsureAdminApi::class,
         'api.key' => \App\Http\Middleware\AuthenticateApiKey::class,
         'admin.activity.log' => \App\Http\Middleware\LogAdminActivity::class,
+        'isAdminSosmed' => \App\Http\Middleware\isAdminSosmed::class,
 
 
     ];
