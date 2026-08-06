@@ -187,9 +187,9 @@
                     <div class="d-flex align-items-start">
                         <i class="ti ti-info-circle fs-3 me-2 text-primary flex-shrink-0 mt-1"></i>
                         <div>
-                            <strong class="d-block text-primary mb-1">PENTING - Ketentuan Pengisian Nama:</strong>
+                            <strong class="d-block text-primary mb-1">PENTING - Ketentuan Pengisian Nama / Username Sosmed:</strong>
                             <p>
-                                <strong>Nama Panggilan / Nama Utama WAJIB SAMA</strong> di setiap pengisian form dan tidak boleh berbeda-beda!
+                                <strong>Nama Panggilan / Username Sosmed WAJIB SAMA</strong> di setiap pengisian form dan tidak boleh berbeda-beda!
                                 Hal ini sangat penting untuk akurasi pencatatan akumulasi fee yang akan didapatkan Anda.
                             </p>
                         </div>
@@ -202,17 +202,17 @@
                     <!-- Field Nama -->
                     <div class="mb-3">
                         <label for="nama" class="form-label">
-                            Nama Panggilan / Lengkap <span class="required-star">*</span>
+                            Nama Panggilan / Username Sosmed <span class="required-star">*</span>
                         </label>
                         <input type="text" 
                                class="form-control @error('nama') is-invalid @enderror" 
                                id="nama" 
                                name="nama" 
                                value="{{ old('nama') }}" 
-                               placeholder="Masukkan nama panggilan Anda (misal: Budi / Budi Santoso)" 
+                               placeholder="Masukkan nama panggilan / username sosmed Anda (misal: Budi / Budi_ig)" 
                                required>
                         <div class="form-text text-muted">
-                            <i class="ti ti-bulb me-1"></i>Gunakan kata pertama nama yang konsisten pada penginputan selanjutnya.
+                            <i class="ti ti-bulb me-1"></i>Gunakan kata pertama atau username sosmed yang konsisten pada penginputan selanjutnya.
                         </div>
                         @error('nama')
                             <div class="invalid-feedback">{{ $message }}</div>
