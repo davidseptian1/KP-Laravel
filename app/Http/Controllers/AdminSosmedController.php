@@ -349,7 +349,7 @@ class AdminSosmedController extends Controller
     }
 
     /**
-     * Halaman Pengaturan Fee & Form Status
+     * Halaman Pengaturan Fee, Form Status & Kelola Penugasan Sosmed
      */
     public function settings()
     {
@@ -358,30 +358,66 @@ class AdminSosmedController extends Controller
         $publicFormUrl = route('sosmed.form.show');
 
         $rawTaskLinks = SosmedSetting::getByKey('task_links', '[]');
-        $taskLinksArray = json_decode($rawTaskLinks, true) ?? [];
-        $taskLinksText = is_array($taskLinksArray) ? implode("\n", $taskLinksArray) : '';
+        $taskItemsRaw = json_decode($rawTaskLinks, true) ?? [];
+        if (!is_array($taskItemsRaw)) {
+            $taskItemsRaw = [];
+        }
 
-        return view('admin.sosmed.settings', compact('feePerSubmission', 'isFormActive', 'publicFormUrl', 'taskLinksText'));
+        $taskItems = [];
+        foreach ($taskItemsRaw as $index => $item) {
+            if (is_array($item)) {
+                $taskItems[] = [
+                    'judul' => $item['judul'] ?? ('Tugas ' . ($index + 1)),
+                    'link' => $item['link'] ?? '',
+                    'tanggal_start' => $item['tanggal_start'] ?? date('Y-m-d'),
+                ];
+            } else {
+                $taskItems[] = [
+                    'judul' => 'Tugas ' . ($index + 1),
+                    'link' => (string) $item,
+                    'tanggal_start' => date('Y-m-d'),
+                ];
+            }
+        }
+
+        return view('admin.sosmed.settings', compact('feePerSubmission', 'isFormActive', 'publicFormUrl', 'taskItems'));
     }
 
     /**
-     * Update Pengaturan Fee, Form Status & Link Tugas
+     * Update Pengaturan Fee, Form Status & Daftar Penugasan (Judul, Link, Tanggal Start)
      */
     public function updateSettings(Request $request)
     {
         $request->validate([
             'fee_per_submission' => 'required|numeric|min:0',
             'form_is_active' => 'required|in:0,1',
-            'task_links' => 'nullable|string',
+            'tasks' => 'nullable|array',
+            'tasks.*.judul' => 'nullable|string|max:255',
+            'tasks.*.link' => 'nullable|string|max:1000',
+            'tasks.*.tanggal_start' => 'nullable|date',
         ]);
 
-        $taskLinksInput = $request->task_links ?? '';
-        $links = array_values(array_filter(array_map('trim', explode("\n", str_replace("\r", "", $taskLinksInput)))));
+        $savedTasks = [];
+        if (!empty($request->tasks) && is_array($request->tasks)) {
+            foreach ($request->tasks as $index => $t) {
+                $judul = trim($t['judul'] ?? '');
+                $link = trim($t['link'] ?? '');
+                $tanggalStart = trim($t['tanggal_start'] ?? date('Y-m-d'));
+
+                if ($judul !== '' || $link !== '') {
+                    $savedTasks[] = [
+                        'judul' => $judul !== '' ? $judul : ('Tugas ' . ($index + 1)),
+                        'link' => $link,
+                        'tanggal_start' => $tanggalStart !== '' ? $tanggalStart : date('Y-m-d'),
+                    ];
+                }
+            }
+        }
 
         SosmedSetting::setByKey('fee_per_submission', $request->fee_per_submission);
         SosmedSetting::setByKey('form_is_active', $request->form_is_active);
-        SosmedSetting::setByKey('task_links', json_encode($links));
+        SosmedSetting::setByKey('task_links', json_encode($savedTasks));
 
-        return back()->with('success', 'Pengaturan fee, status form, dan link tugas sosmed berhasil diperbarui.');
+        return back()->with('success', 'Pengaturan fee, status form, dan kelola penugasan sosmed berhasil diperbarui.');
     }
 }

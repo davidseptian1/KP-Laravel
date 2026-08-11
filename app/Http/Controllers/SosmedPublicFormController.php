@@ -176,14 +176,34 @@ class SosmedPublicFormController extends Controller
             $taskLinksRaw = [];
         }
 
+        $todayStr = now()->format('Y-m-d');
         $formattedTasks = [];
-        foreach ($taskLinksRaw as $index => $link) {
+
+        foreach ($taskLinksRaw as $index => $item) {
             $num = $index + 1;
-            $formattedTasks[] = [
-                'id' => 'tugas_' . $num,
-                'title' => 'Tugas ' . $num,
-                'link' => trim($link),
-            ];
+            if (is_array($item)) {
+                $judul = trim($item['judul'] ?? '');
+                $link = trim($item['link'] ?? '');
+                $tanggalStart = trim($item['tanggal_start'] ?? $todayStr);
+
+                // Task HANYA TAMPIL di user jika Tanggal Start === HARI INI (otomatis HILANG pada jam 00:00)
+                if ($tanggalStart === $todayStr) {
+                    $formattedTasks[] = [
+                        'id' => 'tugas_' . $num,
+                        'title' => $judul !== '' ? $judul : ('Tugas ' . $num),
+                        'link' => $link,
+                        'tanggal_start' => $tanggalStart,
+                    ];
+                }
+            } else {
+                // Legacy format string URL
+                $formattedTasks[] = [
+                    'id' => 'tugas_' . $num,
+                    'title' => 'Tugas ' . $num,
+                    'link' => trim((string) $item),
+                    'tanggal_start' => $todayStr,
+                ];
+            }
         }
 
         // Ambil data task yang SUDAH dikerjakan HARI INI per user untuk mengunci dropdown
