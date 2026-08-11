@@ -976,6 +976,25 @@
         initPagination();
     }
 
+    // Anti Double-Click / Anti Double-Submit Guard
+    let isFormSubmitting = false;
+    const sosmedForm = document.getElementById('sosmedForm');
+    const btnSubmit = document.getElementById('btnSubmit');
+
+    if (sosmedForm && btnSubmit) {
+        sosmedForm.addEventListener('submit', function(e) {
+            if (isFormSubmitting) {
+                e.preventDefault();
+                return false;
+            }
+
+            isFormSubmitting = true;
+            btnSubmit.disabled = true;
+            btnSubmit.style.pointerEvents = 'none';
+            btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Sedang Mengirim Data Bukti Posting, Mohon Tunggu...';
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         handlePlatformChange();
         handleTaskChange();
