@@ -11,9 +11,12 @@ class SosmedSubmission extends Model
 
     protected $fillable = [
         'nama',
+        'username_sosmed',
         'nama_first_word',
         'divisi',
         'sosmed_platform',
+        'pilihan_tugas',
+        'tugas_link',
         'photos',
         'status',
         'catatan',

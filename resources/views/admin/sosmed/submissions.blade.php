@@ -43,7 +43,7 @@
             <div class="col-md-4">
                 <div class="input-group">
                     <span class="input-group-text bg-white border-end-0"><i class="ti ti-search text-muted"></i></span>
-                    <input type="text" name="search" class="form-control border-start-0 ps-0" placeholder="Cari nama user / divisi..." value="{{ request('search') }}">
+                    <input type="text" name="search" class="form-control border-start-0 ps-0" placeholder="Cari nama, username, divisi..." value="{{ request('search') }}">
                 </div>
             </div>
             <div class="col-md-3">
@@ -60,6 +60,7 @@
                     <option value="Instagram" {{ request('platform') == 'Instagram' ? 'selected' : '' }}>Instagram</option>
                     <option value="TikTok" {{ request('platform') == 'TikTok' ? 'selected' : '' }}>TikTok</option>
                     <option value="Facebook" {{ request('platform') == 'Facebook' ? 'selected' : '' }}>Facebook</option>
+                    <option value="YouTube" {{ request('platform') == 'YouTube' ? 'selected' : '' }}>YouTube</option>
                 </select>
             </div>
             <div class="col-md-2 d-flex gap-1">
@@ -79,16 +80,16 @@
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th style="width: 50px;">No</th>
-                        <th>User (Nama & Kata 1)</th>
+                        <th style="width: 40px;">No</th>
+                        <th>Karyawan & Username</th>
                         <th>Divisi</th>
-                        <th>Platform</th>
-                        <th>Foto Bukti</th>
+                        <th>Platform & Tugas</th>
+                        <th>Foto Bukti (Like, Komen, Share)</th>
                         <th>Tanggal Submit</th>
                         <th>Status</th>
                         <th>Fee Earned</th>
                         <th>Catatan Admin</th>
-                        <th style="width: 150px;" class="text-center">Aksi Moderasi</th>
+                        <th style="width: 140px;" class="text-center">Aksi Moderasi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -96,28 +97,57 @@
                         <tr>
                             <td>{{ $submissions->firstItem() + $key }}</td>
                             <td>
-                                <strong class="text-dark d-block">{{ $item->nama }}</strong>
+                                <strong class="text-dark d-block fs-6">{{ $item->nama }}</strong>
+                                @if($item->username_sosmed)
+                                    <span class="badge bg-light-info text-info font-monospace me-1">
+                                        <i class="ti ti-at me-1"></i>{{ $item->username_sosmed }}
+                                    </span>
+                                @endif
                                 <span class="badge bg-light-primary text-primary font-monospace fs-7">
-                                    <i class="ti ti-id me-1"></i>Kata 1: {{ $item->nama_first_word }}
+                                    Kata 1: {{ $item->nama_first_word }}
                                 </span>
                             </td>
                             <td><span class="badge bg-light-secondary text-dark">{{ $item->divisi }}</span></td>
                             <td>
-                                @if($item->sosmed_platform === 'Instagram')
-                                    <span class="badge bg-danger"><i class="ti ti-brand-instagram me-1"></i>Instagram</span>
-                                @elseif($item->sosmed_platform === 'TikTok')
-                                    <span class="badge bg-dark"><i class="ti ti-brand-tiktok me-1"></i>TikTok</span>
-                                @else
-                                    <span class="badge bg-primary"><i class="ti ti-brand-facebook me-1"></i>Facebook</span>
+                                <div class="mb-1">
+                                    @if($item->sosmed_platform === 'Instagram')
+                                        <span class="badge bg-danger"><i class="ti ti-brand-instagram me-1"></i>Instagram</span>
+                                    @elseif($item->sosmed_platform === 'TikTok')
+                                        <span class="badge bg-dark"><i class="ti ti-brand-tiktok me-1"></i>TikTok</span>
+                                    @elseif($item->sosmed_platform === 'Facebook')
+                                        <span class="badge bg-primary"><i class="ti ti-brand-facebook me-1"></i>Facebook</span>
+                                    @elseif($item->sosmed_platform === 'YouTube')
+                                        <span class="badge bg-danger"><i class="ti ti-brand-youtube me-1"></i>YouTube</span>
+                                    @else
+                                        <span class="badge bg-secondary">{{ $item->sosmed_platform }}</span>
+                                    @endif
+                                </div>
+                                @if($item->pilihan_tugas)
+                                    <div class="small fw-semibold text-dark">
+                                        <i class="ti ti-checklist text-primary me-1"></i>{{ $item->pilihan_tugas }}
+                                    </div>
+                                @endif
+                                @if($item->tugas_link)
+                                    <a href="{{ $item->tugas_link }}" target="_blank" class="small text-primary text-decoration-none d-inline-flex align-items-center mt-1">
+                                        <i class="ti ti-link me-1"></i>Buka Link Tugas <i class="ti ti-external-link ms-1 fs-7"></i>
+                                    </a>
                                 @endif
                             </td>
                             <td>
                                 @if(!empty($item->photos) && is_array($item->photos))
                                     <div class="d-flex flex-wrap gap-1">
+                                        @php
+                                            $labels = ['Like', 'Komen', 'Share'];
+                                        @endphp
                                         @foreach($item->photos as $pIndex => $photo)
-                                            <a href="{{ asset($photo) }}" target="_blank" title="Klik untuk perbesar">
-                                                <img src="{{ asset($photo) }}" class="rounded border" style="width: 44px; height: 44px; object-fit: cover;">
-                                            </a>
+                                            <div class="text-center">
+                                                <a href="{{ asset($photo) }}" target="_blank" title="Klik perbesar ({{ $labels[$pIndex] ?? 'Foto '.($pIndex+1) }})">
+                                                    <img src="{{ asset($photo) }}" class="rounded border shadow-sm" style="width: 46px; height: 46px; object-fit: cover;">
+                                                </a>
+                                                <small class="d-block text-muted" style="font-size: 0.68rem;">
+                                                    {{ $labels[$pIndex] ?? ($pIndex+1) }}
+                                                </small>
+                                            </div>
                                         @endforeach
                                     </div>
                                 @else
@@ -191,6 +221,9 @@
                                                     <div class="mb-3">
                                                         <label class="form-label text-muted fs-7 mb-1">User & Platform</label>
                                                         <div class="fw-bold text-dark fs-6">{{ $item->nama }} ({{ $item->divisi }})</div>
+                                                        @if($item->username_sosmed)
+                                                            <div class="text-info fs-7 fw-semibold"><i class="ti ti-at"></i>{{ $item->username_sosmed }}</div>
+                                                        @endif
                                                         <div class="text-muted fs-7">Platform: {{ $item->sosmed_platform }}</div>
                                                     </div>
 

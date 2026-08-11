@@ -12,6 +12,88 @@ use Illuminate\Support\Facades\Storage;
 class AdminSosmedController extends Controller
 {
     /**
+     * Generator Data Leaderboard Peringkat Karyawan (1 - 90)
+     * 1 Task Submission Selesai / Ter-upload = 1 Poin
+     */
+    public static function getLeaderboardData(): array
+    {
+        $karyawanList = SosmedPublicFormController::getKaryawanList();
+        $submissions = SosmedSubmission::all();
+
+        $leaderboard = [];
+
+        foreach ($karyawanList as $k) {
+            $empName = trim($k['nama']);
+            $empDiv = trim($k['divisi']);
+
+            $firstWordName = strtolower(SosmedSubmission::extractFirstWord($empName));
+
+            // Matching submission user by name or first word
+            $userSubs = $submissions->filter(function ($sub) use ($empName, $firstWordName) {
+                $subNama = strtolower(trim($sub->nama));
+                $subFirstWord = strtolower(trim($sub->nama_first_word));
+                
+                return $subNama === strtolower($empName)
+                    || ($subFirstWord !== '' && $subFirstWord === $firstWordName);
+            });
+
+            $totalSubmissions = $userSubs->count();
+            $accCount = $userSubs->where('status', 'acc')->count();
+            $pendingCount = $userSubs->where('status', 'pending')->count();
+            $rejectedCount = $userSubs->where('status', 'ditolak')->count();
+
+            // 1 Task completed / uploaded = 1 Poin
+            $totalPoints = $totalSubmissions;
+
+            $totalFee = $userSubs->where('status', 'acc')->sum('fee_amount');
+
+            $usernames = $userSubs->pluck('username_sosmed')->filter()->unique()->values()->toArray();
+            $tasksCompleted = $userSubs->pluck('pilihan_tugas')->filter()->unique()->values()->toArray();
+
+            $igCount = $userSubs->where('sosmed_platform', 'Instagram')->count();
+            $tiktokCount = $userSubs->where('sosmed_platform', 'TikTok')->count();
+            $fbCount = $userSubs->where('sosmed_platform', 'Facebook')->count();
+            $ytCount = $userSubs->where('sosmed_platform', 'YouTube')->count();
+
+            $leaderboard[] = [
+                'nama' => $empName,
+                'divisi' => $empDiv,
+                'username_sosmed' => !empty($usernames) ? implode(', ', $usernames) : '-',
+                'total_points' => $totalPoints,
+                'total_submissions' => $totalSubmissions,
+                'acc_count' => $accCount,
+                'pending_count' => $pendingCount,
+                'rejected_count' => $rejectedCount,
+                'total_fee' => $totalFee,
+                'tasks_completed' => $tasksCompleted,
+                'ig_count' => $igCount,
+                'tiktok_count' => $tiktokCount,
+                'fb_count' => $fbCount,
+                'yt_count' => $ytCount,
+                'submissions' => $userSubs->sortByDesc('created_at')->values(),
+            ];
+        }
+
+        // Urutkan dari poin terbesar ke terkecil (Terbesar -> Terkecil)
+        usort($leaderboard, function ($a, $b) {
+            if ($b['total_points'] !== $a['total_points']) {
+                return $b['total_points'] <=> $a['total_points'];
+            }
+            if ($b['total_fee'] !== $a['total_fee']) {
+                return $b['total_fee'] <=> $a['total_fee'];
+            }
+            return strcmp($a['nama'], $b['nama']);
+        });
+
+        // Set Nomor Peringkat (Rank 1 - 90)
+        foreach ($leaderboard as $index => &$item) {
+            $item['rank'] = $index + 1;
+        }
+
+        return $leaderboard;
+    }
+
+    /**
      * Dashboard khusus Admin Sosmed
      */
     public function dashboard()
@@ -22,22 +104,31 @@ class AdminSosmedController extends Controller
         $rejectedCount = SosmedSubmission::where('status', 'ditolak')->count();
         $totalFeeAccrued = SosmedSubmission::where('status', 'acc')->sum('fee_amount');
 
-        // Traffic per Platform (IG, TikTok, Facebook)
+        // Traffic per Platform
         $platformCounts = [
             'Instagram' => SosmedSubmission::where('sosmed_platform', 'Instagram')->count(),
             'TikTok'    => SosmedSubmission::where('sosmed_platform', 'TikTok')->count(),
             'Facebook'  => SosmedSubmission::where('sosmed_platform', 'Facebook')->count(),
+            'YouTube'   => SosmedSubmission::where('sosmed_platform', 'YouTube')->count(),
         ];
 
-        // Top Most Active Users (Grafik Paling Rajin Simpan) - Grouped by First Word of Nama
-        $topUsersData = SosmedSubmission::select('nama_first_word', DB::raw('COUNT(*) as total_submit'), DB::raw('SUM(CASE WHEN status = "acc" THEN fee_amount ELSE 0 END) as total_fee'))
-            ->groupBy('nama_first_word')
-            ->orderByDesc('total_submit')
-            ->limit(10)
-            ->get();
+        // Ambil data Peringkat Karyawan (Urut 1 - 90)
+        $leaderboardAll = static::getLeaderboardData();
 
-        $topUserLabels = $topUsersData->pluck('nama_first_word')->toArray();
-        $topUserCounts = $topUsersData->pluck('total_submit')->toArray();
+        // Ambil Top 5 untuk Grafik Peringkat Linechart (Rank 1 s/d Rank 5)
+        $top5Users = array_slice($leaderboardAll, 0, 5);
+
+        $top5Labels = [];
+        $top5Points = [];
+        $top5Divisions = [];
+        $top5Usernames = [];
+
+        foreach ($top5Users as $user) {
+            $top5Labels[] = "#" . $user['rank'] . " " . $user['nama'];
+            $top5Points[] = $user['total_points'];
+            $top5Divisions[] = $user['divisi'];
+            $top5Usernames[] = $user['username_sosmed'];
+        }
 
         // Recent 5 Submissions
         $recentSubmissions = SosmedSubmission::orderBy('created_at', 'desc')->limit(5)->get();
@@ -49,8 +140,11 @@ class AdminSosmedController extends Controller
             'rejectedCount',
             'totalFeeAccrued',
             'platformCounts',
-            'topUserLabels',
-            'topUserCounts',
+            'leaderboardAll',
+            'top5Labels',
+            'top5Points',
+            'top5Divisions',
+            'top5Usernames',
             'recentSubmissions'
         ));
     }
@@ -74,6 +168,7 @@ class AdminSosmedController extends Controller
             $search = trim($request->search);
             $query->where(function ($q) use ($search) {
                 $q->where('nama', 'like', "%{$search}%")
+                  ->orWhere('username_sosmed', 'like', "%{$search}%")
                   ->orWhere('nama_first_word', 'like', "%{$search}%")
                   ->orWhere('divisi', 'like', "%{$search}%");
             });
@@ -135,53 +230,22 @@ class AdminSosmedController extends Controller
     }
 
     /**
-     * Rekap Fee Terkumpul Setiap User
-     * Mengambil data kalimat/kata pertama dari field input nama user
+     * Rekap Leaderboard & Fee Terkumpul 90 Karyawan
      */
     public function userFees(Request $request)
     {
-        $query = SosmedSubmission::query();
+        $leaderboardAll = static::getLeaderboardData();
 
         if ($request->filled('search')) {
-            $search = trim($request->search);
-            $query->where(function ($q) use ($search) {
-                $q->where('nama_first_word', 'like', "%{$search}%")
-                  ->orWhere('nama', 'like', "%{$search}%");
+            $search = strtolower(trim($request->search));
+            $leaderboardAll = array_filter($leaderboardAll, function ($user) use ($search) {
+                return str_contains(strtolower($user['nama']), $search)
+                    || str_contains(strtolower($user['username_sosmed']), $search)
+                    || str_contains(strtolower($user['divisi']), $search);
             });
         }
 
-        // Group by nama_first_word
-        $submissions = $query->get();
-
-        $userFeesGrouped = $submissions->groupBy('nama_first_word')->map(function ($items, $firstWord) {
-            $distinctNames = $items->pluck('nama')->unique()->values()->toArray();
-            $totalSubmissions = $items->count();
-            $accSubmissions = $items->where('status', 'acc')->count();
-            $pendingSubmissions = $items->where('status', 'pending')->count();
-            $rejectedSubmissions = $items->where('status', 'ditolak')->count();
-            $totalFeeAccrued = $items->where('status', 'acc')->sum('fee_amount');
-
-            $igCount = $items->where('sosmed_platform', 'Instagram')->count();
-            $tiktokCount = $items->where('sosmed_platform', 'TikTok')->count();
-            $fbCount = $items->where('sosmed_platform', 'Facebook')->count();
-
-            return [
-                'first_word'          => $firstWord,
-                'variasi_nama'        => $distinctNames,
-                'latest_divisi'       => $items->sortByDesc('created_at')->first()->divisi ?? '-',
-                'total_submissions'   => $totalSubmissions,
-                'acc_submissions'     => $accSubmissions,
-                'pending_submissions' => $pendingSubmissions,
-                'rejected_submissions'=> $rejectedSubmissions,
-                'total_fee'           => $totalFeeAccrued,
-                'ig_count'            => $igCount,
-                'tiktok_count'        => $tiktokCount,
-                'fb_count'            => $fbCount,
-                'items'               => $items->sortByDesc('created_at'),
-            ];
-        })->sortByDesc('total_fee');
-
-        return view('admin.sosmed.user_fees', compact('userFeesGrouped'));
+        return view('admin.sosmed.user_fees', compact('leaderboardAll'));
     }
 
     /**
