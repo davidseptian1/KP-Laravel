@@ -538,8 +538,8 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse($publicLeaderboard as $userItem)
-                                    <tr data-nama-raw="{{ strtolower($userItem['nama_raw']) }}">
+                                @forelse($publicLeaderboard as $index => $userItem)
+                                    <tr class="leaderboard-row {{ $index >= 10 ? 'd-none' : '' }}" data-nama-raw="{{ strtolower($userItem['nama_raw']) }}" style="{{ $index >= 10 ? 'display: none !important;' : '' }}">
                                         <td class="text-center">
                                             @if($userItem['rank'] === 1)
                                                 <span class="badge bg-warning text-dark font-monospace">🥇 #1</span>
@@ -591,7 +591,7 @@
                     <!-- Pagination Controls & Next/Prev Navigation -->
                     <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-3 pt-2">
                         <div class="small text-muted" id="paginationInfoText">
-                            Menampilkan 1 - 10 dari 90 karyawan
+                            Menampilkan 1 - 10 dari {{ count($publicLeaderboard) }} karyawan (Halaman 1 dari {{ ceil(count($publicLeaderboard)/10) }})
                         </div>
                         <div class="d-flex align-items-center gap-1">
                             <button type="button" class="btn btn-sm btn-outline-primary" id="btnPrevPage" onclick="prevPage()">
@@ -816,7 +816,7 @@
         const tbody = table.querySelector('tbody');
         if (!tbody) return;
 
-        const allRows = Array.from(tbody.querySelectorAll('tr'));
+        const allRows = Array.from(tbody.querySelectorAll('tr.leaderboard-row'));
         const searchInput = document.getElementById('searchPublicLeaderboard');
         const filterText = searchInput ? searchInput.value.trim().toLowerCase() : '';
 
@@ -835,13 +835,17 @@
         const startIdx = (currentPage - 1) * effectivePageSize;
         const endIdx = pageSize < 0 ? totalItems : Math.min(startIdx + effectivePageSize, totalItems);
 
-        // Hide all rows first
-        allRows.forEach(row => row.style.display = 'none');
+        // Hide all rows first with d-none and style display
+        allRows.forEach(row => {
+            row.classList.add('d-none');
+            row.setAttribute('style', 'display: none !important;');
+        });
 
         // Show active page rows
         for (let i = startIdx; i < endIdx; i++) {
             if (filteredRows[i]) {
-                filteredRows[i].style.display = '';
+                filteredRows[i].classList.remove('d-none');
+                filteredRows[i].setAttribute('style', '');
             }
         }
 
