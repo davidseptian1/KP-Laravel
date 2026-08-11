@@ -417,6 +417,7 @@ Route::middleware(['checkLogin', 'admin.activity.log'])->group(function () {
         Route::post('admin/sosmed/submissions/{id}/status', [AdminSosmedController::class, 'updateStatus'])->name('admin.sosmed.submissions.status');
         Route::delete('admin/sosmed/submissions/{id}', [AdminSosmedController::class, 'destroySubmission'])->name('admin.sosmed.submissions.destroy');
         Route::get('admin/sosmed/user-fees', [AdminSosmedController::class, 'userFees'])->name('admin.sosmed.user-fees');
+        Route::get('admin/sosmed/user-analysis', [AdminSosmedController::class, 'userAnalysis'])->name('admin.sosmed.user-analysis');
         Route::get('admin/sosmed/settings', [AdminSosmedController::class, 'settings'])->name('admin.sosmed.settings');
         Route::post('admin/sosmed/settings', [AdminSosmedController::class, 'updateSettings'])->name('admin.sosmed.settings.update');
     });

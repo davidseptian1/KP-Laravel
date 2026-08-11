@@ -16,6 +16,9 @@
                 <a href="{{ route('admin.sosmed.submissions') }}" class="btn btn-primary btn-sm rounded-2 me-1">
                     <i class="ti ti-list-check me-1"></i> Moderasi Posting
                 </a>
+                <a href="{{ route('admin.sosmed.user-analysis') }}" class="btn btn-outline-info btn-sm rounded-2 me-1">
+                    <i class="ti ti-chart-dots me-1"></i> Analisa User
+                </a>
                 <a href="{{ route('admin.sosmed.user-fees') }}" class="btn btn-outline-primary btn-sm rounded-2 me-1">
                     <i class="ti ti-trophy me-1"></i> Rekap Leaderboard
                 </a>
@@ -104,7 +107,7 @@
                     <h5 class="card-title mb-0 fw-bold text-dark">
                         <i class="ti ti-chart-bar text-primary me-2"></i>Grafik Horizontal Peringkat Karyawan (Top Leaders)
                     </h5>
-                    <small class="text-muted">Top 5 Karyawan dengan Poin Task Sosmed Terbanyak (1 Task = 1 Poin)</small>
+                    <small class="text-muted">Top 5 Karyawan dengan Poin Task Sosmed Terbanyak (1 Task ACC = 1 Poin)</small>
                 </div>
                 <span class="badge bg-warning text-dark"><i class="ti ti-crown me-1"></i>Top 5 Leaders</span>
             </div>
@@ -146,7 +149,7 @@
                     <h5 class="card-title mb-0 fw-bold">
                         <i class="ti ti-trophy text-warning me-2"></i>Tabel Peringkat Karyawan (Rank 1 - 90)
                     </h5>
-                    <p class="text-muted mb-0 small">Diurutkan berdasarkan perolehan Poin Task (1 Task Upload = 1 Poin) dari Terbesar ke Terkecil</p>
+                    <p class="text-muted mb-0 small">Diurutkan berdasarkan perolehan Poin Task (1 Task ACC = 1 Poin) dari Terbesar ke Terkecil</p>
                 </div>
                 <div class="d-flex gap-2">
                     <span class="badge bg-light-warning text-dark border align-self-center"><i class="ti ti-medal me-1"></i>Top 5 Grafik Bar</span>

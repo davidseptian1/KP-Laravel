@@ -26,7 +26,7 @@
             border: none;
             overflow: hidden;
             width: 100%;
-            max-width: 720px;
+            max-width: 780px;
             margin: 0 auto;
         }
         .card-header-custom {
@@ -199,12 +199,6 @@
             text-overflow: ellipsis;
             line-height: 1.2;
         }
-        .footer-credit {
-            text-align: center;
-            margin-top: 24px;
-            font-size: 0.82rem;
-            color: #8c8c8c;
-        }
         .task-completed-badge {
             background-color: #f6ffed;
             border: 1px solid #b7eb8f;
@@ -216,6 +210,26 @@
             display: flex;
             align-items: center;
             gap: 6px;
+        }
+        .public-leaderboard-section {
+            margin-top: 40px;
+            padding-top: 28px;
+            border-top: 2px dashed #e8e8e8;
+        }
+        .public-leaderboard-title {
+            color: #1890ff;
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .footer-credit {
+            text-align: center;
+            margin-top: 24px;
+            font-size: 0.82rem;
+            color: #8c8c8c;
         }
     </style>
 </head>
@@ -470,6 +484,99 @@
                         <i class="ti ti-send me-2"></i>Simpan & Kirim Bukti Posting
                     </button>
                 </form>
+
+                <!-- SECTION PALING BAWAH: CEK POIN & KLASEMEN REALTIME (Sensored *** Name) -->
+                <div class="public-leaderboard-section" id="cekPoinSection">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+                        <div>
+                            <div class="public-leaderboard-title">
+                                <i class="ti ti-trophy text-warning fs-2"></i>Cek Poin & Klasemen Realtime Karyawan
+                            </div>
+                            <p class="text-muted small mb-0">
+                                Memantau poin & peringkat 90 karyawan secara realtime (Nama disamarkan <code>***</code> demi privasi).
+                            </p>
+                        </div>
+                        <span class="badge bg-light-primary text-primary border px-3 py-2 fw-bold">
+                            <i class="ti ti-users me-1"></i>90 Karyawan
+                        </span>
+                    </div>
+
+                    <!-- Search Input untuk Cari Nama Kamu -->
+                    <div class="mb-3">
+                        <div class="input-group">
+                            <span class="input-group-text bg-white"><i class="ti ti-search text-muted"></i></span>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="searchPublicLeaderboard" 
+                                   placeholder="Ketik nama Anda untuk mencari poin & peringkat kamu..." 
+                                   onkeyup="filterPublicLeaderboard()">
+                        </div>
+                    </div>
+
+                    <!-- Tabel Klasemen Poin Sensored *** -->
+                    <div class="table-responsive rounded-3 border">
+                        <table class="table table-hover align-middle mb-0" id="tablePublicLeaderboard">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 60px;" class="text-center">Rank</th>
+                                    <th>Nama Karyawan</th>
+                                    <th>Username</th>
+                                    <th>Divisi</th>
+                                    <th class="text-center">Total Poin</th>
+                                    <th class="text-center">Hari Ini</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($publicLeaderboard as $userItem)
+                                    <tr data-nama-raw="{{ strtolower($userItem['nama_raw']) }}">
+                                        <td class="text-center">
+                                            @if($userItem['rank'] === 1)
+                                                <span class="badge bg-warning text-dark font-monospace">🥇 #1</span>
+                                            @elseif($userItem['rank'] === 2)
+                                                <span class="badge bg-secondary text-white font-monospace">🥈 #2</span>
+                                            @elseif($userItem['rank'] === 3)
+                                                <span class="badge bg-dark text-white font-monospace" style="background-color: #cd7f32 !important;">🥉 #3</span>
+                                            @elseif($userItem['rank'] <= 5)
+                                                <span class="badge bg-light-primary text-primary font-monospace fw-bold">⭐ #{{ $userItem['rank'] }}</span>
+                                            @else
+                                                <span class="badge bg-light text-muted font-monospace fw-normal">#{{ $userItem['rank'] }}</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            <strong class="text-dark font-monospace fs-6">{{ $userItem['nama_masked'] }}</strong>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-light-secondary text-muted font-monospace fs-7">{{ $userItem['username_masked'] }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-light-info text-info fs-7">{{ $userItem['divisi'] }}</span>
+                                        </td>
+                                        <td class="text-center">
+                                            @if($userItem['total_points'] > 0)
+                                                <span class="badge bg-primary fs-7 px-2 py-1">
+                                                    <i class="ti ti-star me-1"></i>{{ $userItem['total_points'] }} Poin
+                                                </span>
+                                            @else
+                                                <span class="badge bg-light text-muted fs-7">0 Poin</span>
+                                            @endif
+                                        </td>
+                                        <td class="text-center">
+                                            @if($userItem['submitted_today'])
+                                                <span class="badge bg-success"><i class="ti ti-check me-1"></i>Kirim Hari Ini</span>
+                                            @else
+                                                <span class="badge bg-light text-muted border"><i class="ti ti-clock me-1"></i>Belum Kirim</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="6" class="text-center py-4 text-muted">Belum ada data klasemen poin.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             @endif
         </div>
     </div>
@@ -524,6 +631,13 @@
 
             // Cek task yang sudah dikerjakan karyawan ini HARI INI
             checkEmployeeTodayTasks(val);
+
+            // Filter tabel klasemen publik ke nama ini jika dicari
+            const searchInput = document.getElementById('searchPublicLeaderboard');
+            if (searchInput) {
+                searchInput.value = val;
+                filterPublicLeaderboard();
+            }
         });
 
         // Trigger jika ada old value
@@ -538,7 +652,6 @@
         const valLower = inputNamaVal.trim().toLowerCase();
         const firstWordLower = valLower.split(/\s+/)[0] || '';
 
-        // Ambil daftar task yang sudah dikerjakan karyawan ini hari ini
         const completedTasksToday = todayTaskMap[valLower] || todayTaskMap[firstWordLower] || [];
 
         let enabledOptionsCount = 0;
@@ -546,7 +659,7 @@
 
         for (let i = 0; i < pilihanTugasSelect.options.length; i++) {
             const opt = pilihanTugasSelect.options[i];
-            if (!opt.value) continue; // Skip default option
+            if (!opt.value) continue;
 
             totalTaskOptionsCount++;
             const originalText = opt.getAttribute('data-original-text') || opt.value;
@@ -558,7 +671,6 @@
                 opt.style.color = '#bfbfbf';
                 opt.style.backgroundColor = '#f5f5f5';
 
-                // Reset jika opsi yang disabled ter-select
                 if (opt.selected) {
                     pilihanTugasSelect.selectedIndex = 0;
                     handleTaskChange();
@@ -572,7 +684,6 @@
             }
         }
 
-        // Tampilkan notice jika semua task hari ini sudah diselesaikan oleh user ini
         if (allTasksCompletedBox) {
             if (completedTasksToday.length > 0 && enabledOptionsCount === 0 && totalTaskOptionsCount > 0) {
                 allTasksCompletedBox.classList.remove('d-none');
@@ -596,7 +707,6 @@
         if (allTasksCompletedBox) allTasksCompletedBox.classList.add('d-none');
     }
 
-    // Handle Dropdown Tugas & Dynamic Link Button
     function handleTaskChange() {
         const select = document.getElementById('pilihan_tugas');
         const linkBox = document.getElementById('taskLinkBox');
@@ -638,7 +748,6 @@
         handleTaskChange();
     });
 
-    // Preview Multi-Upload Foto dengan Note (Like, Komen, Share)
     function previewImages(event) {
         const container = document.getElementById('previewContainer');
         container.innerHTML = '';
@@ -669,6 +778,30 @@
                     reader.readAsDataURL(file);
                 }
             });
+        }
+    }
+
+    // Filter Realtime untuk Klasemen Publik
+    function filterPublicLeaderboard() {
+        const input = document.getElementById('searchPublicLeaderboard');
+        if (!input) return;
+
+        const filter = input.value.trim().toLowerCase();
+        const table = document.getElementById('tablePublicLeaderboard');
+        if (!table) return;
+
+        const tr = table.getElementsByTagName('tr');
+
+        for (let i = 1; i < tr.length; i++) {
+            const row = tr[i];
+            const rawNama = row.getAttribute('data-nama-raw') || '';
+            const rowText = row.innerText.toLowerCase();
+
+            if (filter === '' || rawNama.includes(filter) || rowText.includes(filter)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
         }
     }
 

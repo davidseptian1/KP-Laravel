@@ -52,6 +52,14 @@
                     </a>
                 </li>
 
+                <!-- Analisa Perilaku User -->
+                <li class="pc-item {{ request()->routeIs('admin.sosmed.user-analysis') ? 'active' : '' }}">
+                    <a href="{{ route('admin.sosmed.user-analysis') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-chart-dots"></i></span>
+                        <span class="pc-mtext">Analisa Rincian User</span>
+                    </a>
+                </li>
+
                 <!-- Pengaturan Fee Sosmed -->
                 <li class="pc-item {{ request()->routeIs('admin.sosmed.settings') ? 'active' : '' }}">
                     <a href="{{ route('admin.sosmed.settings') }}" class="pc-link">

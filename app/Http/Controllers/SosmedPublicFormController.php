@@ -10,6 +10,49 @@ use Illuminate\Support\Facades\Storage;
 class SosmedPublicFormController extends Controller
 {
     /**
+     * Helper Masking Nama untuk Privasi Publik (contoh: Defit Septian -> De*** Se***)
+     */
+    public static function maskName(string $name): string
+    {
+        $words = array_filter(explode(' ', trim($name)));
+        $maskedWords = [];
+
+        foreach ($words as $w) {
+            $len = mb_strlen($w);
+            if ($len <= 2) {
+                $maskedWords[] = mb_substr($w, 0, 1) . '*';
+            } elseif ($len <= 4) {
+                $maskedWords[] = mb_substr($w, 0, 1) . '***';
+            } else {
+                $maskedWords[] = mb_substr($w, 0, 2) . '***';
+            }
+        }
+
+        return implode(' ', $maskedWords);
+    }
+
+    /**
+     * Helper Masking Username Sosmed
+     */
+    public static function maskUsername(string $username): string
+    {
+        $trimmed = trim($username);
+        if (empty($trimmed) || $trimmed === '-') return '-';
+
+        $hasAt = str_starts_with($trimmed, '@');
+        $clean = $hasAt ? substr($trimmed, 1) : $trimmed;
+        $len = strlen($clean);
+
+        if ($len <= 3) {
+            $masked = substr($clean, 0, 1) . '***';
+        } else {
+            $masked = substr($clean, 0, 2) . '***' . substr($clean, -1);
+        }
+
+        return ($hasAt ? '@' : '') . $masked;
+    }
+
+    /**
      * Master Data Karyawan & Divisi dari Sistem Monitoring Transaksi
      */
     public static function getKaryawanList(): array
@@ -171,13 +214,30 @@ class SosmedPublicFormController extends Controller
             }
         }
 
+        // Generator Klasemen Poin Realtime untuk Public Form (Dengan Masking Nama ***)
+        $rawLeaderboard = AdminSosmedController::getUserDetailedAnalysis();
+        $publicLeaderboard = [];
+
+        foreach ($rawLeaderboard as $user) {
+            $publicLeaderboard[] = [
+                'rank' => $user['rank'],
+                'nama_raw' => $user['nama'],
+                'nama_masked' => static::maskName($user['nama']),
+                'username_masked' => static::maskUsername($user['username_sosmed']),
+                'divisi' => $user['divisi'],
+                'total_points' => $user['total_points'],
+                'submitted_today' => $user['submitted_today'],
+            ];
+        }
+
         return view('sosmed.public_form', compact(
             'isFormActive',
             'karyawanList',
             'divisiList',
             'sosmedPlatforms',
             'formattedTasks',
-            'todayTaskMap'
+            'todayTaskMap',
+            'publicLeaderboard'
         ));
     }
 

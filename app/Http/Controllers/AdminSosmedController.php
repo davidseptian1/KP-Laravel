@@ -12,19 +12,23 @@ use Illuminate\Support\Facades\Storage;
 class AdminSosmedController extends Controller
 {
     /**
-     * Generator Data Leaderboard Peringkat Karyawan (1 - 90)
-     * 1 Task Submission Selesai / Ter-upload = 1 Poin
+     * Generator Data Leaderboard & Analisa Detail 90 Karyawan
+     * (Platform Gemar, Kelengkapan 3 Foto, Keaktifan Harian, Hari Bolos/Kosong)
      */
-    public static function getLeaderboardData(): array
+    public static function getUserDetailedAnalysis($targetNama = null): array
     {
         $karyawanList = SosmedPublicFormController::getKaryawanList();
         $submissions = SosmedSubmission::all();
 
-        $leaderboard = [];
+        $analysisData = [];
 
         foreach ($karyawanList as $k) {
             $empName = trim($k['nama']);
             $empDiv = trim($k['divisi']);
+
+            if ($targetNama && strtolower(trim($targetNama)) !== strtolower($empName)) {
+                // skip if filtering for single target
+            }
 
             $firstWordName = strtolower(SosmedSubmission::extractFirstWord($empName));
 
@@ -42,20 +46,84 @@ class AdminSosmedController extends Controller
             $pendingCount = $userSubs->where('status', 'pending')->count();
             $rejectedCount = $userSubs->where('status', 'ditolak')->count();
 
-            // 1 Task completed / uploaded = 1 Poin
-            $totalPoints = $totalSubmissions;
-
+            // Poin hanya bertambah jika task sudah disetujui (ACC) oleh Admin: 1 Task ACC = 1 Poin
+            $totalPoints = $accCount;
             $totalFee = $userSubs->where('status', 'acc')->sum('fee_amount');
 
-            $usernames = $userSubs->pluck('username_sosmed')->filter()->unique()->values()->toArray();
-            $tasksCompleted = $userSubs->pluck('pilihan_tugas')->filter()->unique()->values()->toArray();
-
+            // 1. Analisa Platform Gemar Apa (Instagram, TikTok, Facebook, YouTube)
             $igCount = $userSubs->where('sosmed_platform', 'Instagram')->count();
             $tiktokCount = $userSubs->where('sosmed_platform', 'TikTok')->count();
             $fbCount = $userSubs->where('sosmed_platform', 'Facebook')->count();
             $ytCount = $userSubs->where('sosmed_platform', 'YouTube')->count();
 
-            $leaderboard[] = [
+            $platformBreakdown = [
+                'Instagram' => $igCount,
+                'TikTok'    => $tiktokCount,
+                'Facebook'  => $fbCount,
+                'YouTube'   => $ytCount,
+            ];
+            arsort($platformBreakdown);
+            $favoritePlatform = $totalSubmissions > 0 ? array_key_first($platformBreakdown) : 'Belum Ada';
+
+            // 2. Analisa Kelengkapan 3 Gambar (Apakah lengkap 3 gambar tiap mengirim)
+            $threePhotoCount = 0;
+            $totalPhotosUploaded = 0;
+
+            foreach ($userSubs as $sub) {
+                $photoArray = is_array($sub->photos) ? $sub->photos : [];
+                $count = count($photoArray);
+                $totalPhotosUploaded += $count;
+                if ($count >= 3) {
+                    $threePhotoCount++;
+                }
+            }
+
+            $photoCompletenessRate = $totalSubmissions > 0 
+                ? round(($threePhotoCount / $totalSubmissions) * 100) 
+                : 0;
+
+            $avgPhotosPerSubmission = $totalSubmissions > 0 
+                ? round($totalPhotosUploaded / $totalSubmissions, 1) 
+                : 0;
+
+            $isAlwaysThreePhotos = ($photoCompletenessRate >= 100 && $totalSubmissions > 0);
+
+            // 3. Analisa Keaktifan Harian (Rajin tiap hari atau ada hari yang tidak menyelesaikan task)
+            $activeDates = $userSubs->pluck('created_at')->map(function ($date) {
+                return $date->format('Y-m-d');
+            })->unique();
+
+            $activeDaysCount = $activeDates->count();
+
+            $firstSub = $userSubs->sortBy('created_at')->first();
+            $daysSpan = $firstSub ? max(1, (int) $firstSub->created_at->diffInDays(now()) + 1) : 1;
+            $inactiveDaysCount = max(0, $daysSpan - $activeDaysCount);
+
+            $activityPercentage = min(100, round(($activeDaysCount / $daysSpan) * 100));
+
+            if ($totalSubmissions === 0) {
+                $activityStatus = 'Belum Aktif 😴';
+                $activityBadge = 'bg-secondary';
+            } elseif ($activityPercentage >= 80 || $activeDaysCount >= 5) {
+                $activityStatus = 'Sangat Rajin 🔥 (Setiap Hari)';
+                $activityBadge = 'bg-success';
+            } elseif ($activityPercentage >= 40 || $activeDaysCount >= 2) {
+                $activityStatus = 'Cukup Rajin ⚡';
+                $activityBadge = 'bg-info';
+            } else {
+                $activityStatus = 'Jarang Kirim ⚠️ (Ada Hari Bolos)';
+                $activityBadge = 'bg-warning text-dark';
+            }
+
+            // Submissions hari ini
+            $submittedToday = $userSubs->filter(function($s) {
+                return $s->created_at->isToday();
+            })->count() > 0;
+
+            $usernames = $userSubs->pluck('username_sosmed')->filter()->unique()->values()->toArray();
+            $tasksCompleted = $userSubs->pluck('pilihan_tugas')->filter()->unique()->values()->toArray();
+
+            $analysisData[] = [
                 'nama' => $empName,
                 'divisi' => $empDiv,
                 'username_sosmed' => !empty($usernames) ? implode(', ', $usernames) : '-',
@@ -65,6 +133,18 @@ class AdminSosmedController extends Controller
                 'pending_count' => $pendingCount,
                 'rejected_count' => $rejectedCount,
                 'total_fee' => $totalFee,
+                'favorite_platform' => $favoritePlatform,
+                'platform_breakdown' => $platformBreakdown,
+                'three_photo_count' => $threePhotoCount,
+                'photo_completeness_rate' => $photoCompletenessRate,
+                'avg_photos' => $avgPhotosPerSubmission,
+                'is_always_three' => $isAlwaysThreePhotos,
+                'active_days_count' => $activeDaysCount,
+                'inactive_days_count' => $inactiveDaysCount,
+                'activity_percentage' => $activityPercentage,
+                'activity_status' => $activityStatus,
+                'activity_badge' => $activityBadge,
+                'submitted_today' => $submittedToday,
                 'tasks_completed' => $tasksCompleted,
                 'ig_count' => $igCount,
                 'tiktok_count' => $tiktokCount,
@@ -74,23 +154,23 @@ class AdminSosmedController extends Controller
             ];
         }
 
-        // Urutkan dari poin terbesar ke terkecil (Terbesar -> Terkecil)
-        usort($leaderboard, function ($a, $b) {
+        // Urutkan default berdasarkan Total Points DESC, lalu Active Days DESC
+        usort($analysisData, function ($a, $b) {
             if ($b['total_points'] !== $a['total_points']) {
                 return $b['total_points'] <=> $a['total_points'];
             }
-            if ($b['total_fee'] !== $a['total_fee']) {
-                return $b['total_fee'] <=> $a['total_fee'];
+            if ($b['active_days_count'] !== $a['active_days_count']) {
+                return $b['active_days_count'] <=> $a['active_days_count'];
             }
             return strcmp($a['nama'], $b['nama']);
         });
 
-        // Set Nomor Peringkat (Rank 1 - 90)
-        foreach ($leaderboard as $index => &$item) {
+        // Set Rank 1 - 90
+        foreach ($analysisData as $index => &$item) {
             $item['rank'] = $index + 1;
         }
 
-        return $leaderboard;
+        return $analysisData;
     }
 
     /**
@@ -112,10 +192,10 @@ class AdminSosmedController extends Controller
             'YouTube'   => SosmedSubmission::where('sosmed_platform', 'YouTube')->count(),
         ];
 
-        // Ambil data Peringkat Karyawan (Urut 1 - 90)
-        $leaderboardAll = static::getLeaderboardData();
+        // Ambil data Peringkat & Analisa Karyawan (Urut 1 - 90)
+        $leaderboardAll = static::getUserDetailedAnalysis();
 
-        // Ambil Top 5 untuk Grafik Peringkat Linechart (Rank 1 s/d Rank 5)
+        // Ambil Top 5 untuk Grafik Peringkat Horizontal Bar (Rank 1 s/d Rank 5)
         $top5Users = array_slice($leaderboardAll, 0, 5);
 
         $top5Labels = [];
@@ -147,6 +227,26 @@ class AdminSosmedController extends Controller
             'top5Usernames',
             'recentSubmissions'
         ));
+    }
+
+    /**
+     * Dashboard Analisa Rincian User & Keaktifan Harian (Admin)
+     */
+    public function userAnalysis(Request $request)
+    {
+        $analysisData = static::getUserDetailedAnalysis();
+
+        if ($request->filled('search')) {
+            $search = strtolower(trim($request->search));
+            $analysisData = array_filter($analysisData, function ($user) use ($search) {
+                return str_contains(strtolower($user['nama']), $search)
+                    || str_contains(strtolower($user['username_sosmed']), $search)
+                    || str_contains(strtolower($user['divisi']), $search)
+                    || str_contains(strtolower($user['favorite_platform']), $search);
+            });
+        }
+
+        return view('admin.sosmed.user_analysis', compact('analysisData'));
     }
 
     /**
@@ -234,7 +334,7 @@ class AdminSosmedController extends Controller
      */
     public function userFees(Request $request)
     {
-        $leaderboardAll = static::getLeaderboardData();
+        $leaderboardAll = static::getUserDetailedAnalysis();
 
         if ($request->filled('search')) {
             $search = strtolower(trim($request->search));
