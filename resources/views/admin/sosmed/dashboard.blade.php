@@ -9,7 +9,7 @@
             <div class="col-md-8">
                 <div class="page-header-title">
                     <h4 class="mb-0 fw-bold text-dark"><i class="ti ti-brand-instagram text-primary me-2"></i>Dashboard Admin & Leaderboard Sosmed</h4>
-                    <p class="text-muted mb-0">Deteksi pengerjaan tugas sosmed, grafik peringkat Top 1-5, dan urutan poin seluruh 90 karyawan</p>
+                    <p class="text-muted mb-0">Deteksi pengerjaan tugas sosmed, grafik peringkat horizontal Top 1-5, dan urutan poin seluruh 90 karyawan</p>
                 </div>
             </div>
             <div class="col-md-4 text-md-end mt-2 mt-md-0">
@@ -96,21 +96,21 @@
 
 <!-- Section Charts -->
 <div class="row mt-2">
-    <!-- Chart 1: Line Chart Peringkat Top 1 - 5 User -->
+    <!-- Chart 1: Horizontal Bar Chart Peringkat Top 1 - 5 User (Gaya Bar Race Ranking) -->
     <div class="col-lg-7 mb-4">
         <div class="card shadow-sm border-0 h-100">
             <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between">
                 <div>
                     <h5 class="card-title mb-0 fw-bold text-dark">
-                        <i class="ti ti-chart-line text-warning me-2"></i>Grafik Line Chart Peringkat 1 - 5 (Top Users)
+                        <i class="ti ti-chart-bar text-primary me-2"></i>Grafik Horizontal Peringkat Karyawan (Top Leaders)
                     </h5>
                     <small class="text-muted">Top 5 Karyawan dengan Poin Task Sosmed Terbanyak (1 Task = 1 Poin)</small>
                 </div>
                 <span class="badge bg-warning text-dark"><i class="ti ti-crown me-1"></i>Top 5 Leaders</span>
             </div>
             <div class="card-body">
-                <div style="width: 100%; height: 310px;">
-                    <canvas id="lineChartTop5"></canvas>
+                <div style="width: 100%; height: 320px;">
+                    <canvas id="horizontalBarChartTop5"></canvas>
                 </div>
             </div>
         </div>
@@ -149,7 +149,7 @@
                     <p class="text-muted mb-0 small">Diurutkan berdasarkan perolehan Poin Task (1 Task Upload = 1 Poin) dari Terbesar ke Terkecil</p>
                 </div>
                 <div class="d-flex gap-2">
-                    <span class="badge bg-light-warning text-dark border align-self-center"><i class="ti ti-medal me-1"></i>Top 5 Grafik Line</span>
+                    <span class="badge bg-light-warning text-dark border align-self-center"><i class="ti ti-medal me-1"></i>Top 5 Grafik Bar</span>
                     <span class="badge bg-light-secondary text-dark border align-self-center"><i class="ti ti-users me-1"></i>Total {{ count($leaderboardAll) }} Karyawan</span>
                 </div>
             </div>
@@ -276,55 +276,61 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-        // Line Chart Peringkat 1 - 5 User (Top Users)
-        const lineCtx = document.getElementById('lineChartTop5').getContext('2d');
-
-        // Gradient background for Line Chart
-        const gradientBg = lineCtx.createLinearGradient(0, 0, 0, 300);
-        gradientBg.addColorStop(0, 'rgba(24, 144, 255, 0.35)');
-        gradientBg.addColorStop(1, 'rgba(24, 144, 255, 0.01)');
+        // Horizontal Bar Chart Peringkat Top 1 - 5 User (Gaya Bar Chart Race)
+        const barCtx = document.getElementById('horizontalBarChartTop5').getContext('2d');
 
         const top5Labels = {!! json_encode($top5Labels) !!};
         const top5Points = {!! json_encode($top5Points) !!};
         const top5Divisions = {!! json_encode($top5Divisions) !!};
         const top5Usernames = {!! json_encode($top5Usernames) !!};
 
-        new Chart(lineCtx, {
-            type: 'line',
+        // Palet warna bervariasi persis seperti contoh gambar (Cyan, Bright Blue, Purple, Orange, Magenta)
+        const barColors = [
+            '#36cfc9', // Rank 1: Vibrant Cyan
+            '#1890ff', // Rank 2: Bright Blue
+            '#722ed1', // Rank 3: Purple / Violet
+            '#fa8c16', // Rank 4: Orange Amber
+            '#eb2f96'  // Rank 5: Pink Magenta
+        ];
+
+        new Chart(barCtx, {
+            type: 'bar',
             data: {
                 labels: top5Labels,
                 datasets: [{
-                    label: 'Total Poin Task (1 Task = 1 Poin)',
+                    label: 'Total Poin Task',
                     data: top5Points,
-                    borderColor: '#1890ff',
-                    backgroundColor: gradientBg,
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.35,
-                    pointBackgroundColor: ['#ffec3d', '#d9d9d9', '#d48806', '#1890ff', '#52c41a'],
-                    pointBorderColor: '#ffffff',
-                    pointBorderWidth: 2,
-                    pointRadius: 7,
-                    pointHoverRadius: 10
+                    backgroundColor: barColors.slice(0, top5Labels.length),
+                    borderRadius: 10,
+                    borderSkipped: false,
+                    barThickness: 26
                 }]
             },
             options: {
+                indexAxis: 'y', // Mengubah chart menjadi Horizontal Bar Chart
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {
-                    y: {
+                    x: {
                         beginAtZero: true,
                         ticks: { stepSize: 1 },
                         grid: { color: 'rgba(0, 0, 0, 0.05)' }
                     },
-                    x: {
-                        grid: { display: false }
+                    y: {
+                        grid: { display: false },
+                        ticks: {
+                            font: { weight: 'bold', size: 12 },
+                            color: '#262626'
+                        }
                     }
                 },
                 plugins: {
-                    legend: { display: true, position: 'top' },
+                    legend: { display: false },
                     tooltip: {
                         callbacks: {
+                            label: function(context) {
+                                return ` Poin: ${context.raw} Poin Task`;
+                            },
                             afterLabel: function(context) {
                                 const index = context.dataIndex;
                                 const div = top5Divisions[index] || '-';
