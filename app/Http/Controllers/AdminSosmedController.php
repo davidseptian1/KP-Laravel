@@ -384,23 +384,35 @@ class AdminSosmedController extends Controller
             if (is_array($item)) {
                 $taskItems[] = [
                     'judul' => $item['judul'] ?? ('Tugas ' . ($index + 1)),
+                    'platform' => $item['platform'] ?? 'Semua Platform',
                     'link' => $item['link'] ?? '',
                     'tanggal_start' => $item['tanggal_start'] ?? date('Y-m-d'),
                 ];
             } else {
                 $taskItems[] = [
                     'judul' => 'Tugas ' . ($index + 1),
+                    'platform' => 'Semua Platform',
                     'link' => (string) $item,
                     'tanggal_start' => date('Y-m-d'),
                 ];
             }
         }
 
-        return view('admin.sosmed.settings', compact('feePerSubmission', 'isFormActive', 'publicFormUrl', 'taskItems'));
+        $platformOptions = [
+            'Semua Platform',
+            'TikTok',
+            'Instagram',
+            'Facebook',
+            'YouTube',
+            'Twitter / X',
+            'Threads'
+        ];
+
+        return view('admin.sosmed.settings', compact('feePerSubmission', 'isFormActive', 'publicFormUrl', 'taskItems', 'platformOptions'));
     }
 
     /**
-     * Update Pengaturan Fee, Form Status & Daftar Penugasan (Judul, Link, Tanggal Start)
+     * Update Pengaturan Fee, Form Status & Daftar Penugasan (Judul, Platform, Link, Tanggal Start)
      */
     public function updateSettings(Request $request)
     {
@@ -409,6 +421,7 @@ class AdminSosmedController extends Controller
             'form_is_active' => 'required|in:0,1',
             'tasks' => 'nullable|array',
             'tasks.*.judul' => 'nullable|string|max:255',
+            'tasks.*.platform' => 'nullable|string|max:255',
             'tasks.*.link' => 'nullable|string|max:1000',
             'tasks.*.tanggal_start' => 'nullable|date',
         ]);
@@ -417,12 +430,14 @@ class AdminSosmedController extends Controller
         if (!empty($request->tasks) && is_array($request->tasks)) {
             foreach ($request->tasks as $index => $t) {
                 $judul = trim($t['judul'] ?? '');
+                $platform = trim($t['platform'] ?? 'Semua Platform');
                 $link = trim($t['link'] ?? '');
                 $tanggalStart = trim($t['tanggal_start'] ?? date('Y-m-d'));
 
                 if ($judul !== '' || $link !== '') {
                     $savedTasks[] = [
                         'judul' => $judul !== '' ? $judul : ('Tugas ' . ($index + 1)),
+                        'platform' => $platform !== '' ? $platform : 'Semua Platform',
                         'link' => $link,
                         'tanggal_start' => $tanggalStart !== '' ? $tanggalStart : date('Y-m-d'),
                     ];

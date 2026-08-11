@@ -290,10 +290,10 @@
                         <div>
                             <strong class="d-block text-primary mb-1">PETUNJUK PENGISIAN FORM & ATURAN TASK HARIAN:</strong>
                             <p class="mb-1">
-                                1. Ketik nama Anda di kolom <strong>Nama Karyawan</strong>, divisi akan <strong>terisi otomatis</strong>.
+                                1. Pilih platform sosmed yang memiliki <strong>tugas aktif hari ini</strong>. Kategori tanpa tugas tidak dapat dipilih.
                             </p>
                             <p class="mb-0">
-                                2. Task yang <strong>sudah Anda selesaikan hari ini</strong> akan terkunci otomatis (tidak bisa diklik lagi hari ini). Silakan selesaikan task lainnya.
+                                2. Task yang <strong>sudah Anda selesaikan hari ini</strong> akan terkunci otomatis (tidak bisa diklik lagi hari ini).
                             </p>
                         </div>
                     </div>
@@ -372,19 +372,31 @@
                         @enderror
                     </div>
 
-                    <!-- Field 4: Pilih Sosmed Platform -->
+                    <!-- Field 4: Pilih Sosmed Platform (Terkunci jika 0 Tugas) -->
                     <div class="mb-3">
                         <label for="sosmed_platform" class="form-label">
                             Pilih Sosmed <span class="required-star">*</span>
                         </label>
-                        <select class="form-select @error('sosmed_platform') is-invalid @enderror" id="sosmed_platform" name="sosmed_platform" required>
+                        <select class="form-select @error('sosmed_platform') is-invalid @enderror" id="sosmed_platform" name="sosmed_platform" onchange="handlePlatformChange()" required>
                             <option value="" disabled selected>-- Pilih Platform Sosmed --</option>
                             @foreach ($sosmedPlatforms as $platform)
-                                <option value="{{ $platform }}" {{ old('sosmed_platform') == $platform ? 'selected' : '' }}>
-                                    {{ $platform }}
-                                </option>
+                                @php
+                                    $count = $activePlatformCounts[$platform] ?? 0;
+                                @endphp
+                                @if($count > 0)
+                                    <option value="{{ $platform }}" {{ old('sosmed_platform') == $platform ? 'selected' : '' }}>
+                                        {{ $platform }} (Tersedia {{ $count }} Tugas Hari Ini)
+                                    </option>
+                                @else
+                                    <option value="{{ $platform }}" disabled style="color: #bfbfbf; background-color: #f8f9fa;">
+                                        {{ $platform }} — (Belum Ada Tugas Hari Ini)
+                                    </option>
+                                @endif
                             @endforeach
                         </select>
+                        <div class="form-text text-muted">
+                            <i class="ti ti-lock me-1"></i>Platform yang tidak memiliki tugas aktif hari ini ditandai abu-abu dan tidak dapat diklik.
+                        </div>
                         @error('sosmed_platform')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -399,16 +411,17 @@
                             <option value="" selected disabled>-- Pilih Tugas Yang Dikerjakan --</option>
                             @if(!empty($formattedTasks))
                                 @foreach ($formattedTasks as $task)
-                                    <option value="{{ $task['title'] }}" data-original-text="{{ $task['title'] }}" data-link="{{ $task['link'] }}" {{ old('pilihan_tugas') == $task['title'] ? 'selected' : '' }}>
-                                        {{ $task['title'] }}
+                                    <option value="{{ $task['title'] }}" 
+                                            data-original-text="{{ $task['title'] }}" 
+                                            data-platform="{{ $task['platform'] ?? 'Semua Platform' }}"
+                                            data-link="{{ $task['link'] }}" 
+                                            {{ old('pilihan_tugas') == $task['title'] ? 'selected' : '' }}>
+                                        [{{ $task['platform'] ?? 'Semua Platform' }}] {{ $task['title'] }}
                                     </option>
                                 @endforeach
                             @else
-                                <option value="Tugas 1: Postingan Sosmed Hari Ini" data-original-text="Tugas 1: Postingan Sosmed Hari Ini" data-link="" {{ old('pilihan_tugas') == 'Tugas 1: Postingan Sosmed Hari Ini' ? 'selected' : '' }}>
+                                <option value="Tugas 1: Postingan Sosmed Hari Ini" data-original-text="Tugas 1: Postingan Sosmed Hari Ini" data-platform="Semua Platform" data-link="" {{ old('pilihan_tugas') == 'Tugas 1: Postingan Sosmed Hari Ini' ? 'selected' : '' }}>
                                     Tugas 1: Postingan Sosmed Hari Ini
-                                </option>
-                                <option value="Tugas 2: Video Content & Story" data-original-text="Tugas 2: Video Content & Story" data-link="" {{ old('pilihan_tugas') == 'Tugas 2: Video Content & Story' ? 'selected' : '' }}>
-                                    Tugas 2: Video Content & Story
                                 </option>
                             @endif
                         </select>
@@ -624,6 +637,7 @@
     const autoDivisiNotice = document.getElementById('autoDivisiNotice');
     const autoDivisiText = document.getElementById('autoDivisiText');
     const pilihanTugasSelect = document.getElementById('pilihan_tugas');
+    const sosmedPlatformSelect = document.getElementById('sosmed_platform');
     const allTasksCompletedBox = document.getElementById('allTasksCompletedBox');
 
     // State Pagination Tabel Publik
@@ -678,6 +692,44 @@
         }
     }
 
+    function handlePlatformChange() {
+        const platformSelect = document.getElementById('sosmed_platform');
+        const taskSelect = document.getElementById('pilihan_tugas');
+        if (!platformSelect || !taskSelect) return;
+
+        const selectedPlatform = platformSelect.value;
+        let firstMatchingIndex = -1;
+
+        for (let i = 0; i < taskSelect.options.length; i++) {
+            const opt = taskSelect.options[i];
+            if (!opt.value) continue;
+
+            const optPlatform = opt.getAttribute('data-platform') || 'Semua Platform';
+
+            if (!selectedPlatform || optPlatform === 'Semua Platform' || optPlatform === selectedPlatform) {
+                opt.classList.remove('d-none');
+                opt.disabled = false;
+                opt.style.display = '';
+                if (firstMatchingIndex === -1 && !opt.disabled) {
+                    firstMatchingIndex = i;
+                }
+            } else {
+                opt.classList.add('d-none');
+                opt.disabled = true;
+                opt.style.display = 'none';
+                if (opt.selected) {
+                    taskSelect.selectedIndex = 0;
+                    handleTaskChange();
+                }
+            }
+        }
+
+        // Re-check employee completed tasks
+        if (namaInput && namaInput.value) {
+            checkEmployeeTodayTasks(namaInput.value);
+        }
+    }
+
     function checkEmployeeTodayTasks(inputNamaVal) {
         if (!pilihanTugasSelect) return;
 
@@ -692,6 +744,7 @@
         for (let i = 0; i < pilihanTugasSelect.options.length; i++) {
             const opt = pilihanTugasSelect.options[i];
             if (!opt.value) continue;
+            if (opt.style.display === 'none' || opt.classList.contains('d-none')) continue;
 
             totalTaskOptionsCount++;
             const originalText = opt.getAttribute('data-original-text') || opt.value;
@@ -924,6 +977,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
+        handlePlatformChange();
         handleTaskChange();
         initPagination();
     });

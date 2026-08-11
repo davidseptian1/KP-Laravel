@@ -178,11 +178,17 @@ class SosmedPublicFormController extends Controller
 
         $todayStr = now()->format('Y-m-d');
         $formattedTasks = [];
+        $activePlatformCounts = [];
+
+        foreach ($sosmedPlatforms as $p) {
+            $activePlatformCounts[$p] = 0;
+        }
 
         foreach ($taskLinksRaw as $index => $item) {
             $num = $index + 1;
             if (is_array($item)) {
                 $judul = trim($item['judul'] ?? '');
+                $platform = trim($item['platform'] ?? 'Semua Platform');
                 $link = trim($item['link'] ?? '');
                 $tanggalStart = trim($item['tanggal_start'] ?? $todayStr);
 
@@ -191,18 +197,32 @@ class SosmedPublicFormController extends Controller
                     $formattedTasks[] = [
                         'id' => 'tugas_' . $num,
                         'title' => $judul !== '' ? $judul : ('Tugas ' . $num),
+                        'platform' => $platform,
                         'link' => $link,
                         'tanggal_start' => $tanggalStart,
                     ];
+
+                    if ($platform === 'Semua Platform') {
+                        foreach ($sosmedPlatforms as $p) {
+                            $activePlatformCounts[$p]++;
+                        }
+                    } elseif (isset($activePlatformCounts[$platform])) {
+                        $activePlatformCounts[$platform]++;
+                    }
                 }
             } else {
                 // Legacy format string URL
                 $formattedTasks[] = [
                     'id' => 'tugas_' . $num,
                     'title' => 'Tugas ' . $num,
+                    'platform' => 'Semua Platform',
                     'link' => trim((string) $item),
                     'tanggal_start' => $todayStr,
                 ];
+
+                foreach ($sosmedPlatforms as $p) {
+                    $activePlatformCounts[$p]++;
+                }
             }
         }
 
@@ -256,6 +276,7 @@ class SosmedPublicFormController extends Controller
             'divisiList',
             'sosmedPlatforms',
             'formattedTasks',
+            'activePlatformCounts',
             'todayTaskMap',
             'publicLeaderboard'
         ));
