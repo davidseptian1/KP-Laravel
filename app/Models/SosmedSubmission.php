@@ -23,17 +23,25 @@ class SosmedSubmission extends Model
         'fee_amount',
         'processed_by',
         'processed_at',
+        'deleted_by',
+        'deleted_at',
     ];
 
     protected $casts = [
         'photos' => 'array',
         'fee_amount' => 'float',
         'processed_at' => 'datetime',
+        'deleted_at' => 'datetime',
     ];
 
     public function processor()
     {
         return $this->belongsTo(User::class, 'processed_by');
+    }
+
+    public function deleter()
+    {
+        return $this->belongsTo(User::class, 'deleted_by');
     }
 
     public static function extractFirstWord(string $nama): string

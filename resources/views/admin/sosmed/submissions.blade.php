@@ -9,7 +9,7 @@
             <div class="col-md-8">
                 <div class="page-header-title">
                     <h4 class="mb-0 fw-bold text-dark"><i class="ti ti-history text-primary me-2"></i>Riwayat & Moderasi Posting Sosmed</h4>
-                    <p class="text-muted mb-0">Kelola persetujuan (ACC/Tolak) dan beri catatan untuk setiap bukti simpan sosmed user</p>
+                    <p class="text-muted mb-0">Kelola persetujuan (ACC/Tolak), catatan, dan audit penghapusan data postingan user</p>
                 </div>
             </div>
             <div class="col-md-4 text-md-end mt-2 mt-md-0">
@@ -52,6 +52,7 @@
                     <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
                     <option value="acc" {{ request('status') == 'acc' ? 'selected' : '' }}>ACC (Disetujui)</option>
                     <option value="ditolak" {{ request('status') == 'ditolak' ? 'selected' : '' }}>Ditolak</option>
+                    <option value="terhapus" {{ request('status') == 'terhapus' ? 'selected' : '' }}>🗑️ Terhapus (Audit Log)</option>
                 </select>
             </div>
             <div class="col-md-3">
@@ -94,7 +95,7 @@
                 </thead>
                 <tbody>
                     @forelse($submissions as $key => $item)
-                        <tr>
+                        <tr class="{{ $item->deleted_at ? 'table-danger bg-opacity-10' : '' }}">
                             <td>{{ $submissions->firstItem() + $key }}</td>
                             <td>
                                 <strong class="text-dark d-block fs-6">{{ $item->nama }}</strong>
@@ -159,16 +160,30 @@
                                 <small class="text-muted">{{ $item->created_at->format('H:i') }} WIB</small>
                             </td>
                             <td>
-                                @if($item->status === 'acc')
+                                @if($item->deleted_at)
+                                    <div class="badge bg-danger p-2 text-start d-block shadow-sm">
+                                        <div class="fw-bold"><i class="ti ti-trash me-1"></i>Terhapus Admin</div>
+                                        <div class="small fw-normal text-white-50 mt-1">
+                                            Oleh: <strong>{{ $item->deleter->name ?? 'Admin Sosmed' }}</strong><br>
+                                            <i class="ti ti-clock me-1"></i>{{ $item->deleted_at->format('d/m/Y H:i') }} WIB
+                                        </div>
+                                    </div>
+                                @elseif($item->status === 'acc')
                                     <span class="badge bg-success"><i class="ti ti-check me-1"></i>ACC</span>
+                                    @if($item->processor)
+                                        <small class="d-block text-muted fs-7 mt-1">oleh {{ $item->processor->name }}</small>
+                                    @endif
                                 @elseif($item->status === 'ditolak')
                                     <span class="badge bg-danger"><i class="ti ti-x me-1"></i>Ditolak</span>
+                                    @if($item->processor)
+                                        <small class="d-block text-muted fs-7 mt-1">oleh {{ $item->processor->name }}</small>
+                                    @endif
                                 @else
                                     <span class="badge bg-warning text-dark"><i class="ti ti-clock me-1"></i>Pending</span>
                                 @endif
                             </td>
                             <td>
-                                @if($item->status === 'acc')
+                                @if(!$item->deleted_at && $item->status === 'acc')
                                     <strong class="text-success fs-6">Rp {{ number_format($item->fee_amount, 0, ',', '.') }}</strong>
                                 @else
                                     <span class="text-muted">-</span>
@@ -182,109 +197,118 @@
                                 @endif
                             </td>
                             <td class="text-center">
-                                <div class="btn-group btn-group-sm" role="group">
-                                    <!-- Button Modal Status -->
-                                    <button type="button" 
-                                            class="btn btn-outline-primary" 
-                                            data-bs-toggle="modal" 
-                                            data-bs-target="#modalStatus{{ $item->id }}"
-                                            title="Ubah Status / Catatan">
-                                        <i class="ti ti-edit"></i> Edit
-                                    </button>
-
-                                    <!-- Button Hapus -->
-                                    <form action="{{ route('admin.sosmed.submissions.destroy', $item->id) }}" 
+                                @if($item->deleted_at)
+                                    <!-- Options saat status Terhapus -->
+                                    <form action="{{ route('admin.sosmed.submissions.restore', $item->id) }}" 
                                           method="POST" 
-                                          onsubmit="return confirm('Apakah Anda yakin ingin menghapus data postingan ini?')"
+                                          onsubmit="return confirm('Apakah Anda yakin ingin memulihkan data postingan ini?')"
                                           class="d-inline">
                                         @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-outline-danger" title="Hapus Data">
-                                            <i class="ti ti-trash"></i>
+                                        <button type="submit" class="btn btn-sm btn-outline-success" title="Pulihkan Data Ini">
+                                            <i class="ti ti-rotate-clockwise me-1"></i> Pulihkan
                                         </button>
                                     </form>
-                                </div>
+                                @else
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <!-- Button Modal Status -->
+                                        <button type="button" 
+                                                class="btn btn-outline-primary" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#modalStatus{{ $item->id }}"
+                                                title="Ubah Status / Catatan">
+                                            <i class="ti ti-edit"></i> Edit
+                                        </button>
 
-                                <!-- Modal Status & Catatan -->
-                                <div class="modal fade text-start" id="modalStatus{{ $item->id }}" tabindex="-1" aria-hidden="true">
-                                    <div class="modal-dialog modal-dialog-centered">
-                                        <div class="modal-content">
-                                            <form action="{{ route('admin.sosmed.submissions.status', $item->id) }}" method="POST">
-                                                @csrf
-                                                <div class="modal-header bg-light">
-                                                    <h5 class="modal-title fw-bold">
-                                                        <i class="ti ti-edit me-1 text-primary"></i>Moderasi Submission #{{ $item->id }}
-                                                    </h5>
-                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                </div>
-                                                <div class="modal-body">
-                                                    <div class="mb-3">
-                                                        <label class="form-label text-muted fs-7 mb-1">User & Platform</label>
-                                                        <div class="fw-bold text-dark fs-6">{{ $item->nama }} ({{ $item->divisi }})</div>
-                                                        @if($item->username_sosmed)
-                                                            <div class="text-info fs-7 fw-semibold"><i class="ti ti-at"></i>{{ $item->username_sosmed }}</div>
-                                                        @endif
-                                                        <div class="text-muted fs-7">Platform: {{ $item->sosmed_platform }}</div>
-                                                    </div>
+                                        <!-- Button Hapus -->
+                                        <form action="{{ route('admin.sosmed.submissions.destroy', $item->id) }}" 
+                                              method="POST" 
+                                              onsubmit="return confirm('Apakah Anda yakin ingin menghapus data postingan ini? Info admin & tanggal jam hapus akan dicatat.')"
+                                              class="d-inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-outline-danger" title="Hapus Data">
+                                                <i class="ti ti-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
 
-                                                    <div class="mb-3">
-                                                        <label for="statusSelect{{ $item->id }}" class="form-label fw-semibold">Pilih Status Moderasi</label>
-                                                        <select name="status" id="statusSelect{{ $item->id }}" class="form-select" required>
-                                                            <option value="pending" {{ $item->status == 'pending' ? 'selected' : '' }}>Pending</option>
-                                                            <option value="acc" {{ $item->status == 'acc' ? 'selected' : '' }}>ACC (Disetujui)</option>
-                                                            <option value="ditolak" {{ $item->status == 'ditolak' ? 'selected' : '' }}>Ditolak</option>
-                                                        </select>
+                                    <!-- Modal Status & Catatan -->
+                                    <div class="modal fade text-start" id="modalStatus{{ $item->id }}" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-centered">
+                                            <div class="modal-content">
+                                                <form action="{{ route('admin.sosmed.submissions.status', $item->id) }}" method="POST">
+                                                    @csrf
+                                                    <div class="modal-header bg-light">
+                                                        <h5 class="modal-title fw-bold">
+                                                            <i class="ti ti-edit me-1 text-primary"></i>Moderasi Submission #{{ $item->id }}
+                                                        </h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                                     </div>
+                                                    <div class="modal-body">
+                                                        <div class="mb-3">
+                                                            <label class="form-label text-muted fs-7 mb-1">User & Platform</label>
+                                                            <div class="fw-bold text-dark fs-6">{{ $item->nama }} ({{ $item->divisi }})</div>
+                                                            @if($item->username_sosmed)
+                                                                <div class="text-info fs-7 fw-semibold"><i class="ti ti-at"></i>{{ $item->username_sosmed }}</div>
+                                                            @endif
+                                                            <div class="text-muted fs-7">Platform: {{ $item->sosmed_platform }}</div>
+                                                        </div>
 
-                                                    <div class="mb-3">
-                                                        <label for="feeInput{{ $item->id }}" class="form-label fw-semibold">Nominal Fee (Rp)</label>
-                                                        <input type="number" 
-                                                               name="fee_amount" 
-                                                               id="feeInput{{ $item->id }}" 
-                                                               class="form-control" 
-                                                               value="{{ $item->fee_amount > 0 ? (int)$item->fee_amount : (int)$defaultFee }}" 
-                                                               min="0" 
-                                                               step="500">
-                                                        <small class="text-muted fs-7">Default fee per post: Rp {{ number_format($defaultFee, 0, ',', '.') }}</small>
-                                                    </div>
+                                                        <div class="mb-3">
+                                                            <label for="statusSelect{{ $item->id }}" class="form-label fw-semibold">Pilih Status Moderasi</label>
+                                                            <select name="status" id="statusSelect{{ $item->id }}" class="form-select" required>
+                                                                <option value="pending" {{ $item->status == 'pending' ? 'selected' : '' }}>Pending</option>
+                                                                <option value="acc" {{ $item->status == 'acc' ? 'selected' : '' }}>ACC (Disetujui)</option>
+                                                                <option value="ditolak" {{ $item->status == 'ditolak' ? 'selected' : '' }}>Ditolak</option>
+                                                            </select>
+                                                        </div>
 
-                                                    <div class="mb-3">
-                                                        <label for="catatanInput{{ $item->id }}" class="form-label fw-semibold">Catatan Admin</label>
-                                                        <textarea name="catatan" 
-                                                                  id="catatanInput{{ $item->id }}" 
-                                                                  class="form-control" 
-                                                                  rows="3" 
-                                                                  placeholder="Berikan alasan jika ditolak atau catatan tambahan...">{{ $item->catatan }}</textarea>
+                                                        <div class="mb-3">
+                                                            <label for="feeInput{{ $item->id }}" class="form-label fw-semibold">Nominal Fee (Rp)</label>
+                                                            <input type="number" 
+                                                                   name="fee_amount" 
+                                                                   id="feeInput{{ $item->id }}" 
+                                                                   class="form-control" 
+                                                                   value="{{ $item->fee_amount > 0 ? (int)$item->fee_amount : (int)$defaultFee }}" 
+                                                                   min="0" 
+                                                                   step="500">
+                                                            <small class="text-muted fs-7">Default fee per post: Rp {{ number_format($defaultFee, 0, ',', '.') }}</small>
+                                                        </div>
+
+                                                        <div class="mb-3">
+                                                            <label for="catatanInput{{ $item->id }}" class="form-label fw-semibold">Catatan Admin (Opsional)</label>
+                                                            <textarea name="catatan" id="catatanInput{{ $item->id }}" class="form-control" rows="3" placeholder="Contoh: Foto kurang jelas, postingan disetujui...">{{ $item->catatan }}</textarea>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                                <div class="modal-footer bg-light py-2">
-                                                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
-                                                    <button type="submit" class="btn btn-primary btn-sm"><i class="ti ti-device-floppy me-1"></i>Simpan Perubahan</button>
-                                                </div>
-                                            </form>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                                                        <button type="submit" class="btn btn-primary btn-sm">Simpan Perubahan</button>
+                                                    </div>
+                                                </form>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                @endif
                             </td>
                         </tr>
                     @empty
                         <tr>
                             <td colspan="10" class="text-center py-5 text-muted">
                                 <i class="ti ti-inbox fs-1 d-block mb-2 text-muted"></i>
-                                Belum ada data postingan sosmed yang cocok.
+                                Belum ada data postingan sosmed.
                             </td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
-    </div>
 
-    @if($submissions->hasPages())
-        <div class="card-footer bg-white py-3">
-            {{ $submissions->links() }}
-        </div>
-    @endif
+        @if($submissions->hasPages())
+            <div class="p-3 border-top">
+                {{ $submissions->links() }}
+            </div>
+        @endif
+    </div>
 </div>
 
 @endsection

@@ -14,11 +14,12 @@ class AdminSosmedController extends Controller
     /**
      * Generator Data Leaderboard & Analisa Detail 90 Karyawan
      * (Platform Gemar, Kelengkapan 3 Foto, Keaktifan Harian, Hari Bolos/Kosong)
+     * * Hanya menghitung submission yang TIDAK dihapus (whereNull deleted_at)
      */
     public static function getUserDetailedAnalysis($targetNama = null): array
     {
         $karyawanList = SosmedPublicFormController::getKaryawanList();
-        $submissions = SosmedSubmission::all();
+        $submissions = SosmedSubmission::whereNull('deleted_at')->get();
 
         $analysisData = [];
 
@@ -178,18 +179,18 @@ class AdminSosmedController extends Controller
      */
     public function dashboard()
     {
-        $totalSubmissions = SosmedSubmission::count();
-        $pendingCount = SosmedSubmission::where('status', 'pending')->count();
-        $accCount = SosmedSubmission::where('status', 'acc')->count();
-        $rejectedCount = SosmedSubmission::where('status', 'ditolak')->count();
-        $totalFeeAccrued = SosmedSubmission::where('status', 'acc')->sum('fee_amount');
+        $totalSubmissions = SosmedSubmission::whereNull('deleted_at')->count();
+        $pendingCount = SosmedSubmission::whereNull('deleted_at')->where('status', 'pending')->count();
+        $accCount = SosmedSubmission::whereNull('deleted_at')->where('status', 'acc')->count();
+        $rejectedCount = SosmedSubmission::whereNull('deleted_at')->where('status', 'ditolak')->count();
+        $totalFeeAccrued = SosmedSubmission::whereNull('deleted_at')->where('status', 'acc')->sum('fee_amount');
 
         // Traffic per Platform
         $platformCounts = [
-            'Instagram' => SosmedSubmission::where('sosmed_platform', 'Instagram')->count(),
-            'TikTok'    => SosmedSubmission::where('sosmed_platform', 'TikTok')->count(),
-            'Facebook'  => SosmedSubmission::where('sosmed_platform', 'Facebook')->count(),
-            'YouTube'   => SosmedSubmission::where('sosmed_platform', 'YouTube')->count(),
+            'Instagram' => SosmedSubmission::whereNull('deleted_at')->where('sosmed_platform', 'Instagram')->count(),
+            'TikTok'    => SosmedSubmission::whereNull('deleted_at')->where('sosmed_platform', 'TikTok')->count(),
+            'Facebook'  => SosmedSubmission::whereNull('deleted_at')->where('sosmed_platform', 'Facebook')->count(),
+            'YouTube'   => SosmedSubmission::whereNull('deleted_at')->where('sosmed_platform', 'YouTube')->count(),
         ];
 
         // Ambil data Peringkat & Analisa Karyawan (Urut 1 - 90)
@@ -211,7 +212,7 @@ class AdminSosmedController extends Controller
         }
 
         // Recent 5 Submissions
-        $recentSubmissions = SosmedSubmission::orderBy('created_at', 'desc')->limit(5)->get();
+        $recentSubmissions = SosmedSubmission::whereNull('deleted_at')->orderBy('created_at', 'desc')->limit(5)->get();
 
         return view('admin.sosmed.dashboard', compact(
             'totalSubmissions',
@@ -250,14 +251,18 @@ class AdminSosmedController extends Controller
     }
 
     /**
-     * Moderasi dan Riwayat Submission User
+     * Moderasi dan Riwayat Submission User (Dengan Audit Penghapusan Admin)
      */
     public function submissions(Request $request)
     {
-        $query = SosmedSubmission::with('processor')->orderBy('created_at', 'desc');
+        $query = SosmedSubmission::with(['processor', 'deleter'])->orderBy('created_at', 'desc');
 
         if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            if ($request->status === 'terhapus') {
+                $query->whereNotNull('deleted_at');
+            } else {
+                $query->whereNull('deleted_at')->where('status', $request->status);
+            }
         }
 
         if ($request->filled('platform')) {
@@ -310,23 +315,34 @@ class AdminSosmedController extends Controller
     }
 
     /**
-     * Hapus Data Submission
+     * Tandai Hapus Submission + Catat Admin Sosmed & Waktu Penghapusan Audit
      */
     public function destroySubmission($id)
     {
         $submission = SosmedSubmission::findOrFail($id);
 
-        if (!empty($submission->photos) && is_array($submission->photos)) {
-            foreach ($submission->photos as $photoPath) {
-                $cleanPath = str_replace('storage/', '', $photoPath);
-                if (Storage::disk('public')->exists($cleanPath)) {
-                    Storage::disk('public')->delete($cleanPath);
-                }
-            }
-        }
+        $submission->deleted_by = Auth::id();
+        $submission->deleted_at = now();
+        $submission->save();
 
-        $submission->delete();
-        return back()->with('success', 'Data submission berhasil dihapus.');
+        $deleterName = Auth::user()->name ?? 'Admin Sosmed';
+        $timeStr = $submission->deleted_at->format('d/m/Y H:i') . ' WIB';
+
+        return back()->with('success', "Data submission #{$submission->id} berhasil ditandai terhapus oleh {$deleterName} pada {$timeStr}. Data tercatat dalam riwayat audit.");
+    }
+
+    /**
+     * Pulihkan Submission yang Terhapus
+     */
+    public function restoreSubmission($id)
+    {
+        $submission = SosmedSubmission::findOrFail($id);
+
+        $submission->deleted_by = null;
+        $submission->deleted_at = null;
+        $submission->save();
+
+        return back()->with('success', "Data submission #{$submission->id} berhasil dipulihkan kembali.");
     }
 
     /**
