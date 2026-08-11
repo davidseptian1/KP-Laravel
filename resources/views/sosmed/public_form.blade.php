@@ -485,7 +485,7 @@
                     </button>
                 </form>
 
-                <!-- SECTION PALING BAWAH: CEK POIN & KLASEMEN REALTIME (Sensored *** Name) -->
+                <!-- SECTION PALING BAWAH: CEK POIN & KLASEMEN REALTIME (Sensored *** Name + Pagination) -->
                 <div class="public-leaderboard-section" id="cekPoinSection">
                     <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
                         <div>
@@ -501,15 +501,26 @@
                         </span>
                     </div>
 
-                    <!-- Search Input untuk Cari Nama Kamu -->
-                    <div class="mb-3">
-                        <div class="input-group">
-                            <span class="input-group-text bg-white"><i class="ti ti-search text-muted"></i></span>
-                            <input type="text" 
-                                   class="form-control" 
-                                   id="searchPublicLeaderboard" 
-                                   placeholder="Ketik nama Anda untuk mencari poin & peringkat kamu..." 
-                                   onkeyup="filterPublicLeaderboard()">
+                    <!-- Controls Row: Search Input + List Page Size Select (10, 20, 50, Semua) -->
+                    <div class="row g-2 align-items-center mb-3">
+                        <div class="col-md-7 col-sm-6">
+                            <div class="input-group">
+                                <span class="input-group-text bg-white"><i class="ti ti-search text-muted"></i></span>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="searchPublicLeaderboard" 
+                                       placeholder="Ketik nama Anda untuk mencari poin & peringkat kamu..." 
+                                       onkeyup="filterPublicLeaderboard()">
+                            </div>
+                        </div>
+                        <div class="col-md-5 col-sm-6 text-sm-end d-flex align-items-center justify-content-sm-end gap-2">
+                            <label for="pageSizeSelect" class="form-label text-muted mb-0 small text-nowrap">Tampilkan:</label>
+                            <select id="pageSizeSelect" class="form-select form-select-sm w-auto d-inline-block fw-semibold" onchange="changePageSize()">
+                                <option value="10" selected>10 Baris</option>
+                                <option value="20">20 Baris</option>
+                                <option value="50">50 Baris</option>
+                                <option value="-1">Semua (All)</option>
+                            </select>
                         </div>
                     </div>
 
@@ -518,11 +529,11 @@
                         <table class="table table-hover align-middle mb-0" id="tablePublicLeaderboard">
                             <thead class="table-light">
                                 <tr>
-                                    <th style="width: 60px;" class="text-center">Rank</th>
+                                    <th style="width: 65px;" class="text-center">Rank</th>
                                     <th>Nama Karyawan</th>
                                     <th>Username</th>
                                     <th>Divisi</th>
-                                    <th class="text-center">Total Poin</th>
+                                    <th class="text-center">Total Poin (ACC)</th>
                                     <th class="text-center">Hari Ini</th>
                                 </tr>
                             </thead>
@@ -576,6 +587,22 @@
                             </tbody>
                         </table>
                     </div>
+
+                    <!-- Pagination Controls & Next/Prev Navigation -->
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-3 pt-2">
+                        <div class="small text-muted" id="paginationInfoText">
+                            Menampilkan 1 - 10 dari 90 karyawan
+                        </div>
+                        <div class="d-flex align-items-center gap-1">
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="btnPrevPage" onclick="prevPage()">
+                                <i class="ti ti-chevron-left me-1"></i>Prev
+                            </button>
+                            <div id="pageNumbersContainer" class="d-inline-flex gap-1"></div>
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="btnNextPage" onclick="nextPage()">
+                                Next<i class="ti ti-chevron-right ms-1"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             @endif
         </div>
@@ -598,6 +625,11 @@
     const autoDivisiText = document.getElementById('autoDivisiText');
     const pilihanTugasSelect = document.getElementById('pilihan_tugas');
     const allTasksCompletedBox = document.getElementById('allTasksCompletedBox');
+
+    // State Pagination Tabel Publik
+    let currentPage = 1;
+    let pageSize = 10;
+    let filteredRows = [];
 
     // Auto Fill Divisi & Lock Completed Tasks Today
     if (namaInput) {
@@ -744,10 +776,6 @@
         }
     }
 
-    document.addEventListener('DOMContentLoaded', function() {
-        handleTaskChange();
-    });
-
     function previewImages(event) {
         const container = document.getElementById('previewContainer');
         container.innerHTML = '';
@@ -781,37 +809,119 @@
         }
     }
 
-    // Filter Realtime untuk Klasemen Publik
-    function filterPublicLeaderboard() {
-        const input = document.getElementById('searchPublicLeaderboard');
-        if (!input) return;
-
-        const filter = input.value.trim().toLowerCase();
+    // JS Pagination Logic untuk Klasemen Publik
+    function initPagination() {
         const table = document.getElementById('tablePublicLeaderboard');
         if (!table) return;
+        const tbody = table.querySelector('tbody');
+        if (!tbody) return;
 
-        const tr = table.getElementsByTagName('tr');
+        const allRows = Array.from(tbody.querySelectorAll('tr'));
+        const searchInput = document.getElementById('searchPublicLeaderboard');
+        const filterText = searchInput ? searchInput.value.trim().toLowerCase() : '';
 
-        for (let i = 1; i < tr.length; i++) {
-            const row = tr[i];
+        filteredRows = allRows.filter(row => {
             const rawNama = row.getAttribute('data-nama-raw') || '';
             const rowText = row.innerText.toLowerCase();
+            return filterText === '' || rawNama.includes(filterText) || rowText.includes(filterText);
+        });
 
-            if (filter === '' || rawNama.includes(filter) || rowText.includes(filter)) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
+        const totalItems = filteredRows.length;
+        const effectivePageSize = pageSize < 0 ? totalItems : pageSize;
+        const totalPages = effectivePageSize > 0 ? Math.ceil(totalItems / effectivePageSize) : 1;
+
+        if (currentPage > totalPages) currentPage = totalPages || 1;
+
+        const startIdx = (currentPage - 1) * effectivePageSize;
+        const endIdx = pageSize < 0 ? totalItems : Math.min(startIdx + effectivePageSize, totalItems);
+
+        // Hide all rows first
+        allRows.forEach(row => row.style.display = 'none');
+
+        // Show active page rows
+        for (let i = startIdx; i < endIdx; i++) {
+            if (filteredRows[i]) {
+                filteredRows[i].style.display = '';
             }
+        }
+
+        // Update Page Info
+        const pageInfo = document.getElementById('paginationInfoText');
+        if (pageInfo) {
+            if (totalItems === 0) {
+                pageInfo.innerText = 'Menampilkan 0 data karyawan';
+            } else {
+                pageInfo.innerText = `Menampilkan ${startIdx + 1} - ${endIdx} dari ${totalItems} karyawan (Halaman ${currentPage} dari ${totalPages})`;
+            }
+        }
+
+        // Update Prev / Next Buttons
+        const btnPrev = document.getElementById('btnPrevPage');
+        const btnNext = document.getElementById('btnNextPage');
+        if (btnPrev) btnPrev.disabled = (currentPage <= 1);
+        if (btnNext) btnNext.disabled = (currentPage >= totalPages || totalItems === 0);
+
+        renderPageNumbers(totalPages);
+    }
+
+    function renderPageNumbers(totalPages) {
+        const container = document.getElementById('pageNumbersContainer');
+        if (!container) return;
+        container.innerHTML = '';
+
+        if (totalPages <= 1) return;
+
+        let startPage = Math.max(1, currentPage - 2);
+        let endPage = Math.min(totalPages, startPage + 4);
+        if (endPage - startPage < 4) {
+            startPage = Math.max(1, endPage - 4);
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = `btn btn-sm ${i === currentPage ? 'btn-primary fw-bold' : 'btn-outline-secondary'}`;
+            btn.innerText = i;
+            btn.onclick = function() {
+                currentPage = i;
+                initPagination();
+            };
+            container.appendChild(btn);
         }
     }
 
-    // Loading State saat submit form
-    document.getElementById('sosmedForm')?.addEventListener('submit', function() {
-        const btn = document.getElementById('btnSubmit');
-        if (btn) {
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Mengirim Data Bukti Posting...';
+    function changePageSize() {
+        const select = document.getElementById('pageSizeSelect');
+        if (!select) return;
+        pageSize = parseInt(select.value);
+        currentPage = 1;
+        initPagination();
+    }
+
+    function prevPage() {
+        if (currentPage > 1) {
+            currentPage--;
+            initPagination();
         }
+    }
+
+    function nextPage() {
+        const effectivePageSize = pageSize < 0 ? filteredRows.length : pageSize;
+        const totalPages = Math.ceil(filteredRows.length / effectivePageSize);
+        if (currentPage < totalPages) {
+            currentPage++;
+            initPagination();
+        }
+    }
+
+    function filterPublicLeaderboard() {
+        currentPage = 1;
+        initPagination();
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        handleTaskChange();
+        initPagination();
     });
 </script>
 
