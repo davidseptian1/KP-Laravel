@@ -32,24 +32,37 @@ class SosmedPublicFormController extends Controller
     }
 
     /**
-     * Helper Masking Username Sosmed
+     * Helper Masking Username Sosmed (Mendukung multiple username dipisah koma, contoh: @defit, @dasda, @asda)
      */
     public static function maskUsername(string $username): string
     {
         $trimmed = trim($username);
         if (empty($trimmed) || $trimmed === '-') return '-';
 
-        $hasAt = str_starts_with($trimmed, '@');
-        $clean = $hasAt ? substr($trimmed, 1) : $trimmed;
-        $len = strlen($clean);
+        // Split jika ada multiple username dipisah koma atau garis miring
+        $parts = preg_split('/[,\/]+/', $trimmed);
+        $maskedParts = [];
 
-        if ($len <= 3) {
-            $masked = substr($clean, 0, 1) . '***';
-        } else {
-            $masked = substr($clean, 0, 2) . '***' . substr($clean, -1);
+        foreach ($parts as $part) {
+            $cleanPart = trim($part);
+            if (empty($cleanPart)) continue;
+
+            $hasAt = str_starts_with($cleanPart, '@');
+            $raw = $hasAt ? substr($cleanPart, 1) : $cleanPart;
+            $len = strlen($raw);
+
+            if ($len <= 2) {
+                $masked = substr($raw, 0, 1) . '*';
+            } elseif ($len <= 4) {
+                $masked = substr($raw, 0, 1) . '***';
+            } else {
+                $masked = substr($raw, 0, 2) . '***' . substr($raw, -1);
+            }
+
+            $maskedParts[] = ($hasAt ? '@' : '') . $masked;
         }
 
-        return ($hasAt ? '@' : '') . $masked;
+        return !empty($maskedParts) ? implode(', ', $maskedParts) : '-';
     }
 
     /**

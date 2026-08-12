@@ -121,7 +121,17 @@ class AdminSosmedController extends Controller
                 return $s->created_at->isToday();
             })->count() > 0;
 
-            $usernames = $userSubs->pluck('username_sosmed')->filter()->unique()->values()->toArray();
+            $usernamesRaw = $userSubs->pluck('username_sosmed')->filter()->toArray();
+            $usernames = [];
+            foreach ($usernamesRaw as $uRaw) {
+                $splitParts = preg_split('/[,\/]+/', $uRaw);
+                foreach ($splitParts as $sp) {
+                    $cSp = trim($sp);
+                    if ($cSp !== '' && !in_array($cSp, $usernames)) {
+                        $usernames[] = $cSp;
+                    }
+                }
+            }
             $tasksCompleted = $userSubs->pluck('pilihan_tugas')->filter()->unique()->values()->toArray();
 
             $analysisData[] = [

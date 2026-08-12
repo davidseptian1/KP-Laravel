@@ -570,7 +570,18 @@
                                             <strong class="text-dark font-monospace fs-6">{{ $userItem['nama_masked'] }}</strong>
                                         </td>
                                         <td>
-                                            <span class="badge bg-light-secondary text-muted font-monospace fs-7">{{ $userItem['username_masked'] }}</span>
+                                            @if($userItem['username_masked'] !== '-')
+                                                @php
+                                                    $uParts = explode(',', $userItem['username_masked']);
+                                                @endphp
+                                                <div class="d-flex flex-wrap gap-1">
+                                                    @foreach($uParts as $uPart)
+                                                        <span class="badge bg-light-secondary text-muted font-monospace fs-7">{{ trim($uPart) }}</span>
+                                                    @endforeach
+                                                </div>
+                                            @else
+                                                <span class="badge bg-light text-muted fs-7">-</span>
+                                            @endif
                                         </td>
                                         <td>
                                             <span class="badge bg-light-info text-info fs-7">{{ $userItem['divisi'] }}</span>
