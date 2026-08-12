@@ -20,15 +20,7 @@ class AdminSosmedController extends Controller
     {
         $karyawanList = SosmedPublicFormController::getKaryawanList();
         $submissions = SosmedSubmission::whereNull('deleted_at')->get();
-
-        // Hitung frekuensi nama depan untuk mendeteksi nama umum (seperti Muhammad, Nur, Syifa, dll)
-        $firstWordCounts = [];
-        foreach ($karyawanList as $k) {
-            $fw = strtolower(SosmedSubmission::extractFirstWord($k['nama']));
-            if ($fw !== '') {
-                $firstWordCounts[$fw] = ($firstWordCounts[$fw] ?? 0) + 1;
-            }
-        }
+        $allEmpNames = array_column($karyawanList, 'nama');
 
         $analysisData = [];
 
@@ -40,25 +32,9 @@ class AdminSosmedController extends Controller
                 // skip if filtering for single target
             }
 
-            $empNameLower = strtolower($empName);
-            $firstWordName = strtolower(SosmedSubmission::extractFirstWord($empName));
-            $isFirstWordUnique = isset($firstWordCounts[$firstWordName]) && $firstWordCounts[$firstWordName] === 1;
-
-            // Matching submission user persis berdasarkan Nama Lengkap / Nama Depan Unik
-            $userSubs = $submissions->filter(function ($sub) use ($empNameLower, $firstWordName, $isFirstWordUnique) {
-                $subNama = strtolower(trim($sub->nama));
-                
-                // 1. Cocokkan Nama Lengkap (Presisi Utama)
-                if ($subNama === $empNameLower) {
-                    return true;
-                }
-
-                // 2. Cocokkan Nama Depan HANYA jika Nama Depan tersebut unik (TIDAK dimiliki karyawan lain)
-                if ($isFirstWordUnique && $subNama === $firstWordName) {
-                    return true;
-                }
-
-                return false;
+            // Matching submission user persis berdasarkan Nama Lengkap / Nama Unik yang Tidak Ambigu
+            $userSubs = $submissions->filter(function ($sub) use ($empName, $allEmpNames) {
+                return static::isSubmissionForEmployee($sub->nama, $empName, $allEmpNames);
             });
 
             $totalSubmissions = $userSubs->count();
@@ -479,5 +455,42 @@ class AdminSosmedController extends Controller
         SosmedSetting::setByKey('task_links', json_encode($savedTasks));
 
         return back()->with('success', 'Pengaturan fee, status form, dan kelola penugasan sosmed berhasil diperbarui.');
+    }
+
+    /**
+     * Helper mencocokkan postingan ke Karyawan secara presisi berdasarkan Nama Lengkap / Nama Unik yang Tidak Ambigu
+     */
+    public static function isSubmissionForEmployee(string $subNamaRaw, string $empNameRaw, array $allEmpNames): bool
+    {
+        $subNama = strtolower(trim($subNamaRaw));
+        $empName = strtolower(trim($empNameRaw));
+
+        if ($subNama === '' || $empName === '') {
+            return false;
+        }
+
+        // 1. Presisi Utama: Exact Match Nama Lengkap
+        if ($subNama === $empName) {
+            return true;
+        }
+
+        // 2. Jika input nama user merupakan bagian/kata dari Nama Lengkap Master (misal: "Haikal" / "Febriyansyah")
+        // Cek apakah kata/nama tersebut UNIK hanya milik 1 karyawan di antara 90 karyawan master
+        if (str_contains($empName, $subNama) || str_contains($subNama, $empName)) {
+            $matchingCount = 0;
+            foreach ($allEmpNames as $otherEmp) {
+                $otherLower = strtolower(trim($otherEmp));
+                if (str_contains($otherLower, $subNama) || str_contains($subNama, $otherLower)) {
+                    $matchingCount++;
+                }
+            }
+            
+            // HANYA cocok jika UNIK ke 1 karyawan ini saja (mencegah nama umum "Muhammad" tercampur)
+            if ($matchingCount === 1) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
