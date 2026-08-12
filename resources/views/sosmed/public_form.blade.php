@@ -741,6 +741,8 @@
         let enabledOptionsCount = 0;
         let totalTaskOptionsCount = 0;
 
+        const selectedPlatformVal = sosmedPlatformSelect ? sosmedPlatformSelect.value.trim().toLowerCase() : '';
+
         for (let i = 0; i < pilihanTugasSelect.options.length; i++) {
             const opt = pilihanTugasSelect.options[i];
             if (!opt.value) continue;
@@ -748,7 +750,19 @@
 
             totalTaskOptionsCount++;
             const originalText = opt.getAttribute('data-original-text') || opt.value;
-            const isCompleted = completedTasksToday.some(t => t.toLowerCase() === opt.value.toLowerCase() || t.toLowerCase() === originalText.toLowerCase());
+            const taskValLower = opt.value.trim().toLowerCase();
+            const originalTextLower = originalText.trim().toLowerCase();
+
+            const isCompleted = completedTasksToday.some(item => {
+                const parts = item.split('|');
+                const itemPlatform = parts[0] || '';
+                const itemTugas = parts[1] || item;
+
+                const platformMatches = !selectedPlatformVal || !itemPlatform || itemPlatform === selectedPlatformVal;
+                const taskMatches = (itemTugas === taskValLower || itemTugas === originalTextLower);
+
+                return platformMatches && taskMatches;
+            });
 
             if (isCompleted) {
                 opt.disabled = true;

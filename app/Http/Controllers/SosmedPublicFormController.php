@@ -226,29 +226,34 @@ class SosmedPublicFormController extends Controller
             }
         }
 
-        // Ambil data task yang SUDAH dikerjakan HARI INI per user untuk mengunci dropdown
-        $todaySubmissions = SosmedSubmission::whereDate('created_at', today())->get(['nama', 'nama_first_word', 'pilihan_tugas']);
+        // Ambil data task yang SUDAH dikerjakan HARI INI per user & platform untuk mengunci dropdown
+        $todaySubmissions = SosmedSubmission::whereDate('created_at', today())
+            ->whereNull('deleted_at')
+            ->get(['nama', 'nama_first_word', 'sosmed_platform', 'pilihan_tugas']);
         
         $todayTaskMap = [];
         foreach ($todaySubmissions as $sub) {
             $namaKey = strtolower(trim($sub->nama));
             $firstWordKey = strtolower(trim($sub->nama_first_word));
+            $platformKey = strtolower(trim($sub->sosmed_platform));
             $tugas = trim($sub->pilihan_tugas);
 
             if ($tugas !== '') {
+                $itemKey = $platformKey . '|' . strtolower($tugas);
+
                 if (!isset($todayTaskMap[$namaKey])) {
                     $todayTaskMap[$namaKey] = [];
                 }
-                if (!in_array($tugas, $todayTaskMap[$namaKey])) {
-                    $todayTaskMap[$namaKey][] = $tugas;
+                if (!in_array($itemKey, $todayTaskMap[$namaKey])) {
+                    $todayTaskMap[$namaKey][] = $itemKey;
                 }
 
                 if ($firstWordKey !== '') {
                     if (!isset($todayTaskMap[$firstWordKey])) {
                         $todayTaskMap[$firstWordKey] = [];
                     }
-                    if (!in_array($tugas, $todayTaskMap[$firstWordKey])) {
-                        $todayTaskMap[$firstWordKey][] = $tugas;
+                    if (!in_array($itemKey, $todayTaskMap[$firstWordKey])) {
+                        $todayTaskMap[$firstWordKey][] = $itemKey;
                     }
                 }
             }
@@ -311,10 +316,12 @@ class SosmedPublicFormController extends Controller
 
         $namaTrimmed = trim($request->nama);
         $namaFirstWord = SosmedSubmission::extractFirstWord($namaTrimmed);
+        $platform = trim($request->sosmed_platform);
         $pilihanTugas = trim($request->pilihan_tugas);
 
-        // Kunci penugasan: Pengguna tidak boleh menyelesaikan task yang sama 2x dalam 1 hari
+        // Kunci penugasan: Pengguna tidak boleh menyelesaikan task yang sama pada platform yang sama 2x dalam 1 hari
         $alreadyCompletedToday = SosmedSubmission::whereDate('created_at', today())
+            ->whereNull('deleted_at')
             ->where(function ($q) use ($namaTrimmed, $namaFirstWord) {
                 $q->where(function ($subQ) use ($namaTrimmed) {
                     $subQ->whereRaw('LOWER(nama) = ?', [strtolower($namaTrimmed)]);
@@ -324,11 +331,12 @@ class SosmedPublicFormController extends Controller
                     }
                 });
             })
+            ->whereRaw('LOWER(sosmed_platform) = ?', [strtolower($platform)])
             ->whereRaw('LOWER(pilihan_tugas) = ?', [strtolower($pilihanTugas)])
             ->exists();
 
         if ($alreadyCompletedToday) {
-            return back()->with('error', "Mohon maaf, Anda sudah menyelesaikan '" . $pilihanTugas . "' untuk hari ini! Silakan pilih tugas lain yang belum diselesaikan.")->withInput();
+            return back()->with('error', "Mohon maaf, Anda sudah menyelesaikan '" . $pilihanTugas . "' untuk platform " . $platform . " hari ini! Silakan selesaikan tugas platform lainnya.")->withInput();
         }
 
         $uploadedPaths = [];
