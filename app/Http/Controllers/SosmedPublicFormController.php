@@ -247,7 +247,6 @@ class SosmedPublicFormController extends Controller
         $todayTaskMap = [];
         foreach ($todaySubmissions as $sub) {
             $namaKey = strtolower(trim($sub->nama));
-            $firstWordKey = strtolower(trim($sub->nama_first_word));
             $platformKey = strtolower(trim($sub->sosmed_platform));
             $tugas = trim($sub->pilihan_tugas);
 
@@ -259,15 +258,6 @@ class SosmedPublicFormController extends Controller
                 }
                 if (!in_array($itemKey, $todayTaskMap[$namaKey])) {
                     $todayTaskMap[$namaKey][] = $itemKey;
-                }
-
-                if ($firstWordKey !== '') {
-                    if (!isset($todayTaskMap[$firstWordKey])) {
-                        $todayTaskMap[$firstWordKey] = [];
-                    }
-                    if (!in_array($itemKey, $todayTaskMap[$firstWordKey])) {
-                        $todayTaskMap[$firstWordKey][] = $itemKey;
-                    }
                 }
             }
         }
@@ -335,15 +325,7 @@ class SosmedPublicFormController extends Controller
         // Kunci penugasan: Pengguna tidak boleh menyelesaikan task yang sama pada platform yang sama 2x dalam 1 hari
         $alreadyCompletedToday = SosmedSubmission::whereDate('created_at', today())
             ->whereNull('deleted_at')
-            ->where(function ($q) use ($namaTrimmed, $namaFirstWord) {
-                $q->where(function ($subQ) use ($namaTrimmed) {
-                    $subQ->whereRaw('LOWER(nama) = ?', [strtolower($namaTrimmed)]);
-                })->orWhere(function ($subQ) use ($namaFirstWord) {
-                    if ($namaFirstWord !== '') {
-                        $subQ->whereRaw('LOWER(nama_first_word) = ?', [strtolower($namaFirstWord)]);
-                    }
-                });
-            })
+            ->whereRaw('LOWER(nama) = ?', [strtolower($namaTrimmed)])
             ->whereRaw('LOWER(sosmed_platform) = ?', [strtolower($platform)])
             ->whereRaw('LOWER(pilihan_tugas) = ?', [strtolower($pilihanTugas)])
             ->exists();

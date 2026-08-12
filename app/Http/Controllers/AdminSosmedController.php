@@ -21,6 +21,15 @@ class AdminSosmedController extends Controller
         $karyawanList = SosmedPublicFormController::getKaryawanList();
         $submissions = SosmedSubmission::whereNull('deleted_at')->get();
 
+        // Hitung frekuensi nama depan untuk mendeteksi nama umum (seperti Muhammad, Nur, Syifa, dll)
+        $firstWordCounts = [];
+        foreach ($karyawanList as $k) {
+            $fw = strtolower(SosmedSubmission::extractFirstWord($k['nama']));
+            if ($fw !== '') {
+                $firstWordCounts[$fw] = ($firstWordCounts[$fw] ?? 0) + 1;
+            }
+        }
+
         $analysisData = [];
 
         foreach ($karyawanList as $k) {
@@ -31,15 +40,25 @@ class AdminSosmedController extends Controller
                 // skip if filtering for single target
             }
 
+            $empNameLower = strtolower($empName);
             $firstWordName = strtolower(SosmedSubmission::extractFirstWord($empName));
+            $isFirstWordUnique = isset($firstWordCounts[$firstWordName]) && $firstWordCounts[$firstWordName] === 1;
 
-            // Matching submission user by name or first word
-            $userSubs = $submissions->filter(function ($sub) use ($empName, $firstWordName) {
+            // Matching submission user persis berdasarkan Nama Lengkap / Nama Depan Unik
+            $userSubs = $submissions->filter(function ($sub) use ($empNameLower, $firstWordName, $isFirstWordUnique) {
                 $subNama = strtolower(trim($sub->nama));
-                $subFirstWord = strtolower(trim($sub->nama_first_word));
                 
-                return $subNama === strtolower($empName)
-                    || ($subFirstWord !== '' && $subFirstWord === $firstWordName);
+                // 1. Cocokkan Nama Lengkap (Presisi Utama)
+                if ($subNama === $empNameLower) {
+                    return true;
+                }
+
+                // 2. Cocokkan Nama Depan HANYA jika Nama Depan tersebut unik (TIDAK dimiliki karyawan lain)
+                if ($isFirstWordUnique && $subNama === $firstWordName) {
+                    return true;
+                }
+
+                return false;
             });
 
             $totalSubmissions = $userSubs->count();
