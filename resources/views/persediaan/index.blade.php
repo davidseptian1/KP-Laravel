@@ -55,7 +55,6 @@
                                 <th>Divisi</th>
                                 <th>Pembayaran</th>
                                 <th>Cicilan</th>
-                                <th>Total</th>
                                 <th>Status</th>
                                 <th></th>
                             </tr>
@@ -74,7 +73,6 @@
                                             <span class="badge bg-light text-dark">Tanpa Cicilan</span>
                                         @endif
                                     </td>
-                                    <td>Rp {{ number_format($r->total_amount, 2, ',', '.') }}</td>
                                     <td>
                                         @if(($r->status ?? 'pending') === 'approved')
                                             <span class="badge bg-success">Approved (ACC)</span>
@@ -92,7 +90,7 @@
                                 </tr>
                             @endforeach
                             @if(empty($records) || $records->isEmpty())
-                                <tr><td colspan="8" class="text-center text-muted">Belum ada permintaan persediaan / PO.</td></tr>
+                                <tr><td colspan="7" class="text-center text-muted">Belum ada permintaan persediaan / PO.</td></tr>
                             @endif
                         </tbody>
                     </table>
@@ -406,9 +404,20 @@
         if (modalOpen || inPasteArea) {
             if (readClipboardImageAndSetPreview(items, 'transfer_proof_base64', 'transfer-proof-preview')) {
                 e.preventDefault();
-                return;
             }
         }
+
+        setTimeout(function(){
+            const pasteArea = document.getElementById('transfer-paste-area');
+            const transferHidden = document.getElementById('transfer_proof_base64');
+            if (pasteArea && transferHidden) {
+                const img = pasteArea.querySelector('img');
+                if (img && img.src) {
+                    transferHidden.value = img.src;
+                    setImagePreview('transfer-proof-preview', 'transfer_proof_base64', 'transfer-proof-file', img.src);
+                }
+            }
+        }, 100);
     });
 
     function bindFilePreview(inputId, previewId, hiddenBase64Id){
@@ -460,6 +469,15 @@
         const form = document.getElementById('persediaan-form');
         if(!form) return;
         form.addEventListener('submit', function(e){
+            const pasteArea = document.getElementById('transfer-paste-area');
+            const transferHidden = document.getElementById('transfer_proof_base64');
+            if (pasteArea && transferHidden) {
+                const img = pasteArea.querySelector('img');
+                if (img && img.src) {
+                    transferHidden.value = img.src;
+                }
+            }
+
             const itemsTable = document.querySelector('#items-table tbody');
             let items = [];
             if (itemsTable) {

@@ -83,7 +83,6 @@
                                 <th>Cicilan</th>
                                 <th>Tgl PO</th>
                                 <th>Tgl Penerimaan</th>
-                                <th>Total</th>
                                 <th>Status</th>
                                 <th>Bukti Gambar</th>
                                 <th class="text-center">Aksi</th>
@@ -116,7 +115,6 @@
                                             <span class="text-muted opacity-75">- Belum Diterima -</span>
                                         @endif
                                     </td>
-                                    <td class="fw-bold text-dark">Rp {{ number_format($row->total_amount, 2, ',', '.') }}</td>
                                     <td>
                                         @if(($row->status ?? 'pending') === 'approved')
                                             <span class="badge bg-success"><i class="ti ti-circle-check me-1"></i>Approved (ACC)</span>

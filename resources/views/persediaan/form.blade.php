@@ -167,8 +167,19 @@
 
         if (readClipboardImageAndSetPreview(items, 'transfer_proof_base64', 'transfer-proof-preview')) {
             e.preventDefault();
-            return;
         }
+
+        setTimeout(function(){
+            const pasteArea = document.getElementById('transfer-paste-area');
+            const transferHidden = document.getElementById('transfer_proof_base64');
+            if (pasteArea && transferHidden) {
+                const img = pasteArea.querySelector('img');
+                if (img && img.src) {
+                    transferHidden.value = img.src;
+                    setImagePreview('transfer-proof-preview', 'transfer_proof_base64', 'transfer-proof-file', img.src);
+                }
+            }
+        }, 100);
     });
 
     // file input change -> preview and set base64 for convenience (so both ways supported)
@@ -221,6 +232,15 @@
         const form = document.getElementById('persediaan-form');
         if(!form) return;
         form.addEventListener('submit', function(e){
+            const pasteArea = document.getElementById('transfer-paste-area');
+            const transferHidden = document.getElementById('transfer_proof_base64');
+            if (pasteArea && transferHidden) {
+                const img = pasteArea.querySelector('img');
+                if (img && img.src) {
+                    transferHidden.value = img.src;
+                }
+            }
+
             const itemsTable = document.querySelector('#items-table tbody');
             let items = [];
             if (itemsTable) {
