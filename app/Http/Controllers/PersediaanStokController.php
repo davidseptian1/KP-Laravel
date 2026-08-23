@@ -55,7 +55,7 @@ class PersediaanStokController extends Controller
             'account_name' => 'nullable|string|max:255',
             'purchase_date' => 'nullable|date',
             'receive_date' => 'nullable|date',
-            'items_json' => 'required|string',
+            'items_json' => 'nullable|string',
             'on_behalf' => 'nullable|string|max:255',
             'transfer_proof' => 'nullable|image|max:5120',
             'transfer_proof_base64' => 'nullable|string',

@@ -21,15 +21,9 @@
                     </div>
                 @endif
 
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Nama Perusahaan <span class="text-danger">*</span></label>
-                        <input name="company_name" class="form-control" placeholder="Contoh: PT Belanja Kuota" required>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Nama Pemilik / Atas Nama</label>
-                        <input name="owner_name" class="form-control" placeholder="Opsional (Otomatis nama perusahaan jika kosong)">
-                    </div>
+                <div class="mb-3">
+                    <label class="form-label">Nama Perusahaan <span class="text-danger">*</span></label>
+                    <input name="company_name" class="form-control" placeholder="Contoh: PT Belanja Kuota" required>
                 </div>
 
                 <div class="row">
@@ -96,17 +90,7 @@
                     </div>
                 </div>
 
-                <h6>Barang yang dibeli</h6>
-                <table class="table" id="items-table">
-                    <thead><tr><th>Nama Barang</th><th>Qty</th><th>Harga</th><th>Subtotal</th><th></th></tr></thead>
-                    <tbody></tbody>
-                </table>
-                <button type="button" class="btn btn-sm btn-secondary" id="add-item">Tambah Baris</button>
 
-                <div class="mt-3">
-                    <label class="form-label">Atas Nama Input</label>
-                    <input name="on_behalf" class="form-control">
-                </div>
 
                 <div class="mb-3 mt-3">
                     <label class="form-label">Bukti Transfer (gambar) - klik area di bawah lalu tekan Ctrl+V untuk paste atau pilih file</label>
@@ -244,27 +228,30 @@
         recalcRow(tr);
     }
 
-    document.getElementById('add-item').addEventListener('click', ()=>addRow());
-    // add one initial row
-    addRow();
+    const addItemBtn = document.getElementById('add-item');
+    if (addItemBtn) {
+        addItemBtn.addEventListener('click', ()=>addRow());
+        addRow();
+    }
 
     (function(){
         const form = document.getElementById('persediaan-form');
         if(!form) return;
         form.addEventListener('submit', function(e){
-            // ensure at least one item row exists
-            const tbody = document.querySelector('#items-table tbody');
-            if (tbody && tbody.children.length === 0) {
-                addRow();
+            const itemsTable = document.querySelector('#items-table tbody');
+            let items = [];
+            if (itemsTable) {
+                const rows = Array.from(itemsTable.querySelectorAll('tr'));
+                items = rows.map(r=>({
+                    name: (r.querySelector('.item-name') && r.querySelector('.item-name').value) || '',
+                    qty: (r.querySelector('.item-qty') && r.querySelector('.item-qty').value) || 0,
+                    price: (r.querySelector('.item-price') && r.querySelector('.item-price').value) || 0,
+                }));
             }
-
-            const rows = Array.from(document.querySelectorAll('#items-table tbody tr'));
-            const items = rows.map(r=>({
-                name: (r.querySelector('.item-name') && r.querySelector('.item-name').value) || '',
-                qty: (r.querySelector('.item-qty') && r.querySelector('.item-qty').value) || 0,
-                price: (r.querySelector('.item-price') && r.querySelector('.item-price').value) || 0,
-            }));
-            document.getElementById('items-json').value = JSON.stringify(items);
+            const itemsJsonInput = document.getElementById('items-json');
+            if (itemsJsonInput) {
+                itemsJsonInput.value = JSON.stringify(items);
+            }
         });
     })();
 </script>
