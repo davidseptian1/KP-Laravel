@@ -312,10 +312,18 @@
                     </div>
 
                     <div class="mb-3 mt-3">
-                        <label class="form-label fw-bold text-dark">Bukti Transfer (gambar) - klik area di bawah lalu tekan Ctrl+V untuk paste atau pilih file</label>
-                        <div id="transfer-paste-area" contenteditable="true" style="border:1px dashed #ccc;padding:8px;min-height:80px;cursor:text;">Klik di sini lalu paste gambar (atau gunakan tombol pilih file)</div>
-                        <div style="margin-top:.5rem;"><input type="file" name="transfer_proof" accept="image/*" class="form-control" id="transfer-proof-file"></div>
-                        <div id="transfer-proof-preview" style="margin-top:.5rem;"></div>
+                        <label class="form-label fw-bold text-dark">Bukti Transfer (Gambar) <span class="text-danger">*</span></label>
+                        <div id="transfer-paste-zone" tabindex="0" style="border:2px dashed #0d6efd;border-radius:8px;padding:20px;min-height:90px;cursor:pointer;background:#f8f9fa;text-align:center;outline:none;" onclick="this.focus()">
+                            <div id="transfer-paste-hint" style="color:#6c757d;pointer-events:none;">
+                                <i class="ti ti-clipboard" style="font-size:1.5rem;"></i><br>
+                                <span>Klik area ini, lalu tekan <strong>Ctrl+V</strong> untuk paste gambar</span><br>
+                                <small class="text-muted">atau pilih file di bawah ini</small>
+                            </div>
+                            <div id="transfer-paste-preview" style="display:none;"></div>
+                        </div>
+                        <div style="margin-top:.5rem;">
+                            <input type="file" name="transfer_proof" accept="image/*" class="form-control" id="transfer-proof-file">
+                        </div>
                         <input type="hidden" name="transfer_proof_base64" id="transfer_proof_base64">
                     </div>
 
@@ -343,209 +351,222 @@
 
 @section('scripts')
 <script>
-    // reuse the same JS logic previously used in the standalone form
-    function setFileInputFromBase64(fileInputId, dataUrl, filename) {
-        if (!dataUrl || !dataUrl.startsWith('data:')) return;
-        try {
-            const arr = dataUrl.split(',');
-            const mimeMatch = arr[0].match(/:(.*?);/);
-            const mime = mimeMatch ? mimeMatch[1] : 'image/png';
-            const bstr = atob(arr[1]);
-            let n = bstr.length;
-            const u8arr = new Uint8Array(n);
-            while (n--) {
-                u8arr[n] = bstr.charCodeAt(n);
-            }
-            const file = new File([u8arr], filename, { type: mime });
-            const container = new DataTransfer();
-            container.items.add(file);
-            const input = document.getElementById(fileInputId);
-            if (input) {
-                input.files = container.files;
-            }
-        } catch (e) {
-            console.error('DataTransfer file set fallback error', e);
-        }
-    }
+    // ============================================================
+    //  TRANSFER PROOF — paste zone & file input handler
+    // ============================================================
+    (function () {
+        var _pastedDataUrl = null; // store the captured data URL
 
-    function setImagePreview(containerId, base64HiddenId, fileInputId, dataUrl){
-        const container = document.getElementById(containerId);
-        if(!container) return;
-        container.innerHTML = `
-            <div style="position:relative;display:inline-block;margin-top:6px;">
-                <img src="${dataUrl}" style="max-width:220px;max-height:220px;display:block;border-radius:6px;border:2px solid #28a745;" />
-                <span class="badge bg-success" style="position:absolute;bottom:4px;left:4px;">Gambar Terpasang</span>
-                <button type="button" class="btn btn-sm btn-danger remove-preview" style="position:absolute;top:4px;right:4px;line-height:1;padding:2px 6px;border-radius:3px;">×</button>
-            </div>
-        `;
-        try{ document.getElementById(base64HiddenId).value = dataUrl; }catch(e){}
-        if (fileInputId && dataUrl) {
-            setFileInputFromBase64(fileInputId, dataUrl, 'bukti_transfer_' + Date.now() + '.png');
+        function showTransferPreview(dataUrl) {
+            _pastedDataUrl = dataUrl;
+
+            // Update hidden input immediately
+            var hidden = document.getElementById('transfer_proof_base64');
+            if (hidden) hidden.value = dataUrl;
+
+            // Also push to the file input via DataTransfer so backend receives multipart file
+            try {
+                var arr = dataUrl.split(',');
+                var mimeMatch = arr[0].match(/:(.*?);/);
+                var mime = mimeMatch ? mimeMatch[1] : 'image/png';
+                var bstr = atob(arr[1].replace(/\s/g, ''));
+                var n = bstr.length;
+                var u8 = new Uint8Array(n);
+                while (n--) u8[n] = bstr.charCodeAt(n);
+                var file = new File([u8], 'bukti_transfer_' + Date.now() + '.png', { type: mime });
+                var dt = new DataTransfer();
+                dt.items.add(file);
+                var fi = document.getElementById('transfer-proof-file');
+                if (fi) fi.files = dt.files;
+            } catch (ex) {
+                console.warn('DataTransfer error (will use base64 fallback):', ex);
+            }
+
+            // Show preview inside the paste zone
+            var hint = document.getElementById('transfer-paste-hint');
+            var preview = document.getElementById('transfer-paste-preview');
+            if (hint) hint.style.display = 'none';
+            if (preview) {
+                preview.style.display = 'block';
+                preview.innerHTML =
+                    '<div style="position:relative;display:inline-block;">' +
+                    '<img src="' + dataUrl + '" style="max-width:100%;max-height:220px;border-radius:6px;border:2px solid #28a745;" />' +
+                    '<span class="badge bg-success" style="position:absolute;bottom:4px;left:4px;">Gambar Terpasang ✓</span>' +
+                    '<button type="button" id="remove-transfer-preview" class="btn btn-sm btn-danger" style="position:absolute;top:4px;right:4px;padding:2px 8px;">×</button>' +
+                    '</div>';
+
+                var rmBtn = document.getElementById('remove-transfer-preview');
+                if (rmBtn) {
+                    rmBtn.addEventListener('click', function (ev) {
+                        ev.stopPropagation();
+                        _pastedDataUrl = null;
+                        var h = document.getElementById('transfer_proof_base64');
+                        if (h) h.value = '';
+                        var fi2 = document.getElementById('transfer-proof-file');
+                        if (fi2) fi2.value = '';
+                        preview.style.display = 'none';
+                        preview.innerHTML = '';
+                        if (hint) hint.style.display = '';
+                        // Also reset zone border
+                        var zone = document.getElementById('transfer-paste-zone');
+                        if (zone) zone.style.borderColor = '#0d6efd';
+                    });
+                }
+            }
+
+            // Turn zone border green as feedback
+            var zone = document.getElementById('transfer-paste-zone');
+            if (zone) zone.style.borderColor = '#28a745';
         }
 
-        const btn = container.querySelector('.remove-preview');
-        if(btn){
-            btn.addEventListener('click', function(){
-                container.innerHTML = '';
-                try{ document.getElementById(base64HiddenId).value = ''; }catch(e){}
-                if(fileInputId){ try{ document.getElementById(fileInputId).value = ''; }catch(e){} }
+        function extractImageFromClipboard(clipboardData) {
+            if (!clipboardData) return null;
+
+            // 1. Try files[]
+            if (clipboardData.files && clipboardData.files.length > 0) {
+                for (var i = 0; i < clipboardData.files.length; i++) {
+                    if (clipboardData.files[i].type.startsWith('image/')) {
+                        return clipboardData.files[i];
+                    }
+                }
+            }
+
+            // 2. Try items[]
+            if (clipboardData.items && clipboardData.items.length > 0) {
+                for (var j = 0; j < clipboardData.items.length; j++) {
+                    var item = clipboardData.items[j];
+                    if (item.type && item.type.startsWith('image/') && item.getAsFile) {
+                        var blob = item.getAsFile();
+                        if (blob) return blob;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        // Listen for paste on the zone element itself
+        var zone = document.getElementById('transfer-paste-zone');
+        if (zone) {
+            zone.addEventListener('paste', function (e) {
+                var blob = extractImageFromClipboard(e.clipboardData || window.clipboardData);
+                if (blob) {
+                    e.preventDefault();
+                    var reader = new FileReader();
+                    reader.onload = function (ev) { showTransferPreview(ev.target.result); };
+                    reader.readAsDataURL(blob);
+                } else {
+                    // Show hint that no image was found
+                    zone.style.borderColor = '#dc3545';
+                    setTimeout(function () { zone.style.borderColor = '#0d6efd'; }, 1500);
+                }
+            });
+
+            // Global paste: capture anywhere in modal
+            document.addEventListener('paste', function (e) {
+                var active = document.activeElement;
+
+                // Skip if focused on invoice-text textarea
+                if (active && active.id === 'invoice-text') return;
+
+                // Only handle when modal is open
+                var modal = document.getElementById('modalPersediaan');
+                if (!modal || !modal.classList.contains('show')) return;
+
+                // Skip if already handled by zone's own paste listener
+                if (active && active.id === 'transfer-paste-zone') return;
+
+                var blob = extractImageFromClipboard(e.clipboardData || window.clipboardData);
+                if (blob) {
+                    e.preventDefault();
+                    var reader = new FileReader();
+                    reader.onload = function (ev) { showTransferPreview(ev.target.result); };
+                    reader.readAsDataURL(blob);
+                    // Auto-focus zone so user sees it
+                    zone.focus();
+                }
             });
         }
-    }
 
-    function readClipboardDataAndSetPreview(e, targetHiddenInputId, previewContainerId, fileInputId) {
-        const clipboard = e.clipboardData || window.clipboardData;
-        if (!clipboard) return false;
+        // File input change → show preview
+        var fileInput = document.getElementById('transfer-proof-file');
+        if (fileInput) {
+            fileInput.addEventListener('change', function () {
+                var f = fileInput.files && fileInput.files[0];
+                if (!f) return;
+                var reader = new FileReader();
+                reader.onload = function (ev) { showTransferPreview(ev.target.result); };
+                reader.readAsDataURL(f);
+            });
+        }
 
-        if (clipboard.files && clipboard.files.length > 0) {
-            for (let i = 0; i < clipboard.files.length; i++) {
-                const f = clipboard.files[i];
-                if (f.type && f.type.startsWith('image/')) {
-                    const reader = new FileReader();
-                    reader.onload = function(evt) {
-                        setImagePreview(previewContainerId, targetHiddenInputId, fileInputId, evt.target.result);
+        // On form submit: ensure base64 is set
+        document.addEventListener('DOMContentLoaded', function () {
+            var form = document.getElementById('persediaan-form');
+            if (form) {
+                form.addEventListener('submit', function () {
+                    if (_pastedDataUrl) {
+                        var h = document.getElementById('transfer_proof_base64');
+                        if (h && !h.value) h.value = _pastedDataUrl;
+                    }
+                });
+            }
+        });
+
+        // Invoice-text paste: image → base64 field
+        var invoiceText = document.getElementById('invoice-text');
+        if (invoiceText) {
+            invoiceText.addEventListener('paste', function (e) {
+                var blob = extractImageFromClipboard(e.clipboardData || window.clipboardData);
+                if (blob) {
+                    e.preventDefault();
+                    var reader = new FileReader();
+                    reader.onload = function (ev) {
+                        var h = document.getElementById('invoice_file_base64');
+                        if (h) h.value = ev.target.result;
+                        var prev = document.getElementById('invoice-file-preview');
+                        if (prev) prev.innerHTML = '<img src="' + ev.target.result + '" style="max-width:200px;max-height:200px;border-radius:4px;margin-top:6px;" />';
                     };
-                    reader.readAsDataURL(f);
-                    return true;
+                    reader.readAsDataURL(blob);
                 }
-            }
+            });
         }
 
-        if (clipboard.items && clipboard.items.length > 0) {
-            for (let i = 0; i < clipboard.items.length; i++) {
-                const item = clipboard.items[i];
-                if (item.type && item.type.startsWith('image/')) {
-                    const blob = item.getAsFile ? item.getAsFile() : null;
-                    if (blob) {
-                        const reader = new FileReader();
-                        reader.onload = function(evt) {
-                            setImagePreview(previewContainerId, targetHiddenInputId, fileInputId, evt.target.result);
-                        };
-                        reader.readAsDataURL(blob);
-                        return true;
-                    }
-                }
-            }
+        // Invoice file input
+        var invoiceFile = document.getElementById('invoice-file');
+        if (invoiceFile) {
+            invoiceFile.addEventListener('change', function () {
+                var f = invoiceFile.files && invoiceFile.files[0];
+                if (!f) return;
+                var reader = new FileReader();
+                reader.onload = function (ev) {
+                    var h = document.getElementById('invoice_file_base64');
+                    if (h) h.value = ev.target.result;
+                    var prev = document.getElementById('invoice-file-preview');
+                    if (prev) prev.innerHTML = '<img src="' + ev.target.result + '" style="max-width:200px;max-height:200px;border-radius:4px;margin-top:6px;" />';
+                };
+                reader.readAsDataURL(f);
+            });
         }
+    })();
 
-        const html = clipboard.getData('text/html');
-        if (html) {
-            const doc = new DOMParser().parseFromString(html, 'text/html');
-            const img = doc.querySelector('img');
-            if (img && img.src && (img.src.startsWith('data:image/') || img.src.startsWith('http'))) {
-                setImagePreview(previewContainerId, targetHiddenInputId, fileInputId, img.src);
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    document.addEventListener('paste', function(e){
-        const active = document.activeElement;
-        if (active && active.id === 'invoice-text') {
-            if (readClipboardDataAndSetPreview(e, 'invoice_file_base64', 'invoice-file-preview', 'invoice-file')) {
-                e.preventDefault();
-                return;
-            }
-            return;
-        }
-
-        const modal = document.getElementById('modalPersediaan');
-        const modalOpen = modal && (modal.classList.contains('show') || modal.style.display === 'block');
-        const inPasteArea = active && (active.id === 'transfer-paste-area' || active.closest('#transfer-paste-area') || active.closest('#modalPersediaan'));
-
-        if (modalOpen || inPasteArea) {
-            if (readClipboardDataAndSetPreview(e, 'transfer_proof_base64', 'transfer-proof-preview', 'transfer-proof-file')) {
-                e.preventDefault();
-            }
-        }
-
-        [50, 200, 500].forEach(function(ms){
-            setTimeout(function(){
-                const pasteArea = document.getElementById('transfer-paste-area');
-                if (pasteArea) {
-                    const img = pasteArea.querySelector('img');
-                    if (img && img.src && img.src.length > 20) {
-                        setImagePreview('transfer-proof-preview', 'transfer_proof_base64', 'transfer-proof-file', img.src);
-                    }
-                }
-            }, ms);
-        });
-    });
-
-    function bindFilePreview(inputId, previewId, hiddenBase64Id){
-        const input = document.getElementById(inputId);
-        if (!input) return;
-        input.addEventListener('change', function(){
-            const file = input.files && input.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e){
-                setImagePreview(previewId, hiddenBase64Id, inputId, e.target.result);
-            };
-            reader.readAsDataURL(file);
-        });
-    }
-
-    bindFilePreview('transfer-proof-file','transfer-proof-preview','transfer_proof_base64');
-    bindFilePreview('invoice-file','invoice-file-preview','invoice_file_base64');
-
-    function recalcRow(row){
-        const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
-        const price = parseFloat(row.querySelector('.item-price').value) || 0;
-        row.querySelector('.item-subtotal').textContent = (qty*price).toFixed(2);
-    }
-
-    function addRow(name='', qty=1, price=0){
-        const tbody = document.querySelector('#items-table tbody');
-        if(!tbody) return;
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td><input class="form-control item-name" value="${name}"></td>
-            <td><input type="number" min="1" class="form-control item-qty" value="${qty}"></td>
-            <td><input type="number" step="0.01" class="form-control item-price" value="${price}"></td>
-            <td class="item-subtotal">0.00</td>
-            <td><button type="button" class="btn btn-sm btn-danger remove-row">x</button></td>
-        `;
-        tbody.appendChild(tr);
-        tr.querySelectorAll('.item-qty, .item-price').forEach(el=>el.addEventListener('input', ()=>recalcRow(tr)));
-        tr.querySelector('.remove-row').addEventListener('click', ()=>{ tr.remove(); });
-        recalcRow(tr);
-    }
-
-    document.addEventListener('DOMContentLoaded', function(){
-        const addItemBtn = document.getElementById('add-item');
-        if (addItemBtn) {
-            addItemBtn.addEventListener('click', ()=>addRow());
-        }
-
+    document.addEventListener('DOMContentLoaded', function () {
         const form = document.getElementById('persediaan-form');
-        if(!form) return;
-        form.addEventListener('submit', function(e){
-            const pasteArea = document.getElementById('transfer-paste-area');
-            if (pasteArea) {
-                const img = pasteArea.querySelector('img');
-                if (img && img.src && img.src.length > 20) {
-                    setImagePreview('transfer-proof-preview', 'transfer_proof_base64', 'transfer-proof-file', img.src);
+        if (form) {
+            form.addEventListener('submit', function () {
+                const itemsTable = document.querySelector('#items-table tbody');
+                let items = [];
+                if (itemsTable) {
+                    items = Array.from(itemsTable.querySelectorAll('tr')).map(r => ({
+                        name: (r.querySelector('.item-name') && r.querySelector('.item-name').value) || '',
+                        qty: (r.querySelector('.item-qty') && r.querySelector('.item-qty').value) || 0,
+                        price: (r.querySelector('.item-price') && r.querySelector('.item-price').value) || 0,
+                    }));
                 }
-            }
-
-            const itemsTable = document.querySelector('#items-table tbody');
-            let items = [];
-            if (itemsTable) {
-                const rows = Array.from(itemsTable.querySelectorAll('tr'));
-                items = rows.map(r=>({
-                    name: (r.querySelector('.item-name') && r.querySelector('.item-name').value) || '',
-                    qty: (r.querySelector('.item-qty') && r.querySelector('.item-qty').value) || 0,
-                    price: (r.querySelector('.item-price') && r.querySelector('.item-price').value) || 0,
-                }));
-            }
-            const itemsJsonInput = document.getElementById('items-json');
-            if (itemsJsonInput) {
-                itemsJsonInput.value = JSON.stringify(items);
-            }
-        });
+                const itemsJsonInput = document.getElementById('items-json');
+                if (itemsJsonInput) itemsJsonInput.value = JSON.stringify(items);
+            });
+        }
     });
 
     // Inline detail toggle for persediaan rows
