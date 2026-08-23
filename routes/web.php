@@ -41,6 +41,7 @@ use App\Models\DataRequest;
 use App\Models\Deposit;
 use App\Models\LoanRequest;
 use App\Models\Reimburse;
+use App\Models\PersediaanStok;
 
 
 
@@ -157,6 +158,7 @@ Route::middleware(['checkLogin', 'admin.activity.log'])->group(function () {
             'data_request_pending' => DataRequest::where('status', 'pending')->count(),
             'loan_request_pending' => LoanRequest::where('status', 'pending')->count(),
             'deposit_pending' => Deposit::where('status', 'pending')->count(),
+            'persediaan_pending' => PersediaanStok::where('status', 'pending')->count(),
             'hutang_belum_lunas' => Deposit::whereIn('jenis_transaksi', ['hutang', 'bon', 'Hutang', 'Bon'])
                 ->whereIn('status', [
                     'selesai_belum_lunas', 

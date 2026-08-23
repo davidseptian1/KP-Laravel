@@ -86,42 +86,65 @@ class PersediaanStokController extends Controller
         // handle uploaded file
         if ($request->hasFile('transfer_proof')) {
             $record->transfer_proof_path = $request->file('transfer_proof')->store('persediaan', 'public');
-        } elseif (!empty($data['transfer_proof_base64'])) {
-            // save base64 image to storage
-            try {
-                $fileData = $data['transfer_proof_base64'];
-                if (preg_match('/^data:(image\/[a-zA-Z0-9\+\-]+);base64,/', $fileData, $type)) {
-                    $fileData = substr($fileData, strpos($fileData, ',') + 1);
-                    $fileData = base64_decode($fileData);
-                    $mime = $type[1];
-                    $ext = explode('/', $mime)[1] ?? 'png';
-                    if ($ext === 'jpeg') $ext = 'jpg';
-                    $filename = 'persediaan/transfer_' . time() . '_' . bin2hex(random_bytes(6)) . '.' . $ext;
-                    Storage::disk('public')->put($filename, $fileData);
-                    $record->transfer_proof_path = $filename;
+        } else {
+            $base64 = $request->input('transfer_proof_base64') ?: ($data['transfer_proof_base64'] ?? null);
+            if (!empty($base64)) {
+                try {
+                    if (str_contains($base64, 'base64,')) {
+                        $parts = explode('base64,', $base64);
+                        $meta = $parts[0];
+                        $rawBase64 = end($parts);
+                        
+                        $ext = 'png';
+                        if (str_contains($meta, 'jpeg') || str_contains($meta, 'jpg')) {
+                            $ext = 'jpg';
+                        } elseif (str_contains($meta, 'webp')) {
+                            $ext = 'webp';
+                        } elseif (str_contains($meta, 'gif')) {
+                            $ext = 'gif';
+                        }
+                        
+                        $fileData = base64_decode(str_replace(' ', '+', trim($rawBase64)));
+                        if ($fileData !== false && strlen($fileData) > 0) {
+                            $filename = 'persediaan/transfer_' . time() . '_' . bin2hex(random_bytes(6)) . '.' . $ext;
+                            Storage::disk('public')->put($filename, $fileData);
+                            $record->transfer_proof_path = $filename;
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    \Log::error('Base64 transfer proof save error: ' . $e->getMessage());
                 }
-            } catch (\Exception $e) {
-                // ignore saving base64 on failure
             }
         }
 
         if ($request->hasFile('invoice_file')) {
             $record->invoice_path = $request->file('invoice_file')->store('persediaan', 'public');
-        } elseif (!empty($data['invoice_file_base64'])) {
-            try {
-                $fileData = $data['invoice_file_base64'];
-                if (preg_match('/^data:(application\/pdf|image\/[a-zA-Z0-9\+\-]+);base64,/', $fileData, $type)) {
-                    $fileData = substr($fileData, strpos($fileData, ',') + 1);
-                    $fileData = base64_decode($fileData);
-                    $mime = $type[1];
-                    $ext = strpos($mime, 'pdf') !== false ? 'pdf' : (explode('/', $mime)[1] ?? 'png');
-                    if ($ext === 'jpeg') $ext = 'jpg';
-                    $filename = 'persediaan/invoice_' . time() . '_' . bin2hex(random_bytes(6)) . '.' . $ext;
-                    Storage::disk('public')->put($filename, $fileData);
-                    $record->invoice_path = $filename;
+        } else {
+            $base64Inv = $request->input('invoice_file_base64') ?: ($data['invoice_file_base64'] ?? null);
+            if (!empty($base64Inv)) {
+                try {
+                    if (str_contains($base64Inv, 'base64,')) {
+                        $parts = explode('base64,', $base64Inv);
+                        $meta = $parts[0];
+                        $rawBase64 = end($parts);
+                        
+                        $ext = str_contains($meta, 'pdf') ? 'pdf' : 'png';
+                        if (str_contains($meta, 'jpeg') || str_contains($meta, 'jpg')) {
+                            $ext = 'jpg';
+                        } elseif (str_contains($meta, 'webp')) {
+                            $ext = 'webp';
+                        }
+                        
+                        $fileData = base64_decode(str_replace(' ', '+', trim($rawBase64)));
+                        if ($fileData !== false && strlen($fileData) > 0) {
+                            $filename = 'persediaan/invoice_' . time() . '_' . bin2hex(random_bytes(6)) . '.' . $ext;
+                            Storage::disk('public')->put($filename, $fileData);
+                            $record->invoice_path = $filename;
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    \Log::error('Base64 invoice file save error: ' . $e->getMessage());
                 }
-            } catch (\Exception $e) {
-                // ignore
             }
         }
 

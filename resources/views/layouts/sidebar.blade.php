@@ -149,6 +149,21 @@
                     </a>
                 </li>
 
+                <!-- Monitoring Request PO / Persediaan Stok (Admin) -->
+                <li class="pc-item {{ request()->routeIs('admin.persediaan*') ? 'active' : '' }}">
+                    <a href="{{ route('admin.persediaan-stok.index') }}" class="pc-link position-relative">
+                        <span class="pc-micon"><i class="ti ti-box"></i></span>
+                        <span class="pc-mtext">Monitoring Request PO</span>
+                        <span data-sidebar-counter
+                              data-counter-key="persediaan_pending"
+                              data-counter-url="{{ route('sidebar.monitoring-counts') }}"
+                              class="badge rounded-pill {{ ($jumlahPersediaanPending ?? 0) > 0 ? 'bg-danger' : 'bg-secondary' }}"
+                              style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 0.9rem; min-width: 34px; text-align: center; padding: 6px 10px; line-height: 1;">
+                            {{ $jumlahPersediaanPending ?? 0 }}
+                        </span>
+                    </a>
+                </li>
+
                 <!-- Bon/Hutang Monitoring (Admin) -->
                 <li class="pc-item {{ $menuAdminBonHutangMonitoring ?? '' }}">
                     <a href="{{ route('admin.deposit.monitoring-hutang') }}" class="pc-link position-relative">

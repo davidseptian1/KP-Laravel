@@ -11,6 +11,7 @@ use App\Models\Deposit;
 use App\Models\LoanRequest;
 use App\Models\Minusan;
 use App\Models\Reimburse;
+use App\Models\PersediaanStok;
 use App\Observers\AdminModelAuditObserver;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\File;
@@ -51,13 +52,15 @@ class AppServiceProvider extends ServiceProvider
             $jumlahDataRequestPending = DataRequest::where('status', 'pending')->count();
             $jumlahLoanRequestPending = LoanRequest::where('status', 'pending')->count();
             $jumlahDepositPending = Deposit::where('status', 'pending')->count();
+            $jumlahPersediaanPending = PersediaanStok::where('status', 'pending')->count();
 
             $view->with('jumlahReportKhusus', $jumlahReportKhusus)
                 ->with('jumlahHutangBelumLunas', $jumlahHutangBelumLunas)
                 ->with('jumlahReimbursePending', $jumlahReimbursePending)
                 ->with('jumlahDataRequestPending', $jumlahDataRequestPending)
                 ->with('jumlahLoanRequestPending', $jumlahLoanRequestPending)
-                ->with('jumlahDepositPending', $jumlahDepositPending);
+                ->with('jumlahDepositPending', $jumlahDepositPending)
+                ->with('jumlahPersediaanPending', $jumlahPersediaanPending);
         });
     }
 }
