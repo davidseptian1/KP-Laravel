@@ -87,7 +87,7 @@
                                         @endif
                                     </td>
                                     <td class="text-end">
-                                        <button class="btn btn-sm btn-outline-secondary js-persediaan-open-detail" data-id="{{ $r->id }}">Lihat</button>
+                                        <button type="button" class="btn btn-sm btn-outline-primary fw-semibold" data-bs-toggle="modal" data-bs-target="#persediaanDetail{{ $r->id }}">Lihat</button>
                                     </td>
                                 </tr>
                             @endforeach
@@ -98,51 +98,131 @@
                     </table>
                 </div>
 
-                {{-- Render detail modals outside the table to keep table markup valid --}}
+                {{-- Detail Modals --}}
                 @foreach(($records ?? collect()) as $r)
                     <div class="modal fade" id="persediaanDetail{{ $r->id }}" tabindex="-1" aria-hidden="true">
-                        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
                             <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title">Detail Permintaan #{{ $r->id }}</h5>
+                                <div class="modal-header bg-light">
+                                    <h5 class="modal-title fw-bold text-dark"><i class="ti ti-file-text me-1"></i>Detail Request PO #{{ $r->id }}</h5>
                                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                 </div>
                                 <div class="modal-body">
-                                    <p><strong>Tanggal:</strong> {{ optional($r->created_at)->format('Y-m-d H:i') }}</p>
-                                    <p><strong>Nama Pemilik:</strong> {{ $r->owner_name }}</p>
-                                    <p><strong>Total:</strong> {{ number_format($r->total_amount,2,'.',',') }}</p>
-                                    <p><strong>Items:</strong></p>
-                                    <table class="table table-sm">
-                                        <thead><tr><th>Nama</th><th>Qty</th><th>Harga</th><th>Subtotal</th></tr></thead>
-                                        <tbody>
-                                            @foreach($r->items ?? [] as $it)
-                                                <tr>
-                                                    <td>{{ $it['name'] ?? '' }}</td>
-                                                    <td>{{ $it['qty'] ?? 0 }}</td>
-                                                    <td>{{ number_format($it['price'] ?? 0,2,'.',',') }}</td>
-                                                    <td>{{ number_format((($it['qty'] ?? 0) * ($it['price'] ?? 0)),2,'.',',') }}</td>
-                                                </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <div class="p-3 border rounded bg-light">
+                                                <small class="text-muted d-block mb-1">Nama Perusahaan</small>
+                                                <h6 class="fw-bold mb-0 text-dark">{{ $r->company_name ?? $r->owner_name }}</h6>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="p-3 border rounded bg-light">
+                                                <small class="text-muted d-block mb-1">Divisi & Pembayaran</small>
+                                                <div class="d-flex gap-2">
+                                                    <span class="badge bg-secondary text-uppercase">{{ $r->division ?? '-' }}</span>
+                                                    <span class="badge bg-info text-uppercase">{{ $r->payment_method ?? '-' }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="p-3 border rounded bg-light">
+                                                <small class="text-muted d-block mb-1">Pilihan Cicilan</small>
+                                                @if(($r->cicilan ?? 'Tanpa Cicilan') === 'Cicilan')
+                                                    <span class="badge bg-warning text-dark">Cicilan</span>
+                                                @else
+                                                    <span class="badge bg-light text-dark border">Tanpa Cicilan</span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="p-3 border rounded bg-light">
+                                                <small class="text-muted d-block mb-1">Tanggal PO</small>
+                                                <h6 class="fw-bold mb-0 text-dark">{{ optional($r->po_date)->format('d F Y') ?? optional($r->created_at)->format('d F Y') }}</h6>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="p-3 border rounded bg-light">
+                                                <small class="text-muted d-block mb-1">Status</small>
+                                                @if(($r->status ?? 'pending') === 'approved')
+                                                    <span class="badge bg-success">Approved (ACC)</span>
+                                                @elseif(($r->status ?? 'pending') === 'rejected')
+                                                    <span class="badge bg-danger">Rejected</span>
+                                                @elseif(($r->status ?? 'pending') === 'selesai')
+                                                    <span class="badge bg-primary">Selesai</span>
+                                                @else
+                                                    <span class="badge bg-warning text-dark">Pending</span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="p-3 border rounded bg-light">
+                                                <small class="text-muted d-block mb-1">No. Rekening & Bank</small>
+                                                <h6 class="fw-bold mb-0 text-dark">{{ $r->account_number ?: '-' }} ({{ $r->account_name ?: '-' }})</h6>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="p-3 border rounded bg-light">
+                                                <small class="text-muted d-block mb-1">Tanggal Penerimaan</small>
+                                                <h6 class="fw-bold mb-0 text-dark">
+                                                    @if($r->receive_date)
+                                                        <span class="text-success">{{ optional($r->receive_date)->format('d F Y H:i') }}</span>
+                                                    @else
+                                                        <span class="text-muted opacity-75">- Belum Diterima -</span>
+                                                    @endif
+                                                </h6>
+                                            </div>
+                                        </div>
+                                    </div>
 
-                                    <p><strong>Bukti Transfer:</strong></p>
-                                    @if($r->transfer_proof_path && file_exists(storage_path('app/public/'.$r->transfer_proof_path)))
-                                        <img src="{{ route('persediaan.file', ['id' => $r->id, 'field' => 'transfer']) }}" style="max-width:240px;max-height:240px;display:block;" />
-                                    @else
-                                        <div class="text-muted">Tidak ada bukti transfer</div>
+                                    @if(!empty($r->items))
+                                        <h6 class="fw-bold mt-4 mb-2">Barang yang Dibeli</h6>
+                                        <table class="table table-sm border">
+                                            <thead><tr><th>Nama</th><th>Qty</th><th>Harga</th><th>Subtotal</th></tr></thead>
+                                            <tbody>
+                                                @foreach($r->items as $it)
+                                                    <tr>
+                                                        <td>{{ $it['name'] ?? '' }}</td>
+                                                        <td>{{ $it['qty'] ?? 0 }}</td>
+                                                        <td>Rp {{ number_format($it['price'] ?? 0, 2, ',', '.') }}</td>
+                                                        <td>Rp {{ number_format((($it['qty'] ?? 0) * ($it['price'] ?? 0)), 2, ',', '.') }}</td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
                                     @endif
 
-                                    <p class="mt-3"><strong>Faktur / Lampiran:</strong></p>
-                                    @if($r->invoice_path && file_exists(storage_path('app/public/'.$r->invoice_path)))
-                                        <a href="{{ route('persediaan.file', ['id' => $r->id, 'field' => 'invoice']) }}" target="_blank" class="btn btn-sm btn-outline-primary">Buka Faktur</a>
-                                    @elseif($r->invoice_text)
-                                        <pre class="small">{{ $r->invoice_text }}</pre>
-                                    @else
-                                        <div class="text-muted">Tidak ada faktur</div>
-                                    @endif
+                                    <div class="row g-3 mt-2">
+                                        <div class="col-md-6">
+                                            <h6 class="fw-bold mb-2">Bukti Transfer (Gambar)</h6>
+                                            @if($r->transfer_proof_path)
+                                                <div class="p-2 border rounded text-center bg-light">
+                                                    <a href="{{ route('persediaan.file', ['id' => $r->id, 'field' => 'transfer']) }}" target="_blank">
+                                                        <img src="{{ route('persediaan.file', ['id' => $r->id, 'field' => 'transfer']) }}" style="max-height: 220px;" class="img-fluid rounded" alt="Bukti Transfer" />
+                                                    </a>
+                                                    <div class="mt-2">
+                                                        <a href="{{ route('persediaan.file', ['id' => $r->id, 'field' => 'transfer']) }}" target="_blank" class="btn btn-sm btn-outline-primary">Buka Fullscreen</a>
+                                                    </div>
+                                                </div>
+                                            @else
+                                                <div class="p-3 border rounded text-muted text-center bg-light">Tidak ada gambar bukti transfer</div>
+                                            @endif
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <h6 class="fw-bold mb-2">Faktur / Lampiran</h6>
+                                            @if($r->invoice_path)
+                                                <div class="p-2 border rounded text-center bg-light">
+                                                    <a href="{{ route('persediaan.file', ['id' => $r->id, 'field' => 'invoice']) }}" target="_blank" class="btn btn-sm btn-outline-primary">Buka File Faktur</a>
+                                                </div>
+                                            @elseif($r->invoice_text)
+                                                <pre class="p-2 border rounded bg-light small mb-0" style="white-space: pre-wrap;">{{ $r->invoice_text }}</pre>
+                                            @else
+                                                <div class="p-3 border rounded text-muted text-center bg-light">Tidak ada faktur</div>
+                                            @endif
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="modal-footer">
+                                <div class="modal-footer bg-light">
                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
                                 </div>
                             </div>
@@ -159,7 +239,7 @@
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Form Permintaan Persediaan Stok</h5>
+                <h5 class="modal-title fw-bold text-dark">Form Permintaan Persediaan Stok</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -176,13 +256,13 @@
                     @endif
 
                     <div class="mb-3">
-                        <label class="form-label">Nama Perusahaan <span class="text-danger">*</span></label>
+                        <label class="form-label fw-bold text-dark">Nama Perusahaan <span class="text-danger">*</span></label>
                         <input name="company_name" class="form-control" placeholder="Contoh: PT Belanja Kuota" required>
                     </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Nama Divisi <span class="text-danger">*</span></label>
+                            <label class="form-label fw-bold text-dark">Nama Divisi <span class="text-danger">*</span></label>
                             <select name="division" class="form-select" required>
                                 <option value="">-- Pilih Divisi --</option>
                                 <option value="server">Server</option>
@@ -190,7 +270,7 @@
                             </select>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Pembayaran <span class="text-danger">*</span></label>
+                            <label class="form-label fw-bold text-dark">Pembayaran <span class="text-danger">*</span></label>
                             <select name="payment_method" class="form-select" required>
                                 <option value="">-- Pilih Pembayaran --</option>
                                 <option value="bank">Bank</option>
@@ -201,7 +281,7 @@
 
                     <div class="row">
                         <div class="col-md-4 mb-3">
-                            <label class="form-label">Pilihan Bank (Bank/VA)</label>
+                            <label class="form-label fw-bold text-dark">Pilihan Bank (Bank/VA)</label>
                             <select name="bank_id" class="form-select">
                                 <option value="">-- Pilih Bank --</option>
                                 @foreach($banks as $bank)
@@ -210,35 +290,31 @@
                             </select>
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label class="form-label">Pilihan Cicilan / Tidak <span class="text-danger">*</span></label>
+                            <label class="form-label fw-bold text-dark">Pilihan Cicilan / Tidak <span class="text-danger">*</span></label>
                             <select name="cicilan" class="form-select" required>
                                 <option value="Tanpa Cicilan">Tanpa Cicilan</option>
                                 <option value="Cicilan">Cicilan</option>
                             </select>
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label class="form-label">Tanggal PO <span class="text-danger">*</span></label>
+                            <label class="form-label fw-bold text-dark">Tanggal PO <span class="text-danger">*</span></label>
                             <input type="date" name="po_date" class="form-control" value="{{ date('Y-m-d') }}" required>
                         </div>
                     </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">No. Rekening</label>
+                            <label class="form-label fw-bold text-dark">No. Rekening</label>
                             <input name="account_number" class="form-control" placeholder="Contoh: 1234567890">
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">A.N. Rekening</label>
+                            <label class="form-label fw-bold text-dark">A.N. Rekening</label>
                             <input name="account_name" class="form-control" placeholder="Contoh: PT Belanja Kuota">
                         </div>
                     </div>
 
-
-
-
-
                     <div class="mb-3 mt-3">
-                        <label class="form-label">Bukti Transfer (gambar) - klik area di bawah lalu tekan Ctrl+V untuk paste atau pilih file</label>
+                        <label class="form-label fw-bold text-dark">Bukti Transfer (gambar) - klik area di bawah lalu tekan Ctrl+V untuk paste atau pilih file</label>
                         <div id="transfer-paste-area" contenteditable="true" style="border:1px dashed #ccc;padding:8px;min-height:80px;cursor:text;">Klik di sini lalu paste gambar (atau gunakan tombol pilih file)</div>
                         <div style="margin-top:.5rem;"><input type="file" name="transfer_proof" accept="image/*" class="form-control" id="transfer-proof-file"></div>
                         <div id="transfer-proof-preview" style="margin-top:.5rem;"></div>
@@ -246,7 +322,7 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Bukti Faktur (opsional copy/paste gambar atau teks)</label>
+                        <label class="form-label fw-bold text-dark">Bukti Faktur (opsional copy/paste gambar atau teks)</label>
                         <textarea name="invoice_text" id="invoice-text" class="form-control" rows="3" placeholder="Anda bisa paste teks atau gambar di sini (gambar akan disimpan sebagai lampiran)"></textarea>
                         <div class="mt-2">atau upload file: <input type="file" name="invoice_file" id="invoice-file" class="form-control"/></div>
                         <div id="invoice-file-preview" style="margin-top:.5rem;"></div>

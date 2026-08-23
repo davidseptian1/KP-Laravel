@@ -4,7 +4,7 @@
 <div class="container">
     <div class="card">
         <div class="card-body">
-            <h5>Form Permintaan Persediaan Stok</h5>
+            <h5 class="fw-bold text-dark mb-4">Form Permintaan Persediaan Stok</h5>
             <form id="persediaan-form" method="post" action="{{ route('persediaan.store') }}" enctype="multipart/form-data">
                 @csrf
                 @if(session('success'))
@@ -22,13 +22,13 @@
                 @endif
 
                 <div class="mb-3">
-                    <label class="form-label">Nama Perusahaan <span class="text-danger">*</span></label>
+                    <label class="form-label fw-bold text-dark">Nama Perusahaan <span class="text-danger">*</span></label>
                     <input name="company_name" class="form-control" placeholder="Contoh: PT Belanja Kuota" required>
                 </div>
 
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">Nama Divisi <span class="text-danger">*</span></label>
+                        <label class="form-label fw-bold text-dark">Nama Divisi <span class="text-danger">*</span></label>
                         <select name="division" class="form-select" required>
                             <option value="">-- Pilih Divisi --</option>
                             <option value="server">Server</option>
@@ -36,7 +36,7 @@
                         </select>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">Pembayaran <span class="text-danger">*</span></label>
+                        <label class="form-label fw-bold text-dark">Pembayaran <span class="text-danger">*</span></label>
                         <select name="payment_method" class="form-select" required>
                             <option value="">-- Pilih Pembayaran --</option>
                             <option value="bank">Bank</option>
@@ -47,7 +47,7 @@
 
                 <div class="row">
                     <div class="col-md-4 mb-3">
-                        <label class="form-label">Pilihan Bank (Bank/VA)</label>
+                        <label class="form-label fw-bold text-dark">Pilihan Bank (Bank/VA)</label>
                         <select name="bank_id" class="form-select">
                             <option value="">-- Pilih Bank --</option>
                             @foreach($banks as $bank)
@@ -56,25 +56,25 @@
                         </select>
                     </div>
                     <div class="col-md-4 mb-3">
-                        <label class="form-label">Pilihan Cicilan / Tidak <span class="text-danger">*</span></label>
+                        <label class="form-label fw-bold text-dark">Pilihan Cicilan / Tidak <span class="text-danger">*</span></label>
                         <select name="cicilan" class="form-select" required>
                             <option value="Tanpa Cicilan">Tanpa Cicilan</option>
                             <option value="Cicilan">Cicilan</option>
                         </select>
                     </div>
                     <div class="col-md-4 mb-3">
-                        <label class="form-label">Tanggal PO <span class="text-danger">*</span></label>
+                        <label class="form-label fw-bold text-dark">Tanggal PO <span class="text-danger">*</span></label>
                         <input type="date" name="po_date" class="form-control" value="{{ date('Y-m-d') }}" required>
                     </div>
                 </div>
 
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">No. Rekening</label>
+                        <label class="form-label fw-bold text-dark">No. Rekening</label>
                         <input name="account_number" class="form-control" placeholder="Contoh: 1234567890">
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">A.N. Rekening</label>
+                        <label class="form-label fw-bold text-dark">A.N. Rekening</label>
                         <input name="account_name" class="form-control" placeholder="Contoh: PT Belanja Kuota">
                     </div>
                 </div>
@@ -84,7 +84,7 @@
 
 
                 <div class="mb-3 mt-3">
-                    <label class="form-label">Bukti Transfer (gambar) - klik area di bawah lalu tekan Ctrl+V untuk paste atau pilih file</label>
+                    <label class="form-label fw-bold text-dark">Bukti Transfer (gambar) - klik area di bawah lalu tekan Ctrl+V untuk paste atau pilih file</label>
                     <div id="transfer-paste-area" contenteditable="true" style="border:1px dashed #ccc;padding:8px;min-height:80px;cursor:text;">Klik di sini lalu paste gambar (atau gunakan tombol pilih file)</div>
                     <div style="margin-top:.5rem;"><input type="file" name="transfer_proof" accept="image/*" class="form-control" id="transfer-proof-file"></div>
                     <div id="transfer-proof-preview" style="margin-top:.5rem;"></div>
@@ -92,7 +92,7 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Bukti Faktur (opsional copy/paste gambar atau teks)</label>
+                    <label class="form-label fw-bold text-dark">Bukti Faktur (opsional copy/paste gambar atau teks)</label>
                     <textarea name="invoice_text" id="invoice-text" class="form-control" rows="3" placeholder="Anda bisa paste teks atau gambar di sini (gambar akan disimpan sebagai lampiran)"></textarea>
                     <div class="mt-2">atau upload file: <input type="file" name="invoice_file" id="invoice-file" class="form-control"/></div>
                     <div id="invoice-file-preview" style="margin-top:.5rem;"></div>
