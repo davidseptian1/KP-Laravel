@@ -233,16 +233,7 @@
                         </div>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Tanggal Pembelian (Opsional)</label>
-                            <input type="datetime-local" name="purchase_date" class="form-control">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Tanggal Penerimaan (Opsional)</label>
-                            <input type="datetime-local" name="receive_date" class="form-control">
-                        </div>
-                    </div>
+
 
 
 
