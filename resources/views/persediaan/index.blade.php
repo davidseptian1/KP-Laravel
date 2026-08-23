@@ -313,13 +313,24 @@
 
                     <div class="mb-3 mt-3">
                         <label class="form-label fw-bold text-dark">Bukti Transfer (Gambar) <span class="text-danger">*</span></label>
-                        <div id="transfer-paste-zone" tabindex="0" style="border:2px dashed #0d6efd;border-radius:8px;padding:20px;min-height:90px;cursor:pointer;background:#f8f9fa;text-align:center;outline:none;" onclick="this.focus()">
-                            <div id="transfer-paste-hint" style="color:#6c757d;pointer-events:none;">
-                                <i class="ti ti-clipboard" style="font-size:1.5rem;"></i><br>
-                                <span>Klik area ini, lalu tekan <strong>Ctrl+V</strong> untuk paste gambar</span><br>
-                                <small class="text-muted">atau pilih file di bawah ini</small>
+                        {{-- Paste zone: klik untuk fokus ke textarea tersembunyi, lalu Ctrl+V --}}
+                        <div id="transfer-paste-zone" style="border:2px dashed #0d6efd;border-radius:8px;min-height:100px;cursor:pointer;background:#f8f9fa;position:relative;overflow:hidden;" onclick="document.getElementById('transfer-paste-input').focus()">
+                            <div id="transfer-paste-hint" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#6c757d;pointer-events:none;padding:12px;text-align:center;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="margin-bottom:6px;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                                <span>Klik area ini, lalu tekan <strong>Ctrl+V</strong> untuk paste gambar</span>
+                                <small class="text-muted mt-1">atau pilih file di bawah ini</small>
                             </div>
-                            <div id="transfer-paste-preview" style="display:none;"></div>
+                            <div id="transfer-paste-preview" style="display:none;padding:10px;text-align:center;"></div>
+                            {{-- Textarea tersembunyi yang menerima paste event --}}
+                            <textarea id="transfer-paste-input"
+                                style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;resize:none;border:none;background:transparent;cursor:pointer;z-index:2;color:transparent;caret-color:transparent;"
+                                placeholder=""
+                                autocomplete="off"
+                                tabindex="0"
+                                spellcheck="false"
+                                onfocus="document.getElementById('transfer-paste-zone').style.borderColor='#0a58ca'"
+                                onblur="var h=document.getElementById('transfer_proof_base64');document.getElementById('transfer-paste-zone').style.borderColor=h&&h.value?'#28a745':'#0d6efd'"
+                            ></textarea>
                         </div>
                         <div style="margin-top:.5rem;">
                             <input type="file" name="transfer_proof" accept="image/*" class="form-control" id="transfer-proof-file">
@@ -388,17 +399,19 @@
             if (hint) hint.style.display = 'none';
             if (preview) {
                 preview.style.display = 'block';
+                // z-index 10 agar tombol hapus bisa diklik (di atas textarea opacity:0)
                 preview.innerHTML =
-                    '<div style="position:relative;display:inline-block;">' +
-                    '<img src="' + dataUrl + '" style="max-width:100%;max-height:220px;border-radius:6px;border:2px solid #28a745;" />' +
+                    '<div style="position:relative;display:inline-block;z-index:10;">' +
+                    '<img src="' + dataUrl + '" style="max-width:100%;max-height:220px;border-radius:6px;border:2px solid #28a745;display:block;" />' +
                     '<span class="badge bg-success" style="position:absolute;bottom:4px;left:4px;">Gambar Terpasang ✓</span>' +
-                    '<button type="button" id="remove-transfer-preview" class="btn btn-sm btn-danger" style="position:absolute;top:4px;right:4px;padding:2px 8px;">×</button>' +
+                    '<button type="button" id="remove-transfer-preview" class="btn btn-sm btn-danger" style="position:absolute;top:4px;right:4px;padding:2px 8px;z-index:20;">×</button>' +
                     '</div>';
 
                 var rmBtn = document.getElementById('remove-transfer-preview');
                 if (rmBtn) {
                     rmBtn.addEventListener('click', function (ev) {
                         ev.stopPropagation();
+                        ev.preventDefault();
                         _pastedDataUrl = null;
                         var h = document.getElementById('transfer_proof_base64');
                         if (h) h.value = '';
@@ -406,10 +419,9 @@
                         if (fi2) fi2.value = '';
                         preview.style.display = 'none';
                         preview.innerHTML = '';
-                        if (hint) hint.style.display = '';
-                        // Also reset zone border
-                        var zone = document.getElementById('transfer-paste-zone');
-                        if (zone) zone.style.borderColor = '#0d6efd';
+                        if (hint) hint.style.display = 'flex';
+                        var zone2 = document.getElementById('transfer-paste-zone');
+                        if (zone2) zone2.style.borderColor = '#0d6efd';
                     });
                 }
             }
@@ -445,48 +457,60 @@
             return null;
         }
 
-        // Listen for paste on the zone element itself
+        // -------------------------------------------------------
+        // Attach paste listener ke TEXTAREA TERSEMBUNYI
+        // (div biasa tidak menerima paste event, hanya editable element)
+        // -------------------------------------------------------
+        var pasteInput = document.getElementById('transfer-paste-input');
         var zone = document.getElementById('transfer-paste-zone');
-        if (zone) {
-            zone.addEventListener('paste', function (e) {
-                var blob = extractImageFromClipboard(e.clipboardData || window.clipboardData);
-                if (blob) {
-                    e.preventDefault();
-                    var reader = new FileReader();
-                    reader.onload = function (ev) { showTransferPreview(ev.target.result); };
-                    reader.readAsDataURL(blob);
-                } else {
-                    // Show hint that no image was found
+
+        function handleTransferPaste(e) {
+            var blob = extractImageFromClipboard(e.clipboardData || window.clipboardData);
+            if (blob) {
+                e.preventDefault();
+                var reader = new FileReader();
+                reader.onload = function (ev) { showTransferPreview(ev.target.result); };
+                reader.readAsDataURL(blob);
+                // Kosongkan textarea agar teks tidak menumpuk
+                setTimeout(function () {
+                    if (pasteInput) pasteInput.value = '';
+                }, 0);
+            } else {
+                // Tidak ada gambar di clipboard — feedback merah sebentar
+                if (zone) {
                     zone.style.borderColor = '#dc3545';
-                    setTimeout(function () { zone.style.borderColor = '#0d6efd'; }, 1500);
+                    setTimeout(function () {
+                        var h = document.getElementById('transfer_proof_base64');
+                        zone.style.borderColor = (h && h.value) ? '#28a745' : '#0d6efd';
+                    }, 1500);
                 }
-            });
-
-            // Global paste: capture anywhere in modal
-            document.addEventListener('paste', function (e) {
-                var active = document.activeElement;
-
-                // Skip if focused on invoice-text textarea
-                if (active && active.id === 'invoice-text') return;
-
-                // Only handle when modal is open
-                var modal = document.getElementById('modalPersediaan');
-                if (!modal || !modal.classList.contains('show')) return;
-
-                // Skip if already handled by zone's own paste listener
-                if (active && active.id === 'transfer-paste-zone') return;
-
-                var blob = extractImageFromClipboard(e.clipboardData || window.clipboardData);
-                if (blob) {
-                    e.preventDefault();
-                    var reader = new FileReader();
-                    reader.onload = function (ev) { showTransferPreview(ev.target.result); };
-                    reader.readAsDataURL(blob);
-                    // Auto-focus zone so user sees it
-                    zone.focus();
-                }
-            });
+            }
         }
+
+        if (pasteInput) {
+            pasteInput.addEventListener('paste', handleTransferPaste);
+        }
+
+        // Global fallback: jika paste terjadi di tempat lain dalam modal
+        document.addEventListener('paste', function (e) {
+            var active = document.activeElement;
+            // Skip jika fokus di invoice-text atau transfer-paste-input (sudah ditangani)
+            if (active && (active.id === 'invoice-text' || active.id === 'transfer-paste-input')) return;
+
+            // Hanya jika modal terbuka
+            var modal = document.getElementById('modalPersediaan');
+            if (!modal || !modal.classList.contains('show')) return;
+
+            var blob = extractImageFromClipboard(e.clipboardData || window.clipboardData);
+            if (blob) {
+                e.preventDefault();
+                var reader = new FileReader();
+                reader.onload = function (ev) { showTransferPreview(ev.target.result); };
+                reader.readAsDataURL(blob);
+                // Fokuskan textarea agar user tahu
+                if (pasteInput) pasteInput.focus();
+            }
+        });
 
         // File input change → show preview
         var fileInput = document.getElementById('transfer-proof-file');
