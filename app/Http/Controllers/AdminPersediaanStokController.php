@@ -65,4 +65,36 @@ class AdminPersediaanStokController extends Controller
             ->header('Content-Type', 'application/pdf')
             ->header('Content-Disposition', 'attachment; filename="invoice_'.$item->id.'.pdf"');
     }
+
+    public function updateDetails(Request $request, $id)
+    {
+        $item = PersediaanStok::findOrFail($id);
+
+        $validated = $request->validate([
+            'cicilan' => 'required|string|in:Cicilan,Tanpa Cicilan',
+            'receive_date' => 'nullable|date',
+        ]);
+
+        $item->cicilan = $validated['cicilan'];
+        $item->receive_date = $validated['receive_date'] ?? null;
+        $item->save();
+
+        return redirect()->back()->with('success', 'Detail cicilan dan tanggal penerimaan berhasil diperbarui.');
+    }
+
+    public function updateStatus(Request $request, $id)
+    {
+        $item = PersediaanStok::findOrFail($id);
+
+        $validated = $request->validate([
+            'status' => 'required|string|in:pending,approved,rejected,selesai',
+        ]);
+
+        $item->status = $validated['status'];
+        $item->save();
+
+        $statusLabel = $item->status === 'approved' ? 'disetujui (ACC)' : ($item->status === 'rejected' ? 'ditolak' : $item->status);
+
+        return redirect()->back()->with('success', 'Status Permintaan #' . $item->id . ' berhasil diubah menjadi ' . $statusLabel . '.');
+    }
 }

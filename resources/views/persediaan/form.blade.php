@@ -21,14 +21,39 @@
                     </div>
                 @endif
 
-                <div class="mb-3">
-                    <label class="form-label">Nama Pemilik</label>
-                    <input name="owner_name" class="form-control" required>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Nama Perusahaan <span class="text-danger">*</span></label>
+                        <input name="company_name" class="form-control" placeholder="Contoh: PT Belanja Kuota" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Nama Pemilik / Atas Nama</label>
+                        <input name="owner_name" class="form-control" placeholder="Opsional (Otomatis nama perusahaan jika kosong)">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Nama Divisi <span class="text-danger">*</span></label>
+                        <select name="division" class="form-select" required>
+                            <option value="">-- Pilih Divisi --</option>
+                            <option value="server">Server</option>
+                            <option value="gudang">Gudang</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Pembayaran <span class="text-danger">*</span></label>
+                        <select name="payment_method" class="form-select" required>
+                            <option value="">-- Pilih Pembayaran --</option>
+                            <option value="bank">Bank</option>
+                            <option value="va">VA (Virtual Account)</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="row">
                     <div class="col-md-4 mb-3">
-                        <label class="form-label">No. Rekening (Bank)</label>
+                        <label class="form-label">Pilihan Bank (Bank/VA)</label>
                         <select name="bank_id" class="form-select">
                             <option value="">-- Pilih Bank --</option>
                             @foreach($banks as $bank)
@@ -37,22 +62,36 @@
                         </select>
                     </div>
                     <div class="col-md-4 mb-3">
-                        <label class="form-label">No. Rek</label>
-                        <input name="account_number" class="form-control">
+                        <label class="form-label">Pilihan Cicilan / Tidak <span class="text-danger">*</span></label>
+                        <select name="cicilan" class="form-select" required>
+                            <option value="Tanpa Cicilan">Tanpa Cicilan</option>
+                            <option value="Cicilan">Cicilan</option>
+                        </select>
                     </div>
                     <div class="col-md-4 mb-3">
-                        <label class="form-label">A.N. Rekening</label>
-                        <input name="account_name" class="form-control">
+                        <label class="form-label">Tanggal PO <span class="text-danger">*</span></label>
+                        <input type="date" name="po_date" class="form-control" value="{{ date('Y-m-d') }}" required>
                     </div>
                 </div>
 
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">Tanggal Pembelian</label>
+                        <label class="form-label">No. Rekening</label>
+                        <input name="account_number" class="form-control" placeholder="Contoh: 1234567890">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">A.N. Rekening</label>
+                        <input name="account_name" class="form-control" placeholder="Contoh: PT Belanja Kuota">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Tanggal Pembelian (Opsional)</label>
                         <input type="datetime-local" name="purchase_date" class="form-control">
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">Tanggal Penerimaan</label>
+                        <label class="form-label">Tanggal Penerimaan (Opsional)</label>
                         <input type="datetime-local" name="receive_date" class="form-control">
                     </div>
                 </div>

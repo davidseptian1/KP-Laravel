@@ -350,6 +350,8 @@ Route::middleware(['checkLogin', 'admin.activity.log'])->group(function () {
         Route::get('admin/persediaan-stok/{id}', [AdminPersediaanStokController::class, 'show'])->name('admin.persediaan.show');
         Route::get('admin/persediaan-stok/{id}/file/{field}', [AdminPersediaanStokController::class, 'viewFile'])->name('admin.persediaan.file');
         Route::get('admin/persediaan-stok/{id}/invoice-pdf', [AdminPersediaanStokController::class, 'downloadInvoicePdf'])->name('admin.persediaan.invoice.pdf');
+        Route::put('admin/persediaan-stok/{id}/update-details', [AdminPersediaanStokController::class, 'updateDetails'])->name('admin.persediaan.update-details');
+        Route::put('admin/persediaan-stok/{id}/update-status', [AdminPersediaanStokController::class, 'updateStatus'])->name('admin.persediaan.update-status');
 
         // Create Minusan
         Route::get('minusan/create', [MinusanController::class, 'create'])->name('minusanCreate');

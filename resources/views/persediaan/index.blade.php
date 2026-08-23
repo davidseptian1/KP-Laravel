@@ -50,8 +50,11 @@
                     <table class="table table-sm mb-0">
                         <thead>
                             <tr>
-                                <th>Tanggal</th>
-                                <th>Nama Pemilik</th>
+                                <th>Tgl PO</th>
+                                <th>Perusahaan</th>
+                                <th>Divisi</th>
+                                <th>Pembayaran</th>
+                                <th>Cicilan</th>
                                 <th>Total</th>
                                 <th>Status</th>
                                 <th></th>
@@ -60,19 +63,36 @@
                         <tbody>
                             @foreach(($records ?? collect()) as $r)
                                 <tr class="js-persediaan-row" data-items='@json($r->items ?? [])' data-transfer-path="{{ $r->transfer_proof_path }}" data-invoice-path="{{ $r->invoice_path }}" data-id="{{ $r->id }}">
-                                    <td>{{ optional($r->created_at)->format('Y-m-d H:i') }}</td>
-                                    <td>{{ $r->owner_name }}</td>
-                                    <td>{{ number_format($r->total_amount, 2, '.', ',') }}</td>
-                                    <td>{{ $r->status ?? 'pending' }}</td>
+                                    <td>{{ optional($r->po_date)->format('d/m/Y') ?? optional($r->created_at)->format('d/m/Y') }}</td>
+                                    <td><strong>{{ $r->company_name ?? $r->owner_name }}</strong></td>
+                                    <td><span class="badge bg-secondary text-uppercase">{{ $r->division ?? '-' }}</span></td>
+                                    <td><span class="badge bg-info text-uppercase">{{ $r->payment_method ?? '-' }}</span></td>
+                                    <td>
+                                        @if(($r->cicilan ?? 'Tanpa Cicilan') === 'Cicilan')
+                                            <span class="badge bg-warning text-dark">Cicilan</span>
+                                        @else
+                                            <span class="badge bg-light text-dark">Tanpa Cicilan</span>
+                                        @endif
+                                    </td>
+                                    <td>Rp {{ number_format($r->total_amount, 2, ',', '.') }}</td>
+                                    <td>
+                                        @if(($r->status ?? 'pending') === 'approved')
+                                            <span class="badge bg-success">Approved (ACC)</span>
+                                        @elseif(($r->status ?? 'pending') === 'rejected')
+                                            <span class="badge bg-danger">Rejected</span>
+                                        @elseif(($r->status ?? 'pending') === 'selesai')
+                                            <span class="badge bg-primary">Selesai</span>
+                                        @else
+                                            <span class="badge bg-warning text-dark">Pending</span>
+                                        @endif
+                                    </td>
                                     <td class="text-end">
                                         <button class="btn btn-sm btn-outline-secondary js-persediaan-open-detail" data-id="{{ $r->id }}">Lihat</button>
                                     </td>
                                 </tr>
-
-                                {{-- per-row modal moved outside table to keep valid HTML --}}
                             @endforeach
                             @if(empty($records) || $records->isEmpty())
-                                <tr><td colspan="5" class="text-center text-muted">Belum ada permintaan persediaan.</td></tr>
+                                <tr><td colspan="8" class="text-center text-muted">Belum ada permintaan persediaan / PO.</td></tr>
                             @endif
                         </tbody>
                     </table>
@@ -155,14 +175,39 @@
                         </div>
                     @endif
 
-                    <div class="mb-3">
-                        <label class="form-label">Nama Pemilik</label>
-                        <input name="owner_name" class="form-control" required>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Nama Perusahaan <span class="text-danger">*</span></label>
+                            <input name="company_name" class="form-control" placeholder="Contoh: PT Belanja Kuota" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Nama Pemilik / Atas Nama</label>
+                            <input name="owner_name" class="form-control" placeholder="Opsional (Otomatis nama perusahaan jika kosong)">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Nama Divisi <span class="text-danger">*</span></label>
+                            <select name="division" class="form-select" required>
+                                <option value="">-- Pilih Divisi --</option>
+                                <option value="server">Server</option>
+                                <option value="gudang">Gudang</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Pembayaran <span class="text-danger">*</span></label>
+                            <select name="payment_method" class="form-select" required>
+                                <option value="">-- Pilih Pembayaran --</option>
+                                <option value="bank">Bank</option>
+                                <option value="va">VA (Virtual Account)</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div class="row">
                         <div class="col-md-4 mb-3">
-                            <label class="form-label">No. Rekening (Bank)</label>
+                            <label class="form-label">Pilihan Bank (Bank/VA)</label>
                             <select name="bank_id" class="form-select">
                                 <option value="">-- Pilih Bank --</option>
                                 @foreach($banks as $bank)
@@ -171,22 +216,36 @@
                             </select>
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label class="form-label">No. Rek</label>
-                            <input name="account_number" class="form-control">
+                            <label class="form-label">Pilihan Cicilan / Tidak <span class="text-danger">*</span></label>
+                            <select name="cicilan" class="form-select" required>
+                                <option value="Tanpa Cicilan">Tanpa Cicilan</option>
+                                <option value="Cicilan">Cicilan</option>
+                            </select>
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label class="form-label">A.N. Rekening</label>
-                            <input name="account_name" class="form-control">
+                            <label class="form-label">Tanggal PO <span class="text-danger">*</span></label>
+                            <input type="date" name="po_date" class="form-control" value="{{ date('Y-m-d') }}" required>
                         </div>
                     </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Tanggal Pembelian</label>
+                            <label class="form-label">No. Rekening</label>
+                            <input name="account_number" class="form-control" placeholder="Contoh: 1234567890">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">A.N. Rekening</label>
+                            <input name="account_name" class="form-control" placeholder="Contoh: PT Belanja Kuota">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Tanggal Pembelian (Opsional)</label>
                             <input type="datetime-local" name="purchase_date" class="form-control">
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Tanggal Penerimaan</label>
+                            <label class="form-label">Tanggal Penerimaan (Opsional)</label>
                             <input type="datetime-local" name="receive_date" class="form-control">
                         </div>
                     </div>

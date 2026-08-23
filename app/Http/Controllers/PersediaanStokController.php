@@ -44,8 +44,13 @@ class PersediaanStokController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'owner_name' => 'required|string|max:255',
+            'company_name' => 'required|string|max:255',
+            'division' => 'required|string|in:server,gudang',
+            'payment_method' => 'required|string|in:bank,va',
             'bank_id' => 'nullable|integer',
+            'cicilan' => 'required|string|in:Cicilan,Tanpa Cicilan',
+            'po_date' => 'required|date',
+            'owner_name' => 'nullable|string|max:255',
             'account_number' => 'nullable|string|max:100',
             'account_name' => 'nullable|string|max:255',
             'purchase_date' => 'nullable|date',
@@ -68,11 +73,16 @@ class PersediaanStokController extends Controller
 
         $record = new PersediaanStok();
         $record->user_id = Auth::id();
-        $record->owner_name = $data['owner_name'];
+        $record->company_name = $data['company_name'];
+        $record->division = $data['division'];
+        $record->payment_method = $data['payment_method'];
+        $record->cicilan = $data['cicilan'];
+        $record->po_date = $data['po_date'];
+        $record->owner_name = !empty($data['owner_name']) ? $data['owner_name'] : $data['company_name'];
         $record->bank_id = $data['bank_id'] ?? null;
         $record->account_number = $data['account_number'] ?? null;
         $record->account_name = $data['account_name'] ?? null;
-        $record->purchase_date = $data['purchase_date'] ?? null;
+        $record->purchase_date = $data['purchase_date'] ?? $data['po_date'] ?? null;
         $record->receive_date = $data['receive_date'] ?? null;
         $record->items = $items;
         $record->total_amount = $total;
