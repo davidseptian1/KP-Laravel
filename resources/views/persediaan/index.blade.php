@@ -362,197 +362,220 @@
 
 @push('scripts')
 <script>
-    // ============================================================
-    //  TRANSFER PROOF — paste zone & file input handler
-    // ============================================================
-    (function () {
-        var _pastedDataUrl = null; // store the captured data URL
+(function () {
+    'use strict';
 
-        function showTransferPreview(dataUrl) {
-            _pastedDataUrl = dataUrl;
+    // Simpan blob asli — BUKAN base64 — untuk preview cepat (ObjectURL)
+    var _blob = null;
+    var _objectUrl = null;
 
-            // Update hidden input immediately
-            var hidden = document.getElementById('transfer_proof_base64');
-            if (hidden) hidden.value = dataUrl;
+    // -------------------------------------------------------
+    //  Tampilkan preview dari blob/file (tanpa konversi base64)
+    // -------------------------------------------------------
+    function showPreviewFromBlob(blob) {
+        _blob = blob;
+        if (_objectUrl) URL.revokeObjectURL(_objectUrl); // bebaskan memori lama
+        _objectUrl = URL.createObjectURL(blob);
 
-            // Also push to the file input via DataTransfer so backend receives multipart file
-            try {
-                var arr = dataUrl.split(',');
-                var mimeMatch = arr[0].match(/:(.*?);/);
-                var mime = mimeMatch ? mimeMatch[1] : 'image/png';
-                var bstr = atob(arr[1].replace(/\s/g, ''));
-                var n = bstr.length;
-                var u8 = new Uint8Array(n);
-                while (n--) u8[n] = bstr.charCodeAt(n);
-                var file = new File([u8], 'bukti_transfer_' + Date.now() + '.png', { type: mime });
-                var dt = new DataTransfer();
-                dt.items.add(file);
-                var fi = document.getElementById('transfer-proof-file');
-                if (fi) fi.files = dt.files;
-            } catch (ex) {
-                console.warn('DataTransfer error (will use base64 fallback):', ex);
-            }
+        // Salin blob ke file input agar backend bisa pakai multipart upload
+        try {
+            var dt = new DataTransfer();
+            dt.items.add(new File([blob], 'bukti_transfer_' + Date.now() + '.' + (blob.type.split('/')[1] || 'png'), { type: blob.type }));
+            var fi = document.getElementById('transfer-proof-file');
+            if (fi) fi.files = dt.files;
+        } catch (ex) { /* fallback ke base64 saat submit */ }
 
-            // Show preview inside the paste zone
-            var hint = document.getElementById('transfer-paste-hint');
-            var preview = document.getElementById('transfer-paste-preview');
-            if (hint) hint.style.display = 'none';
-            if (preview) {
-                preview.style.display = 'block';
-                // z-index 10 agar tombol hapus bisa diklik (di atas textarea opacity:0)
-                preview.innerHTML =
-                    '<div style="position:relative;display:inline-block;z-index:10;">' +
-                    '<img src="' + dataUrl + '" style="max-width:100%;max-height:220px;border-radius:6px;border:2px solid #28a745;display:block;" />' +
-                    '<span class="badge bg-success" style="position:absolute;bottom:4px;left:4px;">Gambar Terpasang ✓</span>' +
-                    '<button type="button" id="remove-transfer-preview" class="btn btn-sm btn-danger" style="position:absolute;top:4px;right:4px;padding:2px 8px;z-index:20;">×</button>' +
-                    '</div>';
+        // Reset hidden field (akan diisi saat submit jika file input gagal)
+        var hidden = document.getElementById('transfer_proof_base64');
+        if (hidden) hidden.value = '';
 
-                var rmBtn = document.getElementById('remove-transfer-preview');
-                if (rmBtn) {
-                    rmBtn.addEventListener('click', function (ev) {
-                        ev.stopPropagation();
-                        ev.preventDefault();
-                        _pastedDataUrl = null;
-                        var h = document.getElementById('transfer_proof_base64');
-                        if (h) h.value = '';
-                        var fi2 = document.getElementById('transfer-proof-file');
-                        if (fi2) fi2.value = '';
-                        preview.style.display = 'none';
-                        preview.innerHTML = '';
-                        if (hint) hint.style.display = 'flex';
-                        var zone2 = document.getElementById('transfer-paste-zone');
-                        if (zone2) zone2.style.borderColor = '#0d6efd';
-                    });
-                }
-            }
+        renderPreview(_objectUrl);
+    }
 
-            // Turn zone border green as feedback
-            var zone = document.getElementById('transfer-paste-zone');
-            if (zone) zone.style.borderColor = '#28a745';
-        }
-
-        function extractImageFromClipboard(clipboardData) {
-            if (!clipboardData) return null;
-
-            // 1. Try files[]
-            if (clipboardData.files && clipboardData.files.length > 0) {
-                for (var i = 0; i < clipboardData.files.length; i++) {
-                    if (clipboardData.files[i].type.startsWith('image/')) {
-                        return clipboardData.files[i];
-                    }
-                }
-            }
-
-            // 2. Try items[]
-            if (clipboardData.items && clipboardData.items.length > 0) {
-                for (var j = 0; j < clipboardData.items.length; j++) {
-                    var item = clipboardData.items[j];
-                    if (item.type && item.type.startsWith('image/') && item.getAsFile) {
-                        var blob = item.getAsFile();
-                        if (blob) return blob;
-                    }
-                }
-            }
-
-            return null;
-        }
-
-        // -------------------------------------------------------
-        // Attach paste listener ke TEXTAREA TERSEMBUNYI
-        // (div biasa tidak menerima paste event, hanya editable element)
-        // -------------------------------------------------------
-        var pasteInput = document.getElementById('transfer-paste-input');
+    function renderPreview(src) {
+        var hint = document.getElementById('transfer-paste-hint');
+        var preview = document.getElementById('transfer-paste-preview');
         var zone = document.getElementById('transfer-paste-zone');
 
-        function handleTransferPaste(e) {
-            var blob = extractImageFromClipboard(e.clipboardData || window.clipboardData);
-            if (blob) {
-                e.preventDefault();
-                var reader = new FileReader();
-                reader.onload = function (ev) { showTransferPreview(ev.target.result); };
-                reader.readAsDataURL(blob);
-                // Kosongkan textarea agar teks tidak menumpuk
-                setTimeout(function () {
-                    if (pasteInput) pasteInput.value = '';
-                }, 0);
-            } else {
-                // Tidak ada gambar di clipboard — feedback merah sebentar
-                if (zone) {
-                    zone.style.borderColor = '#dc3545';
-                    setTimeout(function () {
-                        var h = document.getElementById('transfer_proof_base64');
-                        zone.style.borderColor = (h && h.value) ? '#28a745' : '#0d6efd';
-                    }, 1500);
+        if (hint) hint.style.display = 'none';
+        if (zone) zone.style.borderColor = '#28a745';
+
+        if (preview) {
+            preview.style.display = 'block';
+            preview.innerHTML =
+                '<div style="position:relative;display:inline-block;z-index:10;">' +
+                '<img src="' + src + '" style="max-width:100%;max-height:200px;border-radius:6px;border:2px solid #28a745;display:block;" />' +
+                '<span class="badge bg-success" style="position:absolute;bottom:4px;left:4px;">✓ Gambar Terpasang</span>' +
+                '<button type="button" id="remove-transfer-preview" class="btn btn-sm btn-danger" ' +
+                'style="position:absolute;top:4px;right:4px;padding:2px 8px;z-index:20;" title="Hapus gambar">×</button>' +
+                '</div>';
+
+            var rm = document.getElementById('remove-transfer-preview');
+            if (rm) {
+                rm.addEventListener('click', function (ev) {
+                    ev.stopPropagation(); ev.preventDefault();
+                    clearTransfer();
+                });
+            }
+        }
+    }
+
+    function clearTransfer() {
+        _blob = null;
+        if (_objectUrl) { URL.revokeObjectURL(_objectUrl); _objectUrl = null; }
+        var hidden = document.getElementById('transfer_proof_base64');
+        if (hidden) hidden.value = '';
+        var fi = document.getElementById('transfer-proof-file');
+        if (fi) fi.value = '';
+        var preview = document.getElementById('transfer-paste-preview');
+        if (preview) { preview.style.display = 'none'; preview.innerHTML = ''; }
+        var hint = document.getElementById('transfer-paste-hint');
+        if (hint) hint.style.display = 'flex';
+        var zone = document.getElementById('transfer-paste-zone');
+        if (zone) zone.style.borderColor = '#0d6efd';
+        var input = document.getElementById('transfer-paste-input');
+        if (input) input.value = '';
+    }
+
+    // -------------------------------------------------------
+    //  Extract gambar dari clipboard event
+    // -------------------------------------------------------
+    function getBlobFromClipboard(clipboardData) {
+        if (!clipboardData) return null;
+        // 1. files[]
+        if (clipboardData.files && clipboardData.files.length > 0) {
+            for (var i = 0; i < clipboardData.files.length; i++) {
+                if (clipboardData.files[i].type.startsWith('image/')) return clipboardData.files[i];
+            }
+        }
+        // 2. items[]
+        if (clipboardData.items && clipboardData.items.length > 0) {
+            for (var j = 0; j < clipboardData.items.length; j++) {
+                var it = clipboardData.items[j];
+                if (it.type && it.type.startsWith('image/') && it.getAsFile) {
+                    var b = it.getAsFile();
+                    if (b) return b;
                 }
             }
         }
+        return null;
+    }
 
+    // -------------------------------------------------------
+    //  Handle paste event
+    // -------------------------------------------------------
+    function handlePaste(e) {
+        var blob = getBlobFromClipboard(e.clipboardData || window.clipboardData);
+        if (!blob) {
+            // Feedback border merah sebentar
+            var zone = document.getElementById('transfer-paste-zone');
+            if (zone) {
+                zone.style.borderColor = '#dc3545';
+                setTimeout(function () {
+                    zone.style.borderColor = _blob ? '#28a745' : '#0d6efd';
+                }, 1200);
+            }
+            return;
+        }
+        e.preventDefault();
+        showPreviewFromBlob(blob);
+        // Bersihkan textarea agar tidak ada teks aneh
+        setTimeout(function () {
+            var inp = document.getElementById('transfer-paste-input');
+            if (inp) inp.value = '';
+        }, 0);
+    }
+
+    // -------------------------------------------------------
+    //  Saat form submit: konversi blob → base64 HANYA jika
+    //  file input tidak berhasil (sebagai fallback)
+    // -------------------------------------------------------
+    function ensureBase64BeforeSubmit(form) {
+        form.addEventListener('submit', function (e) {
+            var fi = document.getElementById('transfer-proof-file');
+            var fiHasFile = fi && fi.files && fi.files.length > 0;
+            var hidden = document.getElementById('transfer_proof_base64');
+            var hiddenHasValue = hidden && hidden.value.length > 0;
+
+            // Jika file input sudah punya file, backend pakai multipart → tidak perlu base64
+            if (fiHasFile || hiddenHasValue || !_blob) return;
+
+            // Fallback: konversi blob ke base64 secara sinkron saat submit
+            // (hanya terjadi jika DataTransfer gagal)
+            try {
+                var reader = new FileReader();
+                reader.readAsDataURL(_blob);
+                // Ini async, jadi kita tunda submit
+                e.preventDefault();
+                reader.onload = function (ev) {
+                    if (hidden) hidden.value = ev.target.result;
+                    form.submit();
+                };
+            } catch (ex) {
+                // Biarkan submit tanpa gambar
+            }
+        });
+    }
+
+    // -------------------------------------------------------
+    //  Init setelah DOM siap
+    // -------------------------------------------------------
+    function init() {
+        // Paste dari textarea tersembunyi
+        var pasteInput = document.getElementById('transfer-paste-input');
         if (pasteInput) {
-            pasteInput.addEventListener('paste', handleTransferPaste);
+            pasteInput.addEventListener('paste', handlePaste);
         }
 
-        // Global fallback: jika paste terjadi di tempat lain dalam modal
+        // Global fallback: paste di mana saja dalam modal
         document.addEventListener('paste', function (e) {
             var active = document.activeElement;
-            // Skip jika fokus di invoice-text atau transfer-paste-input (sudah ditangani)
             if (active && (active.id === 'invoice-text' || active.id === 'transfer-paste-input')) return;
-
-            // Hanya jika modal terbuka
             var modal = document.getElementById('modalPersediaan');
             if (!modal || !modal.classList.contains('show')) return;
-
-            var blob = extractImageFromClipboard(e.clipboardData || window.clipboardData);
+            var blob = getBlobFromClipboard(e.clipboardData || window.clipboardData);
             if (blob) {
                 e.preventDefault();
-                var reader = new FileReader();
-                reader.onload = function (ev) { showTransferPreview(ev.target.result); };
-                reader.readAsDataURL(blob);
-                // Fokuskan textarea agar user tahu
+                showPreviewFromBlob(blob);
                 if (pasteInput) pasteInput.focus();
             }
         });
 
-        // File input change → show preview
+        // File input biasa
         var fileInput = document.getElementById('transfer-proof-file');
         if (fileInput) {
             fileInput.addEventListener('change', function () {
                 var f = fileInput.files && fileInput.files[0];
-                if (!f) return;
-                var reader = new FileReader();
-                reader.onload = function (ev) { showTransferPreview(ev.target.result); };
-                reader.readAsDataURL(f);
+                if (!f) { clearTransfer(); return; }
+                _blob = f;
+                if (_objectUrl) URL.revokeObjectURL(_objectUrl);
+                _objectUrl = URL.createObjectURL(f);
+                renderPreview(_objectUrl);
+                // hidden tidak diperlukan karena file sudah ada di input
+                var hidden = document.getElementById('transfer_proof_base64');
+                if (hidden) hidden.value = '';
             });
         }
 
-        // On form submit: ensure base64 is set
-        document.addEventListener('DOMContentLoaded', function () {
-            var form = document.getElementById('persediaan-form');
-            if (form) {
-                form.addEventListener('submit', function () {
-                    if (_pastedDataUrl) {
-                        var h = document.getElementById('transfer_proof_base64');
-                        if (h && !h.value) h.value = _pastedDataUrl;
-                    }
-                });
-            }
-        });
+        // Form submit fallback
+        var form = document.getElementById('persediaan-form');
+        if (form) ensureBase64BeforeSubmit(form);
 
-        // Invoice-text paste: image → base64 field
+        // Invoice paste (gambar)
         var invoiceText = document.getElementById('invoice-text');
         if (invoiceText) {
             invoiceText.addEventListener('paste', function (e) {
-                var blob = extractImageFromClipboard(e.clipboardData || window.clipboardData);
-                if (blob) {
-                    e.preventDefault();
-                    var reader = new FileReader();
-                    reader.onload = function (ev) {
-                        var h = document.getElementById('invoice_file_base64');
-                        if (h) h.value = ev.target.result;
-                        var prev = document.getElementById('invoice-file-preview');
-                        if (prev) prev.innerHTML = '<img src="' + ev.target.result + '" style="max-width:200px;max-height:200px;border-radius:4px;margin-top:6px;" />';
-                    };
-                    reader.readAsDataURL(blob);
-                }
+                var blob = getBlobFromClipboard(e.clipboardData || window.clipboardData);
+                if (!blob) return;
+                e.preventDefault();
+                var reader = new FileReader();
+                reader.onload = function (ev) {
+                    var h = document.getElementById('invoice_file_base64');
+                    if (h) h.value = ev.target.result;
+                    var prev = document.getElementById('invoice-file-preview');
+                    if (prev) prev.innerHTML = '<img src="' + ev.target.result + '" style="max-width:200px;max-height:140px;border-radius:4px;margin-top:6px;border:1px solid #ccc;" />';
+                };
+                reader.readAsDataURL(blob);
             });
         }
 
@@ -567,32 +590,25 @@
                     var h = document.getElementById('invoice_file_base64');
                     if (h) h.value = ev.target.result;
                     var prev = document.getElementById('invoice-file-preview');
-                    if (prev) prev.innerHTML = '<img src="' + ev.target.result + '" style="max-width:200px;max-height:200px;border-radius:4px;margin-top:6px;" />';
+                    if (prev) prev.innerHTML = '<img src="' + ev.target.result + '" style="max-width:200px;max-height:140px;border-radius:4px;margin-top:6px;border:1px solid #ccc;" />';
                 };
                 reader.readAsDataURL(f);
             });
         }
-    })();
+    }
 
-    document.addEventListener('DOMContentLoaded', function () {
-        const form = document.getElementById('persediaan-form');
-        if (form) {
-            form.addEventListener('submit', function () {
-                const itemsTable = document.querySelector('#items-table tbody');
-                let items = [];
-                if (itemsTable) {
-                    items = Array.from(itemsTable.querySelectorAll('tr')).map(r => ({
-                        name: (r.querySelector('.item-name') && r.querySelector('.item-name').value) || '',
-                        qty: (r.querySelector('.item-qty') && r.querySelector('.item-qty').value) || 0,
-                        price: (r.querySelector('.item-price') && r.querySelector('.item-price').value) || 0,
-                    }));
-                }
-                const itemsJsonInput = document.getElementById('items-json');
-                if (itemsJsonInput) itemsJsonInput.value = JSON.stringify(items);
-            });
-        }
-    });
+    // Jalankan setelah DOM ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
+</script>
+@endpush
 
+@push('scripts')
+<script>
     // Inline detail toggle for persediaan rows
     (function(){
         function closeOpenDetail() {
@@ -641,7 +657,6 @@
 
         // Use event delegation to reliably handle clicks on rows and buttons
         document.addEventListener('click', function(e){
-            // button click - toggle corresponding row
             const btn = e.target.closest('.js-persediaan-open-detail');
             if (btn) {
                 e.preventDefault();
@@ -651,8 +666,6 @@
                 if (row) toggleRow(row);
                 return;
             }
-
-            // row click (but not clicks on buttons/links)
             const row = e.target.closest('.js-persediaan-row');
             if (row) {
                 if (e.target.closest('button') || e.target.closest('a')) return;
@@ -662,22 +675,17 @@
 
         function toggleRow(row) {
             const next = row.nextElementSibling;
-            // if detail open for this row, close it
             if (next && next.classList && next.classList.contains('persediaan-detail-row')) {
                 const btnHere = row.querySelector('.js-persediaan-open-detail');
                 if (btnHere) btnHere.textContent = 'Lihat';
                 next.remove();
                 return;
             }
-
-            // otherwise close any other open detail and open this one
             closeOpenDetail();
-
             const items = JSON.parse(row.getAttribute('data-items') || '[]');
             const transferPath = row.getAttribute('data-transfer-path');
             const invoicePath = row.getAttribute('data-invoice-path');
             const id = row.getAttribute('data-id');
-
             const tr = document.createElement('tr');
             tr.className = 'persediaan-detail-row';
             tr.innerHTML = buildDetailHtml(items, transferPath, invoicePath, id);
