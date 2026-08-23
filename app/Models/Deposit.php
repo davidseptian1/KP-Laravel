@@ -25,6 +25,7 @@ class Deposit extends Model
         'nama_rekening',
         'reply_tiket',
         'reply_tiket_image',
+        'reply_tiket_images',
         'reply_penambahan',
         'reply_penambahan_type',
         'reply_penambahan_image',
@@ -46,7 +47,21 @@ class Deposit extends Model
         'jam' => 'datetime:H:i',
         'is_deleted_by_staff' => 'boolean',
         'staff_deleted_at' => 'datetime',
+        'reply_tiket_images' => 'array',
     ];
+
+    public function getReplyTiketImagesListAttribute(): array
+    {
+        if (is_array($this->reply_tiket_images) && !empty($this->reply_tiket_images)) {
+            return array_values(array_filter($this->reply_tiket_images));
+        }
+
+        if (!empty($this->reply_tiket_image)) {
+            return [$this->reply_tiket_image];
+        }
+
+        return [];
+    }
 
     public function user()
     {

@@ -64,7 +64,7 @@
                     <hr class="my-3">
                 @endif
 
-                <form method="POST" action="{{ route('deposit.form.submit', $form->token) }}" id="depositRequestForm" autocomplete="off">
+                <form method="POST" action="{{ route('deposit.form.submit', $form->token) }}" enctype="multipart/form-data" id="depositRequestForm" autocomplete="off">
                     @csrf
                     <input type="hidden" name="reply_penambahan" value="Menunggu Konfirmasi Admin">
                     <div class="alert alert-warning py-2 mb-3">
@@ -140,6 +140,16 @@
                     <div class="mb-3">
                         <label class="form-label">Reply Tiket</label>
                         <textarea name="reply_tiket" class="form-control js-auto-resize-textarea" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Upload / Paste Gambar Reply Tiket</label>
+                        <input type="file" name="reply_tiket_images[]" id="publicReplyTiketImagesInput" class="form-control d-none" accept="image/png,image/jpeg,image/jpg,image/webp" multiple>
+                        <div class="border rounded p-3 text-center bg-light" id="publicReplyTiketPasteZone" tabindex="0" style="cursor: pointer; min-height: 80px;">
+                            <i class="ti ti-photo-plus fs-3 text-secondary mb-1 d-block"></i>
+                            <span class="fw-semibold">Klik untuk pilih gambar</span> atau <span class="badge bg-primary">Ctrl + V</span> untuk paste gambar dari clipboard
+                            <small class="text-muted d-block mt-1">Bisa lebih dari 1 gambar (PNG, JPG, WEBP, Max 5MB per gambar)</small>
+                        </div>
+                        <div class="row g-2 mt-2" id="publicReplyTiketPreviewGallery"></div>
                     </div>
                     <div id="submitNoted" class="alert alert-info mt-2 d-none">
                         Noted: Anda telah melakukan pengajuan, jika anda ingin melakukan pengajuan ulang klik button "Pengajuan Ulang".
@@ -590,9 +600,133 @@
                             syncNoRekFromBank(this.value);
                         }
                     };
+        // Public Form Multi-Image Paste & Upload Handler
+        (function () {
+            const pasteZone = document.getElementById('publicReplyTiketPasteZone');
+            const fileInput = document.getElementById('publicReplyTiketImagesInput');
+            const previewGallery = document.getElementById('publicReplyTiketPreviewGallery');
+
+            if (!pasteZone || !fileInput || !previewGallery) return;
+
+            let dt = new DataTransfer();
+
+            function renderGallery() {
+                previewGallery.innerHTML = '';
+                const files = dt.files;
+                if (files.length === 0) {
+                    return;
+                }
+
+                Array.from(files).forEach((file, index) => {
+                    const col = document.createElement('div');
+                    col.className = 'col-6 col-sm-4 col-md-3 position-relative';
+
+                    const card = document.createElement('div');
+                    card.className = 'card h-100 border shadow-sm p-1 text-center';
+
+                    const img = document.createElement('img');
+                    img.className = 'card-img-top rounded';
+                    img.style.height = '90px';
+                    img.style.objectFit = 'cover';
+                    img.src = URL.createObjectURL(file);
+
+                    const cardBody = document.createElement('div');
+                    cardBody.className = 'p-1';
+
+                    const nameText = document.createElement('small');
+                    nameText.className = 'd-block text-truncate text-muted';
+                    nameText.style.fontSize = '0.7rem';
+                    nameText.textContent = file.name || `Gambar ${index + 1}`;
+
+                    const removeBtn = document.createElement('button');
+                    removeBtn.type = 'button';
+                    removeBtn.className = 'btn btn-danger btn-sm position-absolute top-0 end-0 m-1 rounded-circle p-0';
+                    removeBtn.style.width = '22px';
+                    removeBtn.style.height = '22px';
+                    removeBtn.style.lineHeight = '1';
+                    removeBtn.style.fontSize = '12px';
+                    removeBtn.innerHTML = '&times;';
+                    removeBtn.title = 'Hapus gambar ini';
+                    removeBtn.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        removeFile(index);
+                    });
+
+                    cardBody.appendChild(nameText);
+                    card.appendChild(img);
+                    card.appendChild(cardBody);
+                    col.appendChild(card);
+                    col.appendChild(removeBtn);
+                    previewGallery.appendChild(col);
+                });
+            }
+
+            function removeFile(index) {
+                const newDt = new DataTransfer();
+                Array.from(dt.files).forEach((file, i) => {
+                    if (i !== index) {
+                        newDt.items.add(file);
+                    }
+                });
+                dt = newDt;
+                fileInput.files = dt.files;
+                renderGallery();
+            }
+
+            function addFiles(newFiles) {
+                Array.from(newFiles).forEach(file => {
+                    if (file.type.startsWith('image/')) {
+                        dt.items.add(file);
+                    }
+                });
+                fileInput.files = dt.files;
+                renderGallery();
+            }
+
+            pasteZone.addEventListener('click', function () {
+                fileInput.click();
+            });
+
+            fileInput.addEventListener('change', function () {
+                if (this.files && this.files.length > 0) {
+                    addFiles(this.files);
                 }
             });
-        }
+
+            document.addEventListener('paste', function (event) {
+                const activeEl = document.activeElement;
+                const form = document.getElementById('depositRequestForm');
+                if (form && (form.contains(activeEl) || activeEl === document.body)) {
+                    const items = (event.clipboardData || window.clipboardData)?.items;
+                    if (!items) return;
+
+                    let hasImage = false;
+                    for (let i = 0; i < items.length; i++) {
+                        if (items[i].type.indexOf('image') !== -1) {
+                            const file = items[i].getAsFile();
+                            if (file) {
+                                dt.items.add(file);
+                                hasImage = true;
+                            }
+                        }
+                    }
+                    if (hasImage) {
+                        fileInput.files = dt.files;
+                        renderGallery();
+                        event.preventDefault();
+                    }
+                }
+            });
+
+            const resetBtn = document.getElementById('btnResetAll');
+            if (resetBtn) {
+                resetBtn.addEventListener('click', function () {
+                    dt = new DataTransfer();
+                    fileInput.files = dt.files;
+                    renderGallery();
+                });
+            }
+        })();
     })();
 </script>
 @endpush

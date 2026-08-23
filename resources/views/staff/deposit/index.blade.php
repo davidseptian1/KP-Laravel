@@ -417,7 +417,23 @@
                                     <td>{{ $item->server }}</td>
                                     <td>{{ $item->no_rek }}</td>
                                     <td class="cell-nama-rekening">{{ $item->nama_rekening }}</td>
-                                    <td class="cell-reply-tiket">{{ $item->reply_tiket ?? '-' }}</td>
+                                    <td class="cell-reply-tiket">
+                                        @if (!empty($item->reply_tiket))
+                                            <div class="mb-1">{{ $item->reply_tiket }}</div>
+                                        @endif
+                                        @php $replyImages = $item->reply_tiket_images_list; @endphp
+                                        @if (!empty($replyImages))
+                                            <div class="d-flex flex-wrap gap-1 mt-1">
+                                                @foreach ($replyImages as $idx => $img)
+                                                    <a href="{{ route('deposit.request.reply-tiket-image', ['id' => $item->id, 'index' => $idx]) }}" target="_blank" class="btn btn-outline-primary btn-sm py-0 px-2" style="font-size: 0.72rem;">
+                                                        Lihat Gambar {{ count($replyImages) > 1 ? ($idx + 1) : '' }}
+                                                    </a>
+                                                @endforeach
+                                            </div>
+                                        @elseif (empty($item->reply_tiket))
+                                            -
+                                        @endif
+                                    </td>
                                     <td class="cell-reply-penambahan">{{ $item->reply_penambahan ?? 'Menunggu Konfirmasi Admin' }}</td>
                                     <td class="cell-bukti-transfer">
                                         @if (($item->bukti_transfer_admin_type ?? 'text') === 'image')
@@ -728,14 +744,13 @@
                         </div>
                         <div class="col-12">
                             <label class="form-label">Upload / Paste Gambar Reply Tiket</label>
-                            <input type="file" name="reply_tiket_image" id="replyTiketImageInput" class="form-control" accept="image/png,image/jpeg,image/jpg,image/webp">
-                            <small class="text-muted d-block mt-1">Bisa Ctrl+V dari clipboard saat fokus di area paste.</small>
-                            <div class="border rounded p-2 mt-2" id="replyTiketPasteZone" tabindex="0" style="min-height:60px;">
-                                Paste gambar di sini (Ctrl+V)
+                            <input type="file" name="reply_tiket_images[]" id="replyTiketImagesInput" class="form-control d-none" accept="image/png,image/jpeg,image/jpg,image/webp" multiple>
+                            <div class="border rounded p-3 text-center bg-light" id="replyTiketPasteZone" tabindex="0" style="cursor: pointer; min-height: 80px;">
+                                <i class="ti ti-photo-plus fs-3 text-secondary mb-1 d-block"></i>
+                                <span class="fw-semibold">Klik untuk pilih gambar</span> atau <span class="badge bg-primary">Ctrl + V</span> untuk paste gambar dari clipboard
+                                <small class="text-muted d-block mt-1">Bisa lebih dari 1 gambar (PNG, JPG, WEBP, Max 5MB per gambar)</small>
                             </div>
-                            <div class="mt-2" id="replyTiketPreviewWrap" style="display:none;">
-                                <img src="" alt="Preview Reply Tiket" class="img-fluid rounded border" id="replyTiketPreview" style="max-height:180px;">
-                            </div>
+                            <div class="row g-2 mt-2" id="replyTiketPreviewGallery"></div>
                         </div>
                     </div>
                 </div>
@@ -773,20 +788,80 @@
         const staffRequestDepositForm = document.getElementById('staffRequestDepositForm');
         const staffRequestDepositResetBtn = document.getElementById('staffRequestDepositResetBtn');
         const staffRequestDepositSubmitBtn = document.getElementById('staffRequestDepositSubmitBtn');
-        const replyTiketImageInput = document.getElementById('replyTiketImageInput');
+        const replyTiketImagesInput = document.getElementById('replyTiketImagesInput');
         const replyTiketPasteZone = document.getElementById('replyTiketPasteZone');
-        const replyTiketPreviewWrap = document.getElementById('replyTiketPreviewWrap');
-        const replyTiketPreview = document.getElementById('replyTiketPreview');
+        const replyTiketPreviewGallery = document.getElementById('replyTiketPreviewGallery');
 
-        function setReplyTiketPreview(file) {
-            if (!replyTiketPreview || !replyTiketPreviewWrap || !file) return;
+        let modalReplyTiketDt = new DataTransfer();
 
-            const reader = new FileReader();
-            reader.onload = function (event) {
-                replyTiketPreview.src = event.target.result;
-                replyTiketPreviewWrap.style.display = 'block';
-            };
-            reader.readAsDataURL(file);
+        function renderModalReplyTiketGallery() {
+            if (!replyTiketPreviewGallery) return;
+            replyTiketPreviewGallery.innerHTML = '';
+            const files = modalReplyTiketDt.files;
+            if (files.length === 0) return;
+
+            Array.from(files).forEach((file, index) => {
+                const col = document.createElement('div');
+                col.className = 'col-6 col-sm-4 col-md-3 position-relative';
+
+                const card = document.createElement('div');
+                card.className = 'card h-100 border shadow-sm p-1 text-center';
+
+                const img = document.createElement('img');
+                img.className = 'card-img-top rounded';
+                img.style.height = '80px';
+                img.style.objectFit = 'cover';
+                img.src = URL.createObjectURL(file);
+
+                const cardBody = document.createElement('div');
+                cardBody.className = 'p-1';
+
+                const nameText = document.createElement('small');
+                nameText.className = 'd-block text-truncate text-muted';
+                nameText.style.fontSize = '0.7rem';
+                nameText.textContent = file.name || `Gambar ${index + 1}`;
+
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.className = 'btn btn-danger btn-sm position-absolute top-0 end-0 m-1 rounded-circle p-0';
+                removeBtn.style.width = '22px';
+                removeBtn.style.height = '22px';
+                removeBtn.style.lineHeight = '1';
+                removeBtn.style.fontSize = '12px';
+                removeBtn.innerHTML = '&times;';
+                removeBtn.title = 'Hapus gambar ini';
+                removeBtn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    removeModalReplyTiketFile(index);
+                });
+
+                cardBody.appendChild(nameText);
+                card.appendChild(img);
+                card.appendChild(cardBody);
+                col.appendChild(card);
+                col.appendChild(removeBtn);
+                replyTiketPreviewGallery.appendChild(col);
+            });
+        }
+
+        function removeModalReplyTiketFile(index) {
+            const newDt = new DataTransfer();
+            Array.from(modalReplyTiketDt.files).forEach((file, i) => {
+                if (i !== index) newDt.items.add(file);
+            });
+            modalReplyTiketDt = newDt;
+            if (replyTiketImagesInput) replyTiketImagesInput.files = modalReplyTiketDt.files;
+            renderModalReplyTiketGallery();
+        }
+
+        function addModalReplyTiketFiles(newFiles) {
+            Array.from(newFiles).forEach(file => {
+                if (file.type.startsWith('image/')) {
+                    modalReplyTiketDt.items.add(file);
+                }
+            });
+            if (replyTiketImagesInput) replyTiketImagesInput.files = modalReplyTiketDt.files;
+            renderModalReplyTiketGallery();
         }
 
         function updateNotifStatusText() {
@@ -1786,32 +1861,44 @@
             });
         }
 
-        if (replyTiketImageInput) {
-            replyTiketImageInput.addEventListener('change', function () {
-                const file = this.files && this.files[0] ? this.files[0] : null;
-                if (file) setReplyTiketPreview(file);
+        if (replyTiketPasteZone && replyTiketImagesInput) {
+            replyTiketPasteZone.addEventListener('click', function () {
+                replyTiketImagesInput.click();
             });
-        }
 
-        if (replyTiketPasteZone && replyTiketImageInput) {
+            replyTiketImagesInput.addEventListener('change', function () {
+                if (this.files && this.files.length > 0) {
+                    addModalReplyTiketFiles(this.files);
+                }
+            });
+
             replyTiketPasteZone.addEventListener('paste', function (event) {
-                const items = (event.clipboardData || window.clipboardData).items;
+                const items = (event.clipboardData || window.clipboardData)?.items;
                 if (!items) return;
 
+                let hasImage = false;
                 for (let i = 0; i < items.length; i++) {
                     if (items[i].type.indexOf('image') !== -1) {
                         const file = items[i].getAsFile();
-                        if (!file) continue;
-
-                        const dataTransfer = new DataTransfer();
-                        dataTransfer.items.add(file);
-                        replyTiketImageInput.files = dataTransfer.files;
-
-                        setReplyTiketPreview(file);
-                        event.preventDefault();
-                        break;
+                        if (file) {
+                            modalReplyTiketDt.items.add(file);
+                            hasImage = true;
+                        }
                     }
                 }
+                if (hasImage) {
+                    replyTiketImagesInput.files = modalReplyTiketDt.files;
+                    renderModalReplyTiketGallery();
+                    event.preventDefault();
+                }
+            });
+        }
+
+        if (staffRequestDepositResetBtn) {
+            staffRequestDepositResetBtn.addEventListener('click', function () {
+                modalReplyTiketDt = new DataTransfer();
+                if (replyTiketImagesInput) replyTiketImagesInput.files = modalReplyTiketDt.files;
+                renderModalReplyTiketGallery();
             });
         }
 

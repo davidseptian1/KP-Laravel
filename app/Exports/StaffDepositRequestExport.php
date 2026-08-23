@@ -48,11 +48,12 @@ class StaffDepositRequestExport implements FromArray, WithHeadings, ShouldAutoSi
         $rows = [];
 
         foreach ($this->items as $item) {
-            $replyTiket = trim((string) ($item->reply_tiket ?? ''));
-            if (!empty($item->reply_tiket_image)) {
+            $replyImages = $item->reply_tiket_images_list;
+            if (!empty($replyImages)) {
+                $imgLabel = count($replyImages) > 1 ? '[' . count($replyImages) . ' Gambar]' : '[Image]';
                 $replyTiket = $replyTiket !== ''
-                    ? $replyTiket . ' [Image]'
-                    : 'Image';
+                    ? $replyTiket . ' ' . $imgLabel
+                    : $imgLabel;
             }
 
             $replyPenambahan = trim((string) ($item->reply_penambahan ?? ''));

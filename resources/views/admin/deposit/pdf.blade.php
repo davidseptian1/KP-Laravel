@@ -94,8 +94,17 @@
                     <td>{{ $item->bank }}</td>
                     <td>{{ $item->server }}</td>
                     <td>{{ $item->no_rek }}</td>
-                    <td class="text-right">{{ number_format((float) ($item->nominal ?? 0), 0, ',', '.') }}</td>
-                    <td>{{ $item->reply_tiket ?? '-' }}</td>
+                    <td>
+                        @php
+                            $replyTiketText = trim((string) ($item->reply_tiket ?? ''));
+                            $replyImages = $item->reply_tiket_images_list;
+                            if (!empty($replyImages)) {
+                                $imgLabel = count($replyImages) > 1 ? '[' . count($replyImages) . ' Gambar]' : '[Image]';
+                                $replyTiketText = $replyTiketText !== '' ? $replyTiketText . ' ' . $imgLabel : $imgLabel;
+                            }
+                        @endphp
+                        {{ $replyTiketText !== '' ? $replyTiketText : '-' }}
+                    </td>
                     <td>{{ $item->reply_penambahan ?? '-' }}</td>
                     <td>{{ $buktiTransferAdmin }}</td>
                     <td>{{ $buktiBayarHutang }}</td>

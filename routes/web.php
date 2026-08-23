@@ -222,6 +222,7 @@ Route::middleware(['checkLogin', 'admin.activity.log'])->group(function () {
     Route::get('deposit/request/hutang/export-excel', [DepositFormController::class, 'exportExcelHutang'])->name('deposit.request.hutang.export-excel');
     Route::get('deposit/request/hutang/export-pdf', [DepositFormController::class, 'exportPdfHutang'])->name('deposit.request.hutang.export-pdf');
     Route::get('deposit/request/hutang/changes', [DepositFormController::class, 'changesHutang'])->name('deposit.request.hutang.changes');
+    Route::get('deposit/request/{id}/reply-tiket-image/{index?}', [DepositFormController::class, 'viewReplyTiketImage'])->name('deposit.request.reply-tiket-image');
     Route::get('deposit/request/{id}/transfer-admin-image', [DepositFormController::class, 'viewTransferAdminImage'])->name('deposit.request.transfer-admin-image');
     Route::put('deposit/request/{id}/reply-penambahan', [DepositFormController::class, 'updateReplyPenambahan'])->name('deposit.request.reply.update');
     Route::put('deposit/request/{id}/bukti-bayar-hutang', [DepositFormController::class, 'updateBuktiBayarHutang'])->name('deposit.request.bukti-bayar-hutang.update');
@@ -335,7 +336,7 @@ Route::middleware(['checkLogin', 'admin.activity.log'])->group(function () {
         Route::get('admin/deposit/monitoring-hutang/export-excel', [AdminDepositController::class, 'exportExcelHutang'])->name('admin.deposit.monitoring-hutang.export-excel');
         Route::get('admin/deposit/monitoring-hutang/export-pdf', [AdminDepositController::class, 'exportPdfHutang'])->name('admin.deposit.monitoring-hutang.export-pdf');
         Route::get('admin/deposit/monitoring-hutang/changes', [AdminDepositController::class, 'changesHutang'])->name('admin.deposit.monitoring-hutang.changes');
-        Route::get('admin/deposit/{id}/reply-tiket-image', [AdminDepositController::class, 'viewReplyTiketImage'])->name('admin.deposit.reply-tiket-image');
+        Route::get('admin/deposit/{id}/reply-tiket-image/{index?}', [AdminDepositController::class, 'viewReplyTiketImage'])->name('admin.deposit.reply-tiket-image');
         Route::get('admin/deposit/{id}/reply-image', [AdminDepositController::class, 'viewReplyImage'])->name('admin.deposit.reply-image');
         Route::get('admin/deposit/{id}/transfer-admin-image', [AdminDepositController::class, 'viewTransferAdminImage'])->name('admin.deposit.transfer-admin-image');
         Route::get('admin/deposit/{id}/bukti-bayar-hutang-image', [AdminDepositController::class, 'viewBuktiBayarHutangImage'])->name('admin.deposit.bukti-bayar-hutang-image');

@@ -577,6 +577,9 @@ class DepositFormController extends Controller
             'no_rek' => 'required|regex:/^[0-9]+$/|max:100',
             'nama_rekening' => 'required|string|max:255',
             'reply_tiket' => 'nullable|string',
+            'reply_tiket_image' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:5120',
+            'reply_tiket_images' => 'nullable|array',
+            'reply_tiket_images.*' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:5120',
             'jam' => 'nullable|date_format:H:i',
         ]);
 
@@ -603,6 +606,8 @@ class DepositFormController extends Controller
             })
             ->value('id');
 
+        $uploadedImages = $this->processReplyTiketImages($request);
+
         $depositPayload = [
             'user_id' => Auth::id(),
             'form_id' => $formId,
@@ -614,6 +619,8 @@ class DepositFormController extends Controller
             'no_rek' => $validated['no_rek'],
             'nama_rekening' => $validated['nama_rekening'],
             'reply_tiket' => $validated['reply_tiket'] ?? null,
+            'reply_tiket_images' => !empty($uploadedImages) ? $uploadedImages : null,
+            'reply_tiket_image' => !empty($uploadedImages) ? $uploadedImages[0] : null,
             'reply_penambahan' => 'Menunggu Konfirmasi Admin',
             'status' => 'pending',
             'jam' => $validated['jam'] ?? now()->format('H:i'),
@@ -688,8 +695,13 @@ class DepositFormController extends Controller
             'no_rek' => 'required|regex:/^[0-9]+$/|max:100',
             'nama_rekening' => 'required|string|max:255',
             'reply_tiket' => 'nullable|string',
+            'reply_tiket_image' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:5120',
+            'reply_tiket_images' => 'nullable|array',
+            'reply_tiket_images.*' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:5120',
             'jam' => 'nullable|date_format:H:i',
         ]);
+
+        $uploadedImages = $this->processReplyTiketImages($request);
 
         $depositPayload = [
             'user_id' => Auth::id(),
@@ -702,6 +714,8 @@ class DepositFormController extends Controller
             'no_rek' => $validated['no_rek'],
             'nama_rekening' => $validated['nama_rekening'],
             'reply_tiket' => $validated['reply_tiket'] ?? null,
+            'reply_tiket_images' => !empty($uploadedImages) ? $uploadedImages : null,
+            'reply_tiket_image' => !empty($uploadedImages) ? $uploadedImages[0] : null,
             'reply_penambahan' => 'Menunggu Konfirmasi Admin',
             'status' => 'pending',
             'jam' => $validated['jam'] ?? now()->format('H:i'),
@@ -966,5 +980,48 @@ class DepositFormController extends Controller
         }
 
         return Storage::disk('local')->response($path);
+    }
+
+    public function viewReplyTiketImage(int $id, int $index = 0)
+    {
+        $item = Deposit::where('id', $id)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
+
+        $images = $item->reply_tiket_images_list;
+        $path = $images[$index] ?? null;
+
+        if (!$path || !Storage::disk('local')->exists($path)) {
+            return redirect()->route('deposit.request.index')
+                ->with('error', 'Gambar reply tiket tidak ditemukan');
+        }
+
+        return Storage::disk('local')->response($path);
+    }
+
+    private function processReplyTiketImages(Request $request): array
+    {
+        $paths = [];
+
+        if ($request->hasFile('reply_tiket_images')) {
+            $files = $request->file('reply_tiket_images');
+            if (!is_array($files)) {
+                $files = [$files];
+            }
+            foreach ($files as $file) {
+                if ($file && $file->isValid()) {
+                    $paths[] = $file->store('deposits', 'local');
+                }
+            }
+        }
+
+        if (empty($paths) && $request->hasFile('reply_tiket_image')) {
+            $file = $request->file('reply_tiket_image');
+            if ($file && $file->isValid()) {
+                $paths[] = $file->store('deposits', 'local');
+            }
+        }
+
+        return $paths;
     }
 }

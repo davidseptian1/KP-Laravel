@@ -56,8 +56,15 @@
                         @if (!empty($item->reply_tiket))
                             <div class="mb-1">{{ $item->reply_tiket }}</div>
                         @endif
-                        @if (!empty($item->reply_tiket_image))
-                            <a href="{{ route('admin.deposit.reply-tiket-image', $item->id) }}" target="_blank" class="btn btn-outline-primary btn-sm">Lihat Gambar</a>
+                        @php $replyImages = $item->reply_tiket_images_list; @endphp
+                        @if (!empty($replyImages))
+                            <div class="d-flex flex-wrap gap-1 mt-1">
+                                @foreach ($replyImages as $idx => $img)
+                                    <a href="{{ route('admin.deposit.reply-tiket-image', ['id' => $item->id, 'index' => $idx]) }}" target="_blank" class="btn btn-outline-primary btn-sm py-0 px-2" style="font-size: 0.72rem;">
+                                        Lihat Gambar {{ count($replyImages) > 1 ? ($idx + 1) : '' }}
+                                    </a>
+                                @endforeach
+                            </div>
                         @elseif (empty($item->reply_tiket))
                             -
                         @endif

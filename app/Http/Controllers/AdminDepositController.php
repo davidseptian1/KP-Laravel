@@ -821,10 +821,11 @@ class AdminDepositController extends Controller
         return Storage::disk('local')->response($path);
     }
 
-    public function viewReplyTiketImage(int $id)
+    public function viewReplyTiketImage(int $id, int $index = 0)
     {
         $item = Deposit::findOrFail($id);
-        $path = $item->reply_tiket_image;
+        $images = $item->reply_tiket_images_list;
+        $path = $images[$index] ?? null;
 
         if (!$path || !Storage::disk('local')->exists($path)) {
             return redirect()->route('admin.deposit.monitoring')->with('error', 'Gambar reply tiket tidak ditemukan');
