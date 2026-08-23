@@ -386,12 +386,12 @@
     }
 
     document.addEventListener('paste', function(e){
-        const active = document.activeElement;
         const clipboard = (e.clipboardData || window.clipboardData);
         if (!clipboard) return;
+        const items = clipboard.items || [];
 
+        const active = document.activeElement;
         if (active && active.id === 'invoice-text') {
-            const items = clipboard.items || [];
             if (readClipboardImageAndSetPreview(items, 'invoice_file_base64', 'invoice-file-preview')) {
                 e.preventDefault();
                 return;
@@ -399,13 +399,15 @@
             return;
         }
 
-        if (active && active.id === 'transfer-paste-area') {
-            const items = clipboard.items || [];
+        const modal = document.getElementById('modalPersediaan');
+        const modalOpen = modal && (modal.classList.contains('show') || modal.style.display === 'block');
+        const inPasteArea = active && (active.id === 'transfer-paste-area' || active.closest('#transfer-paste-area') || active.closest('#modalPersediaan'));
+
+        if (modalOpen || inPasteArea) {
             if (readClipboardImageAndSetPreview(items, 'transfer_proof_base64', 'transfer-proof-preview')) {
                 e.preventDefault();
                 return;
             }
-            return;
         }
     });
 

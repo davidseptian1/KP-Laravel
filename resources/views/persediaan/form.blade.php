@@ -152,31 +152,23 @@
     }
 
     document.addEventListener('paste', function(e){
-        const active = document.activeElement;
         const clipboard = (e.clipboardData || window.clipboardData);
         if (!clipboard) return;
+        const items = clipboard.items || [];
 
-        // hanya tangani paste jika fokus di salah satu area yang didukung
+        const active = document.activeElement;
         if (active && active.id === 'invoice-text') {
-            const items = clipboard.items || [];
             if (readClipboardImageAndSetPreview(items, 'invoice_file_base64', 'invoice-file-preview')) {
                 e.preventDefault();
                 return;
             }
-            // jika bukan gambar, biarkan teks masuk ke textarea normal
             return;
         }
 
-        if (active && active.id === 'transfer-paste-area') {
-            const items = clipboard.items || [];
-            if (readClipboardImageAndSetPreview(items, 'transfer_proof_base64', 'transfer-proof-preview')) {
-                e.preventDefault();
-                return;
-            }
-            // jika teks ditempel di area transfer, biarkan teks ditampilkan (opsional)
+        if (readClipboardImageAndSetPreview(items, 'transfer_proof_base64', 'transfer-proof-preview')) {
+            e.preventDefault();
             return;
         }
-        // jika fokus bukan pada kedua area, abaikan paste (tidak mengambil gambar otomatis)
     });
 
     // file input change -> preview and set base64 for convenience (so both ways supported)

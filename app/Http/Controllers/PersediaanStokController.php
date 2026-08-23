@@ -29,11 +29,6 @@ class PersediaanStokController extends Controller
     public function viewFile($id, $field)
     {
         $item = PersediaanStok::findOrFail($id);
-        // only allow owner to view via this route
-        if ($item->user_id !== Auth::id()) {
-            abort(403);
-        }
-
         $path = $field === 'transfer' ? $item->transfer_proof_path : $item->invoice_path;
         if (!$path || !Storage::disk('public')->exists($path)) {
             abort(404);
@@ -64,7 +59,7 @@ class PersediaanStokController extends Controller
             'invoice_text' => 'nullable|string'
         ]);
 
-        $items = json_decode($data['items_json'], true) ?: [];
+        $items = json_decode($data['items_json'] ?? '[]', true) ?: [];
         $total = 0;
         foreach ($items as $i) {
             $subtotal = floatval($i['qty'] ?? 0) * floatval($i['price'] ?? 0);
@@ -95,10 +90,12 @@ class PersediaanStokController extends Controller
             // save base64 image to storage
             try {
                 $fileData = $data['transfer_proof_base64'];
-                if (preg_match('/^data:(image\/\w+);base64,/', $fileData, $type)) {
+                if (preg_match('/^data:(image\/[a-zA-Z0-9\+\-]+);base64,/', $fileData, $type)) {
                     $fileData = substr($fileData, strpos($fileData, ',') + 1);
                     $fileData = base64_decode($fileData);
-                    $ext = explode('/', $type[1])[1];
+                    $mime = $type[1];
+                    $ext = explode('/', $mime)[1] ?? 'png';
+                    if ($ext === 'jpeg') $ext = 'jpg';
                     $filename = 'persediaan/transfer_' . time() . '_' . bin2hex(random_bytes(6)) . '.' . $ext;
                     Storage::disk('public')->put($filename, $fileData);
                     $record->transfer_proof_path = $filename;
@@ -113,10 +110,12 @@ class PersediaanStokController extends Controller
         } elseif (!empty($data['invoice_file_base64'])) {
             try {
                 $fileData = $data['invoice_file_base64'];
-                if (preg_match('/^data:(application\/pdf|image\/\w+);base64,/', $fileData, $type)) {
+                if (preg_match('/^data:(application\/pdf|image\/[a-zA-Z0-9\+\-]+);base64,/', $fileData, $type)) {
                     $fileData = substr($fileData, strpos($fileData, ',') + 1);
                     $fileData = base64_decode($fileData);
-                    $ext = strpos($type[1], 'pdf') !== false ? 'pdf' : explode('/', $type[1])[1];
+                    $mime = $type[1];
+                    $ext = strpos($mime, 'pdf') !== false ? 'pdf' : (explode('/', $mime)[1] ?? 'png');
+                    if ($ext === 'jpeg') $ext = 'jpg';
                     $filename = 'persediaan/invoice_' . time() . '_' . bin2hex(random_bytes(6)) . '.' . $ext;
                     Storage::disk('public')->put($filename, $fileData);
                     $record->invoice_path = $filename;
