@@ -360,7 +360,7 @@
 
 @endsection
 
-@section('scripts')
+@push('scripts')
 <script>
     // ============================================================
     //  TRANSFER PROOF — paste zone & file input handler
@@ -688,4 +688,4 @@
         }
     })();
 </script>
-@endsection
+@endpush
