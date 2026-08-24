@@ -2,7 +2,7 @@
 <nav class="pc-sidebar">
     <div class="navbar-wrapper">
         <div class="m-header">
-            <a href="{{ auth()->check() && in_array(strtolower(trim(auth()->user()->jabatan ?? '')), ['admin sosmed', 'admin_sosmed'], true) ? route('admin.sosmed.dashboard') : route('dashboard') }}" class="b-brand text-primary">
+            <a href="{{ auth()->check() && strtolower(trim(auth()->user()->jabatan ?? '')) === 'po' ? route('po.dashboard') : (auth()->check() && in_array(strtolower(trim(auth()->user()->jabatan ?? '')), ['admin sosmed', 'admin_sosmed'], true) ? route('admin.sosmed.dashboard') : route('dashboard')) }}" class="b-brand text-primary">
                 <!-- ========   Logo   ============ -->
                 <div class="logo-icon">
                     <i class="ti ti-activity"></i>
@@ -14,10 +14,10 @@
             <ul class="pc-navbar">
 
                 <!-- Dashboard -->
-                <li class="pc-item {{ $menuDashboard ?? '' }}">
-                    <a href="{{ auth()->check() && in_array(strtolower(trim(auth()->user()->jabatan ?? '')), ['admin sosmed', 'admin_sosmed'], true) ? route('admin.sosmed.dashboard') : route('dashboard') }}" class="pc-link">
+                <li class="pc-item {{ $menuDashboard ?? '' }} {{ request()->routeIs('po.dashboard') ? 'active' : '' }}">
+                    <a href="{{ auth()->check() && strtolower(trim(auth()->user()->jabatan ?? '')) === 'po' ? route('po.dashboard') : (auth()->check() && in_array(strtolower(trim(auth()->user()->jabatan ?? '')), ['admin sosmed', 'admin_sosmed'], true) ? route('admin.sosmed.dashboard') : route('dashboard')) }}" class="pc-link">
                         <span class="pc-micon"><i class="ti ti-dashboard"></i></span>
-                        <span class="pc-mtext">Dashboard</span>
+                        <span class="pc-mtext">{{ auth()->check() && strtolower(trim(auth()->user()->jabatan ?? '')) === 'po' ? 'Dashboard PO' : 'Dashboard' }}</span>
                     </a>
                 </li>
 
@@ -146,6 +146,14 @@
                               style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 0.9rem; min-width: 34px; text-align: center; padding: 6px 10px; line-height: 1;">
                             {{ $jumlahDepositPending ?? 0 }}
                         </span>
+                    </a>
+                </li>
+
+                <!-- Dashboard PO (Khusus Role PO, Admin, Superadmin) -->
+                <li class="pc-item {{ request()->routeIs('po.*') ? 'active' : '' }}">
+                    <a href="{{ route('po.dashboard') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-package-import"></i></span>
+                        <span class="pc-mtext">Dashboard PO</span>
                     </a>
                 </li>
 
@@ -463,6 +471,21 @@
                     <a href="{{ route('persediaan.create') }}" class="pc-link">
                         <span class="pc-micon"><i class="ti ti-box"></i></span>
                         <span class="pc-mtext">Permintaan Persediaan</span>
+                    </a>
+                </li>
+
+                @endif
+
+                @if (auth()->check() && in_array(auth()->user()->jabatan, ['PO']))
+
+                <li class="pc-item pc-caption">
+                    <label>Dashboard PO</label>
+                </li>
+
+                <li class="pc-item {{ request()->routeIs('po.*') ? 'active' : '' }}">
+                    <a href="{{ route('po.dashboard') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-package-import"></i></span>
+                        <span class="pc-mtext">Dashboard PO</span>
                     </a>
                 </li>
 

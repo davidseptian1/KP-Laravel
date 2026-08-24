@@ -32,7 +32,15 @@ class AdminPersediaanStokController extends Controller
     public function viewFile($id, $field)
     {
         $item = PersediaanStok::findOrFail($id);
-        $path = $field === 'transfer' ? $item->transfer_proof_path : $item->invoice_path;
+        $path = null;
+        if ($field === 'transfer') {
+            $path = $item->transfer_proof_path;
+        } elseif ($field === 'goods') {
+            $path = $item->goods_photo_path;
+        } else {
+            $path = $item->invoice_path;
+        }
+
         if (!$path || !Storage::disk('public')->exists($path)) {
             abort(404);
         }
@@ -71,15 +79,64 @@ class AdminPersediaanStokController extends Controller
         $item = PersediaanStok::findOrFail($id);
 
         $validated = $request->validate([
-            'cicilan' => 'required|string|in:Cicilan,Tanpa Cicilan',
+            'cicilan' => 'required|string|in:Tanpa Cicilan,Cicilan,Cicilan 1,Cicilan 2,Cicilan 3',
             'receive_date' => 'nullable|date',
+            'transfer_proof' => 'nullable|image|max:5120',
+            'transfer_proof_base64' => 'nullable|string',
+            'status' => 'nullable|string|in:pending,approved,rejected,selesai',
         ]);
 
         $item->cicilan = $validated['cicilan'];
-        $item->receive_date = $validated['receive_date'] ?? null;
+        if (!empty($validated['receive_date'])) {
+            $item->receive_date = $validated['receive_date'];
+        }
+
+        // handle upload transfer proof by Admin
+        if ($request->hasFile('transfer_proof')) {
+            $item->transfer_proof_path = $request->file('transfer_proof')->store('persediaan', 'public');
+            // If transfer proof is provided, auto approve / ACC if currently pending
+            if ($item->status === 'pending') {
+                $item->status = 'approved';
+            }
+        } else {
+            $base64 = $request->input('transfer_proof_base64');
+            if (!empty($base64)) {
+                try {
+                    if (str_contains($base64, 'base64,')) {
+                        $parts = explode('base64,', $base64);
+                        $meta = $parts[0];
+                        $rawBase64 = end($parts);
+                        
+                        $ext = 'png';
+                        if (str_contains($meta, 'jpeg') || str_contains($meta, 'jpg')) {
+                            $ext = 'jpg';
+                        } elseif (str_contains($meta, 'webp')) {
+                            $ext = 'webp';
+                        }
+                        
+                        $fileData = base64_decode(str_replace(' ', '+', trim($rawBase64)));
+                        if ($fileData !== false && strlen($fileData) > 0) {
+                            $filename = 'persediaan/transfer_' . time() . '_' . bin2hex(random_bytes(6)) . '.' . $ext;
+                            Storage::disk('public')->put($filename, $fileData);
+                            $item->transfer_proof_path = $filename;
+                            if ($item->status === 'pending') {
+                                $item->status = 'approved';
+                            }
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    \Log::error('Admin base64 transfer proof save error: ' . $e->getMessage());
+                }
+            }
+        }
+
+        if (!empty($validated['status'])) {
+            $item->status = $validated['status'];
+        }
+
         $item->save();
 
-        return redirect()->back()->with('success', 'Detail cicilan dan tanggal penerimaan berhasil diperbarui.');
+        return redirect()->back()->with('success', 'Detail PO #' . $item->id . ' berhasil diperbarui.');
     }
 
     public function updateStatus(Request $request, $id)
@@ -88,13 +145,47 @@ class AdminPersediaanStokController extends Controller
 
         $validated = $request->validate([
             'status' => 'required|string|in:pending,approved,rejected,selesai',
+            'transfer_proof' => 'nullable|image|max:5120',
+            'transfer_proof_base64' => 'nullable|string',
         ]);
+
+        // handle upload transfer proof if provided alongside status update
+        if ($request->hasFile('transfer_proof')) {
+            $item->transfer_proof_path = $request->file('transfer_proof')->store('persediaan', 'public');
+        } else {
+            $base64 = $request->input('transfer_proof_base64');
+            if (!empty($base64)) {
+                try {
+                    if (str_contains($base64, 'base64,')) {
+                        $parts = explode('base64,', $base64);
+                        $meta = $parts[0];
+                        $rawBase64 = end($parts);
+                        
+                        $ext = 'png';
+                        if (str_contains($meta, 'jpeg') || str_contains($meta, 'jpg')) {
+                            $ext = 'jpg';
+                        } elseif (str_contains($meta, 'webp')) {
+                            $ext = 'webp';
+                        }
+                        
+                        $fileData = base64_decode(str_replace(' ', '+', trim($rawBase64)));
+                        if ($fileData !== false && strlen($fileData) > 0) {
+                            $filename = 'persediaan/transfer_' . time() . '_' . bin2hex(random_bytes(6)) . '.' . $ext;
+                            Storage::disk('public')->put($filename, $fileData);
+                            $item->transfer_proof_path = $filename;
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    \Log::error('Admin base64 transfer proof status update error: ' . $e->getMessage());
+                }
+            }
+        }
 
         $item->status = $validated['status'];
         $item->save();
 
-        $statusLabel = $item->status === 'approved' ? 'disetujui (ACC)' : ($item->status === 'rejected' ? 'ditolak' : $item->status);
+        $statusLabel = $item->status === 'approved' ? 'disetujui (ACC) dan diteruskan ke Dashboard PO' : ($item->status === 'rejected' ? 'ditolak' : $item->status);
 
-        return redirect()->back()->with('success', 'Status Permintaan #' . $item->id . ' berhasil diubah menjadi ' . $statusLabel . '.');
+        return redirect()->back()->with('success', 'Status Request PO #' . $item->id . ' berhasil diubah menjadi ' . $statusLabel . '.');
     }
 }

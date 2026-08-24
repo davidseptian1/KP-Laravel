@@ -46,7 +46,7 @@
                 <div class="row g-3">
                     <div class="col-md-6">
                         <div class="p-3 border rounded bg-light">
-                            <small class="text-muted d-block mb-1">Nama Perusahaan</small>
+                            <small class="text-muted d-block mb-1">Nama Supplier</small>
                             <h6 class="fw-bold mb-0 text-dark">{{ $item->company_name ?? $item->owner_name }}</h6>
                             @if($item->owner_name && $item->company_name !== $item->owner_name)
                                 <small class="text-muted">Pemilik: {{ $item->owner_name }}</small>
@@ -55,7 +55,7 @@
                     </div>
                     <div class="col-md-6">
                         <div class="p-3 border rounded bg-light">
-                            <small class="text-muted d-block mb-1">Divisi & Pembayaran</small>
+                            <small class="text-muted d-block mb-1">Server & Pembayaran</small>
                             <div class="d-flex gap-2">
                                 <span class="badge bg-secondary text-uppercase">{{ $item->division ?? '-' }}</span>
                                 <span class="badge bg-info text-uppercase">{{ $item->payment_method ?? '-' }}</span>
@@ -65,11 +65,7 @@
                     <div class="col-md-6">
                         <div class="p-3 border rounded bg-light">
                             <small class="text-muted d-block mb-1">Pilihan Cicilan</small>
-                            @if(($item->cicilan ?? 'Tanpa Cicilan') === 'Cicilan')
-                                <span class="badge bg-warning text-dark"><i class="ti ti-clock me-1"></i>Cicilan</span>
-                            @else
-                                <span class="badge bg-light text-dark border">Tanpa Cicilan</span>
-                            @endif
+                            <h6 class="fw-bold mb-0 text-dark">{{ $item->cicilan }}</h6>
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -80,7 +76,7 @@
                     </div>
                     <div class="col-md-6">
                         <div class="p-3 border rounded bg-light">
-                            <small class="text-muted d-block mb-1">Tanggal Penerimaan</small>
+                            <small class="text-muted d-block mb-1">Tanggal Penerimaan Barang (PO)</small>
                             <h6 class="fw-bold mb-0 text-dark">
                                 @if($item->receive_date)
                                     <span class="text-success"><i class="ti ti-calendar-check me-1"></i>{{ optional($item->receive_date)->format('d F Y H:i') }}</span>
@@ -131,32 +127,30 @@
                 </div>
 
                 <div class="row g-3">
-                    <div class="col-md-6">
-                        <h6 class="fw-bold mb-2"><i class="ti ti-photo me-1"></i>Bukti Transfer / Gambar</h6>
+                    <div class="col-md-4">
+                        <h6 class="fw-bold mb-2"><i class="ti ti-photo me-1"></i>Bukti Transfer (Admin)</h6>
                         @if($item->transfer_proof_path)
                             <div class="border rounded p-2 text-center bg-light">
                                 <a href="{{ route('admin.persediaan.file', [$item->id, 'transfer']) }}" target="_blank">
-                                    <img src="{{ route('admin.persediaan.file', [$item->id, 'transfer']) }}" class="img-fluid rounded" style="max-height: 260px;" alt="Bukti Transfer">
+                                    <img src="{{ route('admin.persediaan.file', [$item->id, 'transfer']) }}" class="img-fluid rounded" style="max-height: 200px;" alt="Bukti Transfer">
                                 </a>
                                 <div class="mt-2">
-                                    <a href="{{ route('admin.persediaan.file', [$item->id, 'transfer']) }}" target="_blank" class="btn btn-sm btn-outline-primary me-1">
-                                        <i class="ti ti-external-link me-1"></i>Buka Fullscreen
-                                    </a>
+                                    <a href="{{ route('admin.persediaan.file', [$item->id, 'transfer']) }}" target="_blank" class="btn btn-sm btn-outline-primary">Buka Fullscreen</a>
                                 </div>
                             </div>
                         @else
-                            <div class="p-3 border rounded text-muted text-center bg-light">Tidak ada gambar bukti transfer</div>
+                            <div class="p-3 border rounded text-muted text-center bg-light">Belum ada gambar bukti transfer</div>
                         @endif
                     </div>
-                    <div class="col-md-6">
-                        <h6 class="fw-bold mb-2"><i class="ti ti-file-invoice me-1"></i>Bukti Faktur / Lampiran</h6>
+                    <div class="col-md-4">
+                        <h6 class="fw-bold mb-2"><i class="ti ti-file-invoice me-1"></i>Bukti Faktur (User)</h6>
                         @if($item->invoice_text)
                             <pre class="p-2 border rounded bg-light mb-2" style="white-space: pre-wrap; max-height: 150px; overflow-y: auto;">{{ $item->invoice_text }}</pre>
                         @endif
                         @if($item->invoice_path)
                             <div class="border rounded p-2 text-center bg-light">
                                 <a href="{{ route('admin.persediaan.file', [$item->id, 'invoice']) }}" target="_blank">
-                                    <img src="{{ route('admin.persediaan.file', [$item->id, 'invoice']) }}" class="img-fluid rounded" style="max-height: 200px;" alt="Faktur">
+                                    <img src="{{ route('admin.persediaan.file', [$item->id, 'invoice']) }}" class="img-fluid rounded" style="max-height: 150px;" alt="Faktur">
                                 </a>
                                 <div class="mt-2">
                                     <a href="{{ route('admin.persediaan.file', [$item->id, 'invoice']) }}" target="_blank" class="btn btn-sm btn-outline-primary me-1">Buka Faktur</a>
@@ -165,6 +159,21 @@
                             </div>
                         @elseif(!$item->invoice_text)
                             <div class="p-3 border rounded text-muted text-center bg-light">Tidak ada faktur</div>
+                        @endif
+                    </div>
+                    <div class="col-md-4">
+                        <h6 class="fw-bold mb-2"><i class="ti ti-camera me-1"></i>Foto Barang (PO)</h6>
+                        @if($item->goods_photo_path)
+                            <div class="border rounded p-2 text-center bg-light">
+                                <a href="{{ route('admin.persediaan.file', [$item->id, 'goods']) }}" target="_blank">
+                                    <img src="{{ route('admin.persediaan.file', [$item->id, 'goods']) }}" class="img-fluid rounded" style="max-height: 200px;" alt="Foto Barang">
+                                </a>
+                                <div class="mt-2">
+                                    <a href="{{ route('admin.persediaan.file', [$item->id, 'goods']) }}" target="_blank" class="btn btn-sm btn-outline-success">Buka Foto Barang</a>
+                                </div>
+                            </div>
+                        @else
+                            <div class="p-3 border rounded text-muted text-center bg-light">Belum ada foto barang dari PO</div>
                         @endif
                     </div>
                 </div>
@@ -179,13 +188,13 @@
                 <h5 class="mb-0 fw-semibold"><i class="ti ti-adjustments me-1"></i>Aksi Admin</h5>
             </div>
             <div class="card-body">
-                <form method="POST" action="{{ route('admin.persediaan.update-status', $item->id) }}" class="mb-3">
+                <form method="POST" action="{{ route('admin.persediaan.update-status', $item->id) }}" enctype="multipart/form-data" class="mb-3">
                     @csrf
                     @method('PUT')
                     <label class="form-label fw-bold">Ubah Status Request PO</label>
-                    <div class="d-grid gap-2">
+                    <div class="d-grid gap-2 mb-3">
                         <button type="submit" name="status" value="approved" class="btn btn-success {{ ($item->status ?? 'pending') === 'approved' ? 'disabled' : '' }}">
-                            <i class="ti ti-check me-1"></i>ACC (Approve PO)
+                            <i class="ti ti-check me-1"></i>ACC (Approve & Teruskan ke PO)
                         </button>
                         <button type="submit" name="status" value="rejected" class="btn btn-danger {{ ($item->status ?? 'pending') === 'rejected' ? 'disabled' : '' }}">
                             <i class="ti ti-x me-1"></i>Tolak (Reject PO)
@@ -195,20 +204,26 @@
 
                 <hr>
 
-                <form method="POST" action="{{ route('admin.persediaan.update-details', $item->id) }}">
+                <form method="POST" action="{{ route('admin.persediaan.update-details', $item->id) }}" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
                     <div class="mb-3">
                         <label class="form-label fw-bold">Edit Pilihan Cicilan</label>
                         <select name="cicilan" class="form-select" required>
                             <option value="Tanpa Cicilan" {{ ($item->cicilan ?? 'Tanpa Cicilan') === 'Tanpa Cicilan' ? 'selected' : '' }}>Tanpa Cicilan</option>
-                            <option value="Cicilan" {{ ($item->cicilan ?? '') === 'Cicilan' ? 'selected' : '' }}>Cicilan</option>
+                            <option value="Cicilan 1" {{ ($item->cicilan ?? '') === 'Cicilan 1' ? 'selected' : '' }}>Cicilan 1</option>
+                            <option value="Cicilan 2" {{ ($item->cicilan ?? '') === 'Cicilan 2' ? 'selected' : '' }}>Cicilan 2</option>
+                            <option value="Cicilan 3" {{ ($item->cicilan ?? '') === 'Cicilan 3' ? 'selected' : '' }}>Cicilan 3</option>
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Tanggal Penerimaan</label>
+                        <label class="form-label fw-bold">Upload / Update Bukti Transfer</label>
+                        <input type="file" name="transfer_proof" accept="image/*" class="form-control mb-1">
+                        <small class="text-muted">Mengunggah bukti TF akan otomatis mengesahkan (ACC) request PO.</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tanggal Penerimaan Barang</label>
                         <input type="datetime-local" name="receive_date" class="form-control" value="{{ $item->receive_date ? \Carbon\Carbon::parse($item->receive_date)->format('Y-m-d\TH:i') : '' }}">
-                        <small class="text-muted">Set tanggal penerimaan barang saat diterima.</small>
                     </div>
                     <button type="submit" class="btn btn-primary w-100"><i class="ti ti-device-floppy me-1"></i>Simpan Perubahan</button>
                 </form>

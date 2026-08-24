@@ -33,6 +33,7 @@ use App\Http\Controllers\DataMatrixController;
 use App\Http\Controllers\ApiManagementController;
 use App\Http\Controllers\PersediaanStokController;
 use App\Http\Controllers\AdminPersediaanStokController;
+use App\Http\Controllers\PODashboardController;
 use App\Http\Controllers\AdminActivityLogController;
 use App\Http\Controllers\DataCuttingController;
 use App\Http\Controllers\SosmedPublicFormController;
@@ -213,6 +214,11 @@ Route::middleware(['checkLogin', 'admin.activity.log'])->group(function () {
     Route::get('persediaan-stok/form', [PersediaanStokController::class, 'create'])->name('persediaan.create');
     Route::post('persediaan-stok', [PersediaanStokController::class, 'store'])->name('persediaan.store');
     Route::get('persediaan-stok/{id}/file/{field}', [PersediaanStokController::class, 'viewFile'])->name('persediaan.file');
+
+    // Dashboard PO (Khusus user posisi PO, Admin & Superadmin)
+    Route::get('po/dashboard', [PODashboardController::class, 'index'])->name('po.dashboard');
+    Route::post('po/confirm-receive/{id}', [PODashboardController::class, 'confirmReceive'])->name('po.confirm-receive');
+    Route::get('po/{id}/file/{field}', [PODashboardController::class, 'viewFile'])->name('po.file');
 
     // Deposit Request (User)
     Route::get('deposit/request', [DepositFormController::class, 'index'])->name('deposit.request.index');

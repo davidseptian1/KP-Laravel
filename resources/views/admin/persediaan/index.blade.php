@@ -77,8 +77,8 @@
                         <thead class="table-light">
                             <tr>
                                 <th>#</th>
-                                <th>Perusahaan</th>
-                                <th>Divisi</th>
+                                <th>Supplier</th>
+                                <th>Server</th>
                                 <th>Pembayaran</th>
                                 <th>Cicilan</th>
                                 <th>Tgl PO</th>
@@ -101,10 +101,10 @@
                                     <td><span class="badge bg-secondary text-uppercase">{{ $row->division ?? '-' }}</span></td>
                                     <td><span class="badge bg-info text-uppercase">{{ $row->payment_method ?? '-' }}</span></td>
                                     <td>
-                                        @if(($row->cicilan ?? 'Tanpa Cicilan') === 'Cicilan')
-                                            <span class="badge bg-warning text-dark"><i class="ti ti-clock me-1"></i>Cicilan</span>
+                                        @if(($row->cicilan ?? 'Tanpa Cicilan') !== 'Tanpa Cicilan')
+                                            <span class="badge bg-warning text-dark"><i class="ti ti-clock me-1"></i>{{ $row->cicilan }}</span>
                                         @else
-                                            <span class="badge bg-light text-dark">Tanpa Cicilan</span>
+                                            <span class="badge bg-light text-dark border">Tanpa Cicilan</span>
                                         @endif
                                     </td>
                                     <td>{{ optional($row->po_date)->format('d/m/Y') ?? optional($row->created_at)->format('d/m/Y') }}</td>
@@ -138,7 +138,12 @@
                                                     <i class="ti ti-file-text me-1"></i>Faktur
                                                 </a>
                                             @endif
-                                            @if(!$row->transfer_proof_path && !$row->invoice_path)
+                                            @if($row->goods_photo_path)
+                                                <a href="{{ route('admin.persediaan.file', [$row->id, 'goods']) }}" target="_blank" class="btn btn-xs btn-outline-success py-0 px-2" style="font-size: 0.72rem;">
+                                                    <i class="ti ti-camera me-1"></i>Foto Barang
+                                                </a>
+                                            @endif
+                                            @if(!$row->transfer_proof_path && !$row->invoice_path && !$row->goods_photo_path)
                                                 <span class="text-muted" style="font-size: 0.75rem;">- Tanpa Gambar -</span>
                                             @endif
                                         </div>
@@ -150,9 +155,9 @@
                                                 <i class="ti ti-eye"></i>
                                             </a>
 
-                                            <!-- Button Edit Cicilan & Tgl Penerimaan -->
-                                            <button type="button" class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#modalEditDetails{{ $row->id }}" title="Edit Cicilan & Tgl Penerimaan">
-                                                <i class="ti ti-edit"></i>
+                                            <!-- Button Edit Cicilan & Input Bukti TF -->
+                                            <button type="button" class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#modalEditDetails{{ $row->id }}" title="Input Bukti TF & Edit Detail">
+                                                <i class="ti ti-edit"></i> Edit/TF
                                             </button>
 
                                             <!-- Quick ACC / Reject Buttons -->
@@ -160,7 +165,7 @@
                                                 @csrf
                                                 @method('PUT')
                                                 <input type="hidden" name="status" value="approved">
-                                                <button type="submit" class="btn btn-sm btn-success {{ ($row->status ?? 'pending') === 'approved' ? 'disabled' : '' }}" title="ACC (Approve) PO">
+                                                <button type="submit" class="btn btn-sm btn-success {{ ($row->status ?? 'pending') === 'approved' ? 'disabled' : '' }}" title="ACC (Approve) PO & Teruskan ke Dashboard PO">
                                                     <i class="ti ti-check"></i> ACC
                                                 </button>
                                             </form>
@@ -177,15 +182,15 @@
                                     </td>
                                 </tr>
 
-                                <!-- Modal Edit Cicilan & Tanggal Penerimaan -->
+                                <!-- Modal Edit Cicilan & Input Bukti TF -->
                                 <div class="modal fade" id="modalEditDetails{{ $row->id }}" tabindex="-1" aria-hidden="true">
                                     <div class="modal-dialog modal-dialog-centered">
                                         <div class="modal-content">
-                                            <form method="POST" action="{{ route('admin.persediaan.update-details', $row->id) }}">
+                                            <form method="POST" action="{{ route('admin.persediaan.update-details', $row->id) }}" enctype="multipart/form-data">
                                                 @csrf
                                                 @method('PUT')
                                                 <div class="modal-header">
-                                                    <h5 class="modal-title"><i class="ti ti-edit me-1"></i>Edit PO #{{ $row->id }} - {{ $row->company_name ?? $row->owner_name }}</h5>
+                                                    <h5 class="modal-title"><i class="ti ti-edit me-1"></i>Input TF & Edit PO #{{ $row->id }}</h5>
                                                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                                 </div>
                                                 <div class="modal-body">
@@ -193,18 +198,44 @@
                                                         <label class="form-label fw-bold">Pilihan Cicilan</label>
                                                         <select name="cicilan" class="form-select" required>
                                                             <option value="Tanpa Cicilan" {{ ($row->cicilan ?? 'Tanpa Cicilan') === 'Tanpa Cicilan' ? 'selected' : '' }}>Tanpa Cicilan</option>
-                                                            <option value="Cicilan" {{ ($row->cicilan ?? '') === 'Cicilan' ? 'selected' : '' }}>Cicilan</option>
+                                                            <option value="Cicilan 1" {{ ($row->cicilan ?? '') === 'Cicilan 1' ? 'selected' : '' }}>Cicilan 1</option>
+                                                            <option value="Cicilan 2" {{ ($row->cicilan ?? '') === 'Cicilan 2' ? 'selected' : '' }}>Cicilan 2</option>
+                                                            <option value="Cicilan 3" {{ ($row->cicilan ?? '') === 'Cicilan 3' ? 'selected' : '' }}>Cicilan 3</option>
                                                         </select>
                                                     </div>
+
                                                     <div class="mb-3">
-                                                        <label class="form-label fw-bold">Tanggal Penerimaan</label>
+                                                        <label class="form-label fw-bold">Upload / Input Bukti Transfer (Admin)</label>
+                                                        @if($row->transfer_proof_path)
+                                                            <div class="mb-2 text-center">
+                                                                <small class="text-success d-block mb-1">Bukti Transfer Terpasang:</small>
+                                                                <a href="{{ route('admin.persediaan.file', [$row->id, 'transfer']) }}" target="_blank">
+                                                                    <img src="{{ route('admin.persediaan.file', [$row->id, 'transfer']) }}" style="max-height: 100px;" class="img-thumbnail rounded" alt="Bukti Transfer">
+                                                                </a>
+                                                            </div>
+                                                        @endif
+                                                        <input type="file" name="transfer_proof" accept="image/*" class="form-control mb-1">
+                                                        <small class="text-muted">Mengunggah bukti transfer akan otomatis me-ACC pengajuan dan meneruskannya ke Dashboard PO.</small>
+                                                    </div>
+
+                                                    <div class="mb-3">
+                                                        <label class="form-label fw-bold">Status Request PO</label>
+                                                        <select name="status" class="form-select">
+                                                            <option value="pending" {{ ($row->status ?? 'pending') === 'pending' ? 'selected' : '' }}>Pending</option>
+                                                            <option value="approved" {{ ($row->status ?? '') === 'approved' ? 'selected' : '' }}>Approved (ACC)</option>
+                                                            <option value="rejected" {{ ($row->status ?? '') === 'rejected' ? 'selected' : '' }}>Rejected</option>
+                                                            <option value="selesai" {{ ($row->status ?? '') === 'selesai' ? 'selected' : '' }}>Selesai</option>
+                                                        </select>
+                                                    </div>
+
+                                                    <div class="mb-3">
+                                                        <label class="form-label fw-bold">Tanggal Penerimaan (Oleh PO)</label>
                                                         <input type="datetime-local" name="receive_date" class="form-control" value="{{ $row->receive_date ? \Carbon\Carbon::parse($row->receive_date)->format('Y-m-d\TH:i') : '' }}">
-                                                        <small class="text-muted">Kosongkan jika barang belum diterima.</small>
                                                     </div>
                                                 </div>
                                                 <div class="modal-footer">
                                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                                                    <button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy me-1"></i>Simpan Perubahan</button>
+                                                    <button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy me-1"></i>Simpan & Update</button>
                                                 </div>
                                             </form>
                                         </div>

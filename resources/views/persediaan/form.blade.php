@@ -22,17 +22,18 @@
                 @endif
 
                 <div class="mb-3">
-                    <label class="form-label fw-bold text-dark">Nama Perusahaan <span class="text-danger">*</span></label>
-                    <input name="company_name" class="form-control" placeholder="Contoh: PT Belanja Kuota" required>
+                    <label class="form-label fw-bold text-dark">Nama Supplier <span class="text-danger">*</span></label>
+                    <input name="company_name" class="form-control" placeholder="Contoh: PT Belanja Kuota / Supplier Utama" required>
                 </div>
 
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold text-dark">Nama Divisi <span class="text-danger">*</span></label>
+                        <label class="form-label fw-bold text-dark">Nama Server <span class="text-danger">*</span></label>
                         <select name="division" class="form-select" required>
-                            <option value="">-- Pilih Divisi --</option>
-                            <option value="server">Server</option>
-                            <option value="gudang">Gudang</option>
+                            <option value="">-- Pilih Server --</option>
+                            @foreach(($servers ?? []) as $srv)
+                                <option value="{{ $srv->nama_server }}">{{ $srv->nama_server }}</option>
+                            @endforeach
                         </select>
                     </div>
                     <div class="col-md-6 mb-3">
@@ -59,7 +60,9 @@
                         <label class="form-label fw-bold text-dark">Pilihan Cicilan / Tidak <span class="text-danger">*</span></label>
                         <select name="cicilan" class="form-select" required>
                             <option value="Tanpa Cicilan">Tanpa Cicilan</option>
-                            <option value="Cicilan">Cicilan</option>
+                            <option value="Cicilan 1">Cicilan 1</option>
+                            <option value="Cicilan 2">Cicilan 2</option>
+                            <option value="Cicilan 3">Cicilan 3</option>
                         </select>
                     </div>
                     <div class="col-md-4 mb-3">
@@ -79,20 +82,8 @@
                     </div>
                 </div>
 
-
-
-
-
-                <div class="mb-3 mt-3">
-                    <label class="form-label fw-bold text-dark">Bukti Transfer (gambar) - klik area di bawah lalu tekan Ctrl+V untuk paste atau pilih file</label>
-                    <div id="transfer-paste-area" contenteditable="true" style="border:1px dashed #ccc;padding:8px;min-height:80px;cursor:text;">Klik di sini lalu paste gambar (atau gunakan tombol pilih file)</div>
-                    <div style="margin-top:.5rem;"><input type="file" name="transfer_proof" accept="image/*" class="form-control" id="transfer-proof-file"></div>
-                    <div id="transfer-proof-preview" style="margin-top:.5rem;"></div>
-                    <input type="hidden" name="transfer_proof_base64" id="transfer_proof_base64">
-                </div>
-
                 <div class="mb-3">
-                    <label class="form-label fw-bold text-dark">Bukti Faktur (opsional copy/paste gambar atau teks)</label>
+                    <label class="form-label fw-bold text-dark">Bukti Faktur (Upload / Paste Ctrl+V Gambar)</label>
                     <textarea name="invoice_text" id="invoice-text" class="form-control" rows="3" placeholder="Anda bisa paste teks atau gambar di sini (gambar akan disimpan sebagai lampiran)"></textarea>
                     <div class="mt-2">atau upload file: <input type="file" name="invoice_file" id="invoice-file" class="form-control"/></div>
                     <div id="invoice-file-preview" style="margin-top:.5rem;"></div>

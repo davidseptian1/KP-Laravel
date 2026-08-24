@@ -51,8 +51,8 @@
                         <thead>
                             <tr>
                                 <th>Tgl PO</th>
-                                <th>Perusahaan</th>
-                                <th>Divisi</th>
+                                <th>Supplier</th>
+                                <th>Server</th>
                                 <th>Pembayaran</th>
                                 <th>Cicilan</th>
                                 <th>Status</th>
@@ -67,10 +67,10 @@
                                     <td><span class="badge bg-secondary text-uppercase">{{ $r->division ?? '-' }}</span></td>
                                     <td><span class="badge bg-info text-uppercase">{{ $r->payment_method ?? '-' }}</span></td>
                                     <td>
-                                        @if(($r->cicilan ?? 'Tanpa Cicilan') === 'Cicilan')
-                                            <span class="badge bg-warning text-dark">Cicilan</span>
+                                        @if(($r->cicilan ?? 'Tanpa Cicilan') !== 'Tanpa Cicilan')
+                                            <span class="badge bg-warning text-dark">{{ $r->cicilan }}</span>
                                         @else
-                                            <span class="badge bg-light text-dark">Tanpa Cicilan</span>
+                                            <span class="badge bg-light text-dark border">Tanpa Cicilan</span>
                                         @endif
                                     </td>
                                     <td>
@@ -109,13 +109,13 @@
                                     <div class="row g-3">
                                         <div class="col-md-6">
                                             <div class="p-3 border rounded bg-light">
-                                                <small class="text-muted d-block mb-1">Nama Perusahaan</small>
+                                                <small class="text-muted d-block mb-1">Nama Supplier</small>
                                                 <h6 class="fw-bold mb-0 text-dark">{{ $r->company_name ?? $r->owner_name }}</h6>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="p-3 border rounded bg-light">
-                                                <small class="text-muted d-block mb-1">Divisi & Pembayaran</small>
+                                                <small class="text-muted d-block mb-1">Server & Pembayaran</small>
                                                 <div class="d-flex gap-2">
                                                     <span class="badge bg-secondary text-uppercase">{{ $r->division ?? '-' }}</span>
                                                     <span class="badge bg-info text-uppercase">{{ $r->payment_method ?? '-' }}</span>
@@ -125,11 +125,7 @@
                                         <div class="col-md-4">
                                             <div class="p-3 border rounded bg-light">
                                                 <small class="text-muted d-block mb-1">Pilihan Cicilan</small>
-                                                @if(($r->cicilan ?? 'Tanpa Cicilan') === 'Cicilan')
-                                                    <span class="badge bg-warning text-dark">Cicilan</span>
-                                                @else
-                                                    <span class="badge bg-light text-dark border">Tanpa Cicilan</span>
-                                                @endif
+                                                <h6 class="fw-bold mb-0 text-dark">{{ $r->cicilan }}</h6>
                                             </div>
                                         </div>
                                         <div class="col-md-4">
@@ -254,17 +250,18 @@
                     @endif
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold text-dark">Nama Perusahaan <span class="text-danger">*</span></label>
-                        <input name="company_name" class="form-control" placeholder="Contoh: PT Belanja Kuota" required>
+                        <label class="form-label fw-bold text-dark">Nama Supplier <span class="text-danger">*</span></label>
+                        <input name="company_name" class="form-control" placeholder="Contoh: PT Belanja Kuota / Supplier Utama" required>
                     </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label fw-bold text-dark">Nama Divisi <span class="text-danger">*</span></label>
+                            <label class="form-label fw-bold text-dark">Nama Server <span class="text-danger">*</span></label>
                             <select name="division" class="form-select" required>
-                                <option value="">-- Pilih Divisi --</option>
-                                <option value="server">Server</option>
-                                <option value="gudang">Gudang</option>
+                                <option value="">-- Pilih Server --</option>
+                                @foreach(($servers ?? []) as $srv)
+                                    <option value="{{ $srv->nama_server }}">{{ $srv->nama_server }}</option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="col-md-6 mb-3">
@@ -291,7 +288,9 @@
                             <label class="form-label fw-bold text-dark">Pilihan Cicilan / Tidak <span class="text-danger">*</span></label>
                             <select name="cicilan" class="form-select" required>
                                 <option value="Tanpa Cicilan">Tanpa Cicilan</option>
-                                <option value="Cicilan">Cicilan</option>
+                                <option value="Cicilan 1">Cicilan 1</option>
+                                <option value="Cicilan 2">Cicilan 2</option>
+                                <option value="Cicilan 3">Cicilan 3</option>
                             </select>
                         </div>
                         <div class="col-md-4 mb-3">
@@ -339,10 +338,28 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold text-dark">Bukti Faktur (opsional copy/paste gambar atau teks)</label>
-                        <textarea name="invoice_text" id="invoice-text" class="form-control" rows="3" placeholder="Anda bisa paste teks atau gambar di sini (gambar akan disimpan sebagai lampiran)"></textarea>
-                        <div class="mt-2">atau upload file: <input type="file" name="invoice_file" id="invoice-file" class="form-control"/></div>
-                        <div id="invoice-file-preview" style="margin-top:.5rem;"></div>
+                        <label class="form-label fw-bold text-dark">Bukti Faktur (Upload / Paste Ctrl+V Gambar)</label>
+                        <div id="invoice-paste-zone" style="border:2px dashed #0d6efd;border-radius:8px;min-height:100px;cursor:pointer;background:#f8f9fa;position:relative;overflow:hidden;" onclick="document.getElementById('invoice-paste-input').focus()">
+                            <div id="invoice-paste-hint" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#6c757d;pointer-events:none;padding:12px;text-align:center;">
+                                <i class="ti ti-file-text fs-3 mb-1"></i>
+                                <span>Klik area ini, lalu tekan <strong>Ctrl+V</strong> untuk paste gambar Faktur</span>
+                                <small class="text-muted mt-1">atau pilih file faktur di bawah</small>
+                            </div>
+                            <div id="invoice-file-preview" style="display:none;padding:10px;text-align:center;"></div>
+                            <textarea id="invoice-paste-input"
+                                style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;resize:none;border:none;background:transparent;cursor:pointer;z-index:2;"
+                                placeholder=""
+                                autocomplete="off"
+                                tabindex="0"
+                                spellcheck="false"
+                            ></textarea>
+                        </div>
+                        <div class="mt-2">
+                            <input type="file" name="invoice_file" id="invoice-file" class="form-control"/>
+                        </div>
+                        <div class="mt-2">
+                            <textarea name="invoice_text" id="invoice-text" class="form-control" rows="2" placeholder="Catatan / Teks Faktur opsional..."></textarea>
+                        </div>
                         <input type="hidden" name="invoice_file_base64" id="invoice_file_base64">
                     </div>
 

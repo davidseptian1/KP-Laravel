@@ -38,10 +38,11 @@ class UserController extends Controller
     private function allowedRolesFor(string $currentRole): array
     {
         $map = [
-            'Superadmin' => ['Superadmin', 'Admin', 'Admin Sosmed', 'HRD', 'Staff'],
-            'Admin' => ['Admin Sosmed', 'HRD', 'Staff'],
-            'HRD' => ['Staff'],
+            'Superadmin' => ['Superadmin', 'Admin', 'Admin Sosmed', 'HRD', 'Staff', 'PO'],
+            'Admin' => ['Admin Sosmed', 'HRD', 'Staff', 'PO'],
+            'HRD' => ['Staff', 'PO'],
             'Staff' => [],
+            'PO' => [],
         ];
 
         return $map[$currentRole] ?? [];

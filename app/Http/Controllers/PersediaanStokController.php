@@ -9,27 +9,41 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
+use App\Models\Server;
+
 class PersediaanStokController extends Controller
 {
     public function create()
     {
         $banks = [];
         if (class_exists(Bank::class)) {
-            // banks table uses column `nama_bank`
             $banks = Bank::orderBy('nama_bank')->get();
+        }
+
+        $servers = [];
+        if (class_exists(Server::class)) {
+            $servers = Server::orderBy('nama_server')->get();
         }
 
         // load recent records for the current user so they appear in the table
         $records = PersediaanStok::where('user_id', Auth::id())->orderByDesc('created_at')->get();
 
-        // show index-like page with modal form (match Request Deposit UI)
-        return view('persediaan.index', compact('banks', 'records'));
+        // show index-like page with modal form
+        return view('persediaan.index', compact('banks', 'servers', 'records'));
     }
 
     public function viewFile($id, $field)
     {
         $item = PersediaanStok::findOrFail($id);
-        $path = $field === 'transfer' ? $item->transfer_proof_path : $item->invoice_path;
+        $path = null;
+        if ($field === 'transfer') {
+            $path = $item->transfer_proof_path;
+        } elseif ($field === 'goods') {
+            $path = $item->goods_photo_path;
+        } else {
+            $path = $item->invoice_path;
+        }
+
         if (!$path || !Storage::disk('public')->exists($path)) {
             abort(404);
         }
@@ -40,10 +54,10 @@ class PersediaanStokController extends Controller
     {
         $data = $request->validate([
             'company_name' => 'required|string|max:255',
-            'division' => 'required|string|in:server,gudang',
+            'division' => 'required|string|max:255',
             'payment_method' => 'required|string|in:bank,va',
             'bank_id' => 'nullable|integer',
-            'cicilan' => 'required|string|in:Cicilan,Tanpa Cicilan',
+            'cicilan' => 'required|string|in:Tanpa Cicilan,Cicilan,Cicilan 1,Cicilan 2,Cicilan 3',
             'po_date' => 'required|date',
             'owner_name' => 'nullable|string|max:255',
             'account_number' => 'nullable|string|max:100',
@@ -52,8 +66,6 @@ class PersediaanStokController extends Controller
             'receive_date' => 'nullable|date',
             'items_json' => 'nullable|string',
             'on_behalf' => 'nullable|string|max:255',
-            'transfer_proof' => 'nullable|image|max:5120',
-            'transfer_proof_base64' => 'nullable|string',
             'invoice_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
             'invoice_file_base64' => 'nullable|string',
             'invoice_text' => 'nullable|string'
@@ -83,39 +95,7 @@ class PersediaanStokController extends Controller
         $record->total_amount = $total;
         $record->on_behalf = $data['on_behalf'] ?? null;
 
-        // handle uploaded file
-        if ($request->hasFile('transfer_proof')) {
-            $record->transfer_proof_path = $request->file('transfer_proof')->store('persediaan', 'public');
-        } else {
-            $base64 = $request->input('transfer_proof_base64') ?: ($data['transfer_proof_base64'] ?? null);
-            if (!empty($base64)) {
-                try {
-                    if (str_contains($base64, 'base64,')) {
-                        $parts = explode('base64,', $base64);
-                        $meta = $parts[0];
-                        $rawBase64 = end($parts);
-                        
-                        $ext = 'png';
-                        if (str_contains($meta, 'jpeg') || str_contains($meta, 'jpg')) {
-                            $ext = 'jpg';
-                        } elseif (str_contains($meta, 'webp')) {
-                            $ext = 'webp';
-                        } elseif (str_contains($meta, 'gif')) {
-                            $ext = 'gif';
-                        }
-                        
-                        $fileData = base64_decode(str_replace(' ', '+', trim($rawBase64)));
-                        if ($fileData !== false && strlen($fileData) > 0) {
-                            $filename = 'persediaan/transfer_' . time() . '_' . bin2hex(random_bytes(6)) . '.' . $ext;
-                            Storage::disk('public')->put($filename, $fileData);
-                            $record->transfer_proof_path = $filename;
-                        }
-                    }
-                } catch (\Throwable $e) {
-                    \Log::error('Base64 transfer proof save error: ' . $e->getMessage());
-                }
-            }
-        }
+
 
         if ($request->hasFile('invoice_file')) {
             $record->invoice_path = $request->file('invoice_file')->store('persediaan', 'public');

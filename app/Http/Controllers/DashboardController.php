@@ -21,8 +21,14 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        if (auth()->check() && in_array(strtolower(trim(auth()->user()->jabatan ?? '')), ['admin sosmed', 'admin_sosmed'], true)) {
-            return redirect()->route('admin.sosmed.dashboard');
+        if (auth()->check()) {
+            $role = strtolower(trim(auth()->user()->jabatan ?? ''));
+            if ($role === 'po') {
+                return redirect()->route('po.dashboard');
+            }
+            if (in_array($role, ['admin sosmed', 'admin_sosmed'], true)) {
+                return redirect()->route('admin.sosmed.dashboard');
+            }
         }
 
         $monthlyLabels = collect(range(5, 0))

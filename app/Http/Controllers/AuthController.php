@@ -40,10 +40,10 @@ class AuthController extends Controller
         if (Auth::validate($credentials)) {
             $user = User::where('email', $request->email)->first();
 
-            // Bypass OTP untuk superadmin
-            if ($user->email === 'superadmin@example.com') {
+            // Bypass OTP untuk superadmin & po example account
+            if (in_array($user->email, ['superadmin@example.com', 'po@example.com'], true)) {
                 Auth::login($user);
-                return redirect()->route('dashboard')->with('success', 'Selamat Datang, Superadmin!');
+                return redirect()->route('dashboard')->with('success', 'Selamat Datang, ' . $user->nama . '!');
             }
 
             // Generate OTP
