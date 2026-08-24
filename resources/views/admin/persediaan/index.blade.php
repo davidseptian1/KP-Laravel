@@ -160,24 +160,26 @@
                                                 <i class="ti ti-edit"></i> Edit/TF
                                             </button>
 
-                                            <!-- Quick ACC / Reject Buttons -->
-                                            <form method="POST" action="{{ route('admin.persediaan.update-status', $row->id) }}" class="d-inline">
-                                                @csrf
-                                                @method('PUT')
-                                                <input type="hidden" name="status" value="approved">
-                                                <button type="submit" class="btn btn-sm btn-success {{ ($row->status ?? 'pending') === 'approved' ? 'disabled' : '' }}" title="ACC (Approve) PO & Teruskan ke Dashboard PO">
-                                                    <i class="ti ti-check"></i> ACC
-                                                </button>
-                                            </form>
+                                            <!-- Quick ACC / Reject Buttons (Hanya muncul jika status masih Pending) -->
+                                            @if(($row->status ?? 'pending') === 'pending')
+                                                <form method="POST" action="{{ route('admin.persediaan.update-status', $row->id) }}" class="d-inline">
+                                                    @csrf
+                                                    @method('PUT')
+                                                    <input type="hidden" name="status" value="approved">
+                                                    <button type="submit" class="btn btn-sm btn-success" title="ACC (Approve) PO & Teruskan ke Dashboard PO">
+                                                        <i class="ti ti-check"></i> ACC
+                                                    </button>
+                                                </form>
 
-                                            <form method="POST" action="{{ route('admin.persediaan.update-status', $row->id) }}" class="d-inline">
-                                                @csrf
-                                                @method('PUT')
-                                                <input type="hidden" name="status" value="rejected">
-                                                <button type="submit" class="btn btn-sm btn-danger {{ ($row->status ?? 'pending') === 'rejected' ? 'disabled' : '' }}" title="Tolak PO">
-                                                    <i class="ti ti-x"></i> Tolak
-                                                </button>
-                                            </form>
+                                                <form method="POST" action="{{ route('admin.persediaan.update-status', $row->id) }}" class="d-inline">
+                                                    @csrf
+                                                    @method('PUT')
+                                                    <input type="hidden" name="status" value="rejected">
+                                                    <button type="submit" class="btn btn-sm btn-danger" title="Tolak PO">
+                                                        <i class="ti ti-x"></i> Tolak
+                                                    </button>
+                                                </form>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>

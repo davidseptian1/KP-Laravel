@@ -188,21 +188,34 @@
                 <h5 class="mb-0 fw-semibold"><i class="ti ti-adjustments me-1"></i>Aksi Admin</h5>
             </div>
             <div class="card-body">
-                <form method="POST" action="{{ route('admin.persediaan.update-status', $item->id) }}" enctype="multipart/form-data" class="mb-3">
-                    @csrf
-                    @method('PUT')
-                    <label class="form-label fw-bold">Ubah Status Request PO</label>
-                    <div class="d-grid gap-2 mb-3">
-                        <button type="submit" name="status" value="approved" class="btn btn-success {{ ($item->status ?? 'pending') === 'approved' ? 'disabled' : '' }}">
-                            <i class="ti ti-check me-1"></i>ACC (Approve & Teruskan ke PO)
-                        </button>
-                        <button type="submit" name="status" value="rejected" class="btn btn-danger {{ ($item->status ?? 'pending') === 'rejected' ? 'disabled' : '' }}">
-                            <i class="ti ti-x me-1"></i>Tolak (Reject PO)
-                        </button>
+                @if(($item->status ?? 'pending') === 'pending')
+                    <form method="POST" action="{{ route('admin.persediaan.update-status', $item->id) }}" enctype="multipart/form-data" class="mb-3">
+                        @csrf
+                        @method('PUT')
+                        <label class="form-label fw-bold">Ubah Status Request PO</label>
+                        <div class="d-grid gap-2 mb-3">
+                            <button type="submit" name="status" value="approved" class="btn btn-success">
+                                <i class="ti ti-check me-1"></i>ACC (Approve & Teruskan ke PO)
+                            </button>
+                            <button type="submit" name="status" value="rejected" class="btn btn-danger">
+                                <i class="ti ti-x me-1"></i>Tolak (Reject PO)
+                            </button>
+                        </div>
+                    </form>
+                    <hr>
+                @elseif(($item->status ?? 'pending') === 'approved')
+                    <div class="alert alert-success py-2 mb-3 text-center fw-semibold">
+                        <i class="ti ti-check me-1"></i>Sudah di-ACC & Diteruskan ke Dashboard PO
                     </div>
-                </form>
-
-                <hr>
+                @elseif(($item->status ?? 'pending') === 'selesai')
+                    <div class="alert alert-primary py-2 mb-3 text-center fw-semibold">
+                        <i class="ti ti-circle-check me-1"></i>Penerimaan Barang Selesai Dikonfirmasi PO
+                    </div>
+                @elseif(($item->status ?? 'pending') === 'rejected')
+                    <div class="alert alert-danger py-2 mb-3 text-center fw-semibold">
+                        <i class="ti ti-x me-1"></i>Request PO Ditolak
+                    </div>
+                @endif
 
                 <form method="POST" action="{{ route('admin.persediaan.update-details', $item->id) }}" enctype="multipart/form-data">
                     @csrf
