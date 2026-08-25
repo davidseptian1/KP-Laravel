@@ -353,8 +353,10 @@ Route::middleware(['checkLogin', 'admin.activity.log'])->group(function () {
         Route::put('admin/deposit/{id}/status', [AdminDepositController::class, 'updateStatus'])->name('admin.deposit.update-status');
         Route::delete('admin/deposit/{id}', [AdminDepositController::class, 'destroy'])->name('admin.deposit.destroy');
 
-        // Persediaan Stok - Admin monitoring
+        // Persediaan Stok - Admin monitoring & Rekap Bulanan
         Route::get('admin/persediaan-stok', [AdminPersediaanStokController::class, 'index'])->name('admin.persediaan-stok.index');
+        Route::get('admin/persediaan-stok-rekap', [AdminPersediaanStokController::class, 'rekapBulanan'])->name('admin.persediaan.rekap');
+        Route::get('admin/persediaan-stok-rekap/pdf', [AdminPersediaanStokController::class, 'rekapBulananPdf'])->name('admin.persediaan.rekap.pdf');
         Route::get('admin/persediaan-stok/{id}', [AdminPersediaanStokController::class, 'show'])->name('admin.persediaan.show');
         Route::get('admin/persediaan-stok/{id}/file/{field}', [AdminPersediaanStokController::class, 'viewFile'])->name('admin.persediaan.file');
         Route::get('admin/persediaan-stok/{id}/invoice-pdf', [AdminPersediaanStokController::class, 'downloadInvoicePdf'])->name('admin.persediaan.invoice.pdf');

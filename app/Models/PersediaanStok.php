@@ -13,11 +13,12 @@ class PersediaanStok extends Model
         'user_id', 'owner_name', 'company_name', 'division', 'payment_method',
         'bank_id', 'account_number', 'account_name', 'cicilan', 'po_date',
         'purchase_date', 'receive_date', 'items', 'total_amount', 'on_behalf',
-        'transfer_proof_path', 'invoice_text', 'invoice_path', 'goods_photo_path', 'status'
+        'transfer_proof_path', 'invoice_text', 'invoice_path', 'goods_photo_path', 'installment_payments', 'status'
     ];
 
     protected $casts = [
         'items' => 'array',
+        'installment_payments' => 'array',
         'po_date' => 'date',
         'purchase_date' => 'datetime',
         'receive_date' => 'datetime',

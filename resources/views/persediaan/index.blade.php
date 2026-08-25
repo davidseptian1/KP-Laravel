@@ -185,9 +185,38 @@
                                         </table>
                                     @endif
 
+                                    @if(!empty($r->installment_payments))
+                                        <div class="mt-3 mb-3 border rounded p-2 bg-light">
+                                            <h6 class="fw-bold mb-2 text-dark"><i class="ti ti-history me-1"></i>Riwayat Pembayaran Cicilan</h6>
+                                            <div class="row g-2">
+                                                @foreach($r->installment_payments as $idx => $pmt)
+                                                    <div class="col-md-6">
+                                                        <div class="p-2 border rounded bg-white shadow-sm">
+                                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                                <span class="badge bg-success">{{ $pmt['stage'] ?? 'Cicilan' }}</span>
+                                                                <span class="text-success fw-semibold" style="font-size:0.8rem;"><i class="ti ti-check me-1"></i>Sudah Dibayarkan</span>
+                                                            </div>
+                                                            <small class="text-muted d-block mb-1"><i class="ti ti-clock me-1"></i>{{ \Carbon\Carbon::parse($pmt['paid_at'] ?? now())->format('d/m/Y H:i') }} WIB</small>
+                                                            @if(!empty($pmt['proof_path']))
+                                                                <div class="text-center mt-1 border rounded bg-light p-1">
+                                                                    <a href="{{ route('persediaan.file', ['id' => $r->id, 'field' => 'cicilan_'.$idx]) }}" target="_blank">
+                                                                        <img src="{{ route('persediaan.file', ['id' => $r->id, 'field' => 'cicilan_'.$idx]) }}" style="max-height: 100px;" class="img-fluid rounded" alt="Bukti {{ $pmt['stage'] }}" />
+                                                                    </a>
+                                                                    <div class="mt-1">
+                                                                        <a href="{{ route('persediaan.file', ['id' => $r->id, 'field' => 'cicilan_'.$idx]) }}" target="_blank" class="btn btn-xs btn-outline-primary py-0 px-1" style="font-size:0.7rem;">Bukti TF {{ $pmt['stage'] }}</a>
+                                                                    </div>
+                                                                </div>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    @endif
+
                                     <div class="row g-3 mt-2">
                                         <div class="col-md-6">
-                                            <h6 class="fw-bold mb-2">Bukti Transfer (Gambar)</h6>
+                                            <h6 class="fw-bold mb-2">Bukti Transfer Terakhir (Gambar)</h6>
                                             @if($r->transfer_proof_path)
                                                 <div class="p-2 border rounded text-center bg-light">
                                                     <a href="{{ route('persediaan.file', ['id' => $r->id, 'field' => 'transfer']) }}" target="_blank">

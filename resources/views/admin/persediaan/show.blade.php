@@ -126,9 +126,44 @@
                     </table>
                 </div>
 
+                <div class="mb-4">
+                    <h6 class="fw-bold mb-3 text-dark"><i class="ti ti-history me-1"></i>Riwayat Pembayaran Cicilan</h6>
+                    @if(!empty($item->installment_payments))
+                        <div class="row g-3">
+                            @foreach($item->installment_payments as $idx => $pmt)
+                                <div class="col-md-6 col-lg-4">
+                                    <div class="border rounded p-3 bg-light shadow-sm">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span class="badge bg-success fs-6">{{ $pmt['stage'] ?? 'Cicilan' }}</span>
+                                            <span class="badge bg-light text-success border border-success"><i class="ti ti-check me-1"></i>Sudah Dibayarkan</span>
+                                        </div>
+                                        <small class="text-muted d-block mb-2">
+                                            <i class="ti ti-clock me-1"></i>Waktu TF: <strong>{{ \Carbon\Carbon::parse($pmt['paid_at'] ?? now())->format('d F Y - H:i') }} WIB</strong>
+                                        </small>
+                                        @if(!empty($pmt['proof_path']))
+                                            <div class="text-center mt-2 border rounded bg-white p-2">
+                                                <a href="{{ route('admin.persediaan.file', [$item->id, 'cicilan_'.$idx]) }}" target="_blank">
+                                                    <img src="{{ route('admin.persediaan.file', [$item->id, 'cicilan_'.$idx]) }}" class="img-fluid rounded" style="max-height: 140px;" alt="Bukti {{ $pmt['stage'] }}">
+                                                </a>
+                                                <div class="mt-2">
+                                                    <a href="{{ route('admin.persediaan.file', [$item->id, 'cicilan_'.$idx]) }}" target="_blank" class="btn btn-xs btn-outline-primary py-1 px-2">
+                                                        <i class="ti ti-external-link me-1"></i>Lihat Bukti TF {{ $pmt['stage'] }}
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="p-3 border rounded text-muted text-center bg-light">Belum ada riwayat pembayaran cicilan</div>
+                    @endif
+                </div>
+
                 <div class="row g-3">
                     <div class="col-md-4">
-                        <h6 class="fw-bold mb-2"><i class="ti ti-photo me-1"></i>Bukti Transfer (Admin)</h6>
+                        <h6 class="fw-bold mb-2"><i class="ti ti-photo me-1"></i>Bukti Transfer Terakhir (Admin)</h6>
                         @if($item->transfer_proof_path)
                             <div class="border rounded p-2 text-center bg-light">
                                 <a href="{{ route('admin.persediaan.file', [$item->id, 'transfer']) }}" target="_blank">

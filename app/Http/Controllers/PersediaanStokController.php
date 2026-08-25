@@ -40,6 +40,10 @@ class PersediaanStokController extends Controller
             $path = $item->transfer_proof_path;
         } elseif ($field === 'goods') {
             $path = $item->goods_photo_path;
+        } elseif (str_starts_with($field, 'cicilan_')) {
+            $idx = (int) str_replace('cicilan_', '', $field);
+            $payments = $item->installment_payments ?? [];
+            $path = $payments[$idx]['proof_path'] ?? null;
         } else {
             $path = $item->invoice_path;
         }

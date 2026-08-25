@@ -44,15 +44,25 @@
 <div class="row mt-3 admin-po-page">
     <div class="col-12">
         <div class="card shadow-sm">
-            <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+            <div class="card-header bg-white d-flex flex-wrap justify-content-between align-items-center gap-2 py-3">
                 <h5 class="mb-0 fw-semibold"><i class="ti ti-list me-1"></i>Daftar Request PO</h5>
-                <form method="GET" action="{{ route('admin.persediaan-stok.index') }}" class="d-flex gap-2">
-                    <input type="text" name="q" value="{{ request('q') }}" class="form-control form-control-sm" placeholder="Cari nama perusahaan / owner..." style="width: 240px;">
-                    <button type="submit" class="btn btn-sm btn-primary"><i class="ti ti-search me-1"></i>Cari</button>
-                    @if(request('q'))
-                        <a href="{{ route('admin.persediaan-stok.index') }}" class="btn btn-sm btn-outline-secondary">Reset</a>
-                    @endif
-                </form>
+                <div class="d-flex align-items-center gap-2">
+                    <!-- Tombol Rekap Bulanan -->
+                    <a href="{{ route('admin.persediaan.rekap') }}" class="btn btn-primary d-inline-flex align-items-center gap-2 shadow-sm border-0 py-2 px-3" style="border-radius: 10px; background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);">
+                        <div class="d-flex align-items-center justify-content-center" style="background: rgba(255, 255, 255, 0.22); border-radius: 7px; width: 28px; height: 28px;">
+                            <i class="ti ti-calendar-event fs-5 text-white"></i>
+                        </div>
+                        <span class="fw-bold text-white">Rekap Bulanan</span>
+                    </a>
+
+                    <form method="GET" action="{{ route('admin.persediaan-stok.index') }}" class="d-flex gap-2 ms-2">
+                        <input type="text" name="q" value="{{ request('q') }}" class="form-control form-control-sm" placeholder="Cari supplier / owner..." style="width: 200px;">
+                        <button type="submit" class="btn btn-sm btn-primary"><i class="ti ti-search me-1"></i>Cari</button>
+                        @if(request('q'))
+                            <a href="{{ route('admin.persediaan-stok.index') }}" class="btn btn-sm btn-outline-secondary">Reset</a>
+                        @endif
+                    </form>
+                </div>
             </div>
             <div class="card-body">
                 @if(session('success'))
@@ -197,28 +207,47 @@
                                                 </div>
                                                 <div class="modal-body">
                                                     <div class="mb-3">
-                                                        <label class="form-label fw-bold">Pilihan Cicilan</label>
+                                                        <label class="form-label fw-bold">Tahap / Pilihan Cicilan yang Dibayar <span class="text-danger">*</span></label>
                                                         <select name="cicilan" class="form-select" required>
-                                                            <option value="Tanpa Cicilan" {{ ($row->cicilan ?? 'Tanpa Cicilan') === 'Tanpa Cicilan' ? 'selected' : '' }}>Tanpa Cicilan</option>
                                                             <option value="Cicilan 1" {{ ($row->cicilan ?? '') === 'Cicilan 1' ? 'selected' : '' }}>Cicilan 1</option>
                                                             <option value="Cicilan 2" {{ ($row->cicilan ?? '') === 'Cicilan 2' ? 'selected' : '' }}>Cicilan 2</option>
                                                             <option value="Cicilan 3" {{ ($row->cicilan ?? '') === 'Cicilan 3' ? 'selected' : '' }}>Cicilan 3</option>
+                                                            <option value="Tanpa Cicilan" {{ ($row->cicilan ?? 'Tanpa Cicilan') === 'Tanpa Cicilan' ? 'selected' : '' }}>Tanpa Cicilan</option>
                                                         </select>
                                                     </div>
 
                                                     <div class="mb-3">
-                                                        <label class="form-label fw-bold">Upload / Input Bukti Transfer (Admin)</label>
-                                                        @if($row->transfer_proof_path)
-                                                            <div class="mb-2 text-center">
-                                                                <small class="text-success d-block mb-1">Bukti Transfer Terpasang:</small>
-                                                                <a href="{{ route('admin.persediaan.file', [$row->id, 'transfer']) }}" target="_blank">
-                                                                    <img src="{{ route('admin.persediaan.file', [$row->id, 'transfer']) }}" style="max-height: 100px;" class="img-thumbnail rounded" alt="Bukti Transfer">
-                                                                </a>
-                                                            </div>
-                                                        @endif
-                                                        <input type="file" name="transfer_proof" accept="image/*" class="form-control mb-1">
-                                                        <small class="text-muted">Mengunggah bukti transfer akan otomatis me-ACC pengajuan dan meneruskannya ke Dashboard PO.</small>
+                                                        <label class="form-label fw-bold">Tanggal & Jam Pembayaran <span class="text-danger">*</span></label>
+                                                        <input type="datetime-local" name="paid_at" class="form-control" value="{{ date('Y-m-d\TH:i') }}" required>
                                                     </div>
+
+                                                    <div class="mb-3">
+                                                        <label class="form-label fw-bold">Upload / Input Bukti Transfer (Khusus Cicilan Ini)</label>
+                                                        <input type="file" name="transfer_proof" accept="image/*" class="form-control mb-1">
+                                                        <small class="text-muted">Setiap cicilan dapat memiliki gambar bukti transfer dan tanggal/jam yang berbeda.</small>
+                                                    </div>
+
+                                                    @if(!empty($row->installment_payments))
+                                                        <div class="mb-3 border rounded p-2 bg-light">
+                                                            <label class="form-label fw-bold text-dark mb-2"><i class="ti ti-history me-1"></i>Riwayat Bukti Pembayaran Cicilan</label>
+                                                            <div class="d-flex flex-column gap-2">
+                                                                @foreach($row->installment_payments as $idx => $pmt)
+                                                                    <div class="p-2 border rounded bg-white d-flex justify-content-between align-items-center">
+                                                                        <div>
+                                                                            <span class="badge bg-success me-1">{{ $pmt['stage'] ?? 'Cicilan' }}</span>
+                                                                            <span class="text-success fw-semibold" style="font-size:0.82rem;">Sudah Dibayarkan</span>
+                                                                            <small class="text-muted d-block"><i class="ti ti-clock me-1"></i>{{ \Carbon\Carbon::parse($pmt['paid_at'] ?? now())->format('d/m/Y H:i') }} WIB</small>
+                                                                        </div>
+                                                                        @if(!empty($pmt['proof_path']))
+                                                                            <a href="{{ route('admin.persediaan.file', [$row->id, 'cicilan_'.$idx]) }}" target="_blank" class="btn btn-xs btn-outline-primary py-1 px-2">
+                                                                                <i class="ti ti-photo me-1"></i>Bukti {{ $pmt['stage'] }}
+                                                                            </a>
+                                                                        @endif
+                                                                    </div>
+                                                                @endforeach
+                                                            </div>
+                                                        </div>
+                                                    @endif
 
                                                     <div class="mb-3">
                                                         <label class="form-label fw-bold">Status Request PO</label>
