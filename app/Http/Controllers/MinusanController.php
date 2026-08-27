@@ -243,7 +243,16 @@ class MinusanController extends Controller
             $tahunList->prepend(date('Y'));
         }
 
-        $minusan = DB::table('minusans')->whereMonth('tanggal', $bulan)->whereYear('tanggal', $tahun)->get();
+        $start = Carbon::createFromFormat('Y-m-d', sprintf('%04d-%02d-24', $tahun, $bulan));
+        $end = (clone $start)->addMonth()->setDay(23);
+
+        $startDate = $start->format('Y-m-d');
+        $endDate = $end->format('Y-m-d');
+
+        $startDateFormatted = $start->format('d F Y');
+        $endDateFormatted = $end->format('d F Y');
+
+        $minusan = DB::table('minusans')->whereBetween('tanggal', [$startDate, $endDate])->get();
 
         return view('admin.rekap-bulanan.index', [
             'title' => 'Rekap Bulanan',
@@ -252,6 +261,8 @@ class MinusanController extends Controller
             'bulan' => $bulan,
             'tahun' => $tahun,
             'tahunList' => $tahunList,
+            'startDateFormatted' => $startDateFormatted,
+            'endDateFormatted' => $endDateFormatted,
         ]);
     }
 

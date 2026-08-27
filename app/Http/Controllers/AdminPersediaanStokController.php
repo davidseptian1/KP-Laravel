@@ -13,6 +13,15 @@ class AdminPersediaanStokController extends Controller
 {
     public function index(Request $request)
     {
+        $today = Carbon::now();
+        if ($today->day >= 23) {
+            $startDate = $today->copy()->day(23)->startOfDay();
+            $endDate = $today->copy()->addMonth()->day(24)->endOfDay();
+        } else {
+            $startDate = $today->copy()->subMonth()->day(23)->startOfDay();
+            $endDate = $today->copy()->day(24)->endOfDay();
+        }
+
         $query = PersediaanStok::with('user')->orderByDesc('created_at');
 
         if ($request->filled('q')) {
@@ -21,7 +30,7 @@ class AdminPersediaanStokController extends Controller
 
         $list = $query->paginate(20);
 
-        return view('admin.persediaan.index', compact('list'));
+        return view('admin.persediaan.index', compact('list', 'startDate', 'endDate'));
     }
 
     public function show($id)

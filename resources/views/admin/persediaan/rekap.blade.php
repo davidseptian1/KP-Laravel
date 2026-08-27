@@ -74,14 +74,24 @@
 </div>
 
 <div class="row mt-3 rekap-po-page">
+    <!-- Banner Notification Periode Perhitungan -->
+    <div class="col-12 mb-3">
+        <div class="d-flex align-items-center flex-wrap p-3 border-0 rounded-3 shadow-sm" style="background-color: #E0F7FA; border: 1px solid #B2EBF2 !important;">
+            <div class="d-flex align-items-center justify-content-center me-2" style="color: #00838F;">
+                <i class="ti ti-info-circle fs-4"></i>
+            </div>
+            <span class="fw-semibold me-2" style="color: #006064; font-size: 0.95rem;">Periode Perhitungan:</span>
+            <span class="badge text-white fs-6 px-3 py-2 fw-bold" style="border-radius: 6px; background-color: #2196F3 !important;">{{ $startDate->format('d F Y') }}</span>
+            <span class="mx-2 fw-bold" style="color: #00838F;">&rarr;</span>
+            <span class="badge text-white fs-6 px-3 py-2 fw-bold" style="border-radius: 6px; background-color: #2196F3 !important;">{{ $endDate->format('d F Y') }}</span>
+        </div>
+    </div>
+
     <!-- Filter Periode Card -->
     <div class="col-12 mb-3 no-print">
         <div class="card shadow-sm">
             <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
                 <h6 class="mb-0 fw-bold text-dark"><i class="ti ti-filter me-1"></i>Filter Periode & Status</h6>
-                <span class="badge bg-primary fs-6 px-3 py-2">
-                    <i class="ti ti-calendar me-1"></i>Periode Berjalan: <strong>23 {{ $startDate->translatedFormat('F Y') }} - 24 {{ $endDate->translatedFormat('F Y') }}</strong>
-                </span>
             </div>
             <div class="card-body">
                 <form method="GET" action="{{ route('admin.persediaan.rekap') }}" class="row g-3 align-items-end">
