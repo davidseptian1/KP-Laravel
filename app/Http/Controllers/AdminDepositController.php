@@ -160,20 +160,28 @@ class AdminDepositController extends Controller
         $optionLists = $this->getMonitoringOptionLists();
 
         $perPage = $filters['per_page'] ?? 50;
-        $items = $query->paginate($perPage)->withQueryString();
         $monitoringSummary = (clone $query)
             ->reorder()
             ->selectRaw('COUNT(*) as total_request, COALESCE(SUM(nominal), 0) as total_nominal')
             ->first();
-        $bankGroupExpression = DB::raw("COALESCE(NULLIF(TRIM(bank), ''), '-')");
         $monitoringByBank = (clone $query)
             ->reorder()
             ->selectRaw("COALESCE(NULLIF(TRIM(bank), ''), '-') as bank_name")
             ->selectRaw('COUNT(*) as total_request')
             ->selectRaw('COALESCE(SUM(nominal), 0) as total_nominal')
-            ->groupBy($bankGroupExpression)
+            ->groupBy('bank')
             ->orderByDesc('total_nominal')
-            ->get();
+            ->get()
+            ->groupBy('bank_name')
+            ->map(function ($items, $bankName) {
+                return (object) [
+                    'bank_name' => $bankName,
+                    'total_request' => $items->sum('total_request'),
+                    'total_nominal' => $items->sum('total_nominal'),
+                ];
+            })
+            ->sortByDesc('total_nominal')
+            ->values();
         $latestUpdatedAt = (clone $query)->max('updated_at');
         $latestIncomingAt = (clone $query)->max('created_at');
         $latestIncomingItem = (clone $query)
@@ -181,6 +189,8 @@ class AdminDepositController extends Controller
             ->orderByDesc('id')
             ->first();
         $latestIncomingId = $latestIncomingItem?->id;
+
+        $items = $query->paginate($perPage)->withQueryString();
 
         $serverColorsMap = Server::query()->pluck('card_color', 'nama_server')->toArray();
 
@@ -231,20 +241,28 @@ class AdminDepositController extends Controller
         $optionLists = $this->getMonitoringOptionLists();
 
         $perPage = $filters['per_page'] ?? 50;
-        $items = $query->paginate($perPage)->withQueryString();
         $monitoringSummary = (clone $query)
             ->reorder()
             ->selectRaw('COUNT(*) as total_request, COALESCE(SUM(nominal), 0) as total_nominal')
             ->first();
-        $bankGroupExpression = DB::raw("COALESCE(NULLIF(TRIM(bank), ''), '-')");
         $monitoringByBank = (clone $query)
             ->reorder()
             ->selectRaw("COALESCE(NULLIF(TRIM(bank), ''), '-') as bank_name")
             ->selectRaw('COUNT(*) as total_request')
             ->selectRaw('COALESCE(SUM(nominal), 0) as total_nominal')
-            ->groupBy($bankGroupExpression)
+            ->groupBy('bank')
             ->orderByDesc('total_nominal')
-            ->get();
+            ->get()
+            ->groupBy('bank_name')
+            ->map(function ($items, $bankName) {
+                return (object) [
+                    'bank_name' => $bankName,
+                    'total_request' => $items->sum('total_request'),
+                    'total_nominal' => $items->sum('total_nominal'),
+                ];
+            })
+            ->sortByDesc('total_nominal')
+            ->values();
         $latestUpdatedAt = (clone $query)->max('updated_at');
         $latestIncomingAt = (clone $query)->max('created_at');
         $latestIncomingItem = (clone $query)
@@ -252,6 +270,8 @@ class AdminDepositController extends Controller
             ->orderByDesc('id')
             ->first();
         $latestIncomingId = $latestIncomingItem?->id;
+
+        $items = $query->paginate($perPage)->withQueryString();
 
         $serverColorsMap = Server::query()->pluck('card_color', 'nama_server')->toArray();
 
@@ -396,15 +416,24 @@ class AdminDepositController extends Controller
                 ->reorder()
                 ->selectRaw('COUNT(*) as total_request, COALESCE(SUM(nominal), 0) as total_nominal')
                 ->first();
-            $bankGroupExpression = DB::raw("COALESCE(NULLIF(TRIM(bank), ''), '-')");
             $monitoringByBank = (clone $query)
                 ->reorder()
                 ->selectRaw("COALESCE(NULLIF(TRIM(bank), ''), '-') as bank_name")
                 ->selectRaw('COUNT(*) as total_request')
                 ->selectRaw('COALESCE(SUM(nominal), 0) as total_nominal')
-                ->groupBy($bankGroupExpression)
+                ->groupBy('bank')
                 ->orderByDesc('total_nominal')
-                ->get();
+                ->get()
+                ->groupBy('bank_name')
+                ->map(function ($items, $bankName) {
+                    return (object) [
+                        'bank_name' => $bankName,
+                        'total_request' => $items->sum('total_request'),
+                        'total_nominal' => $items->sum('total_nominal'),
+                    ];
+                })
+                ->sortByDesc('total_nominal')
+                ->values();
             $summaryCardHtml = view('admin.deposit.partials.summary-card', [
                 'monitoringSummary' => $monitoringSummary,
                 'monitoringByBank' => $monitoringByBank,
@@ -530,15 +559,24 @@ class AdminDepositController extends Controller
                 ->reorder()
                 ->selectRaw('COUNT(*) as total_request, COALESCE(SUM(nominal), 0) as total_nominal')
                 ->first();
-            $bankGroupExpression = DB::raw("COALESCE(NULLIF(TRIM(bank), ''), '-')");
             $monitoringByBank = (clone $query)
                 ->reorder()
                 ->selectRaw("COALESCE(NULLIF(TRIM(bank), ''), '-') as bank_name")
                 ->selectRaw('COUNT(*) as total_request')
                 ->selectRaw('COALESCE(SUM(nominal), 0) as total_nominal')
-                ->groupBy($bankGroupExpression)
+                ->groupBy('bank')
                 ->orderByDesc('total_nominal')
-                ->get();
+                ->get()
+                ->groupBy('bank_name')
+                ->map(function ($items, $bankName) {
+                    return (object) [
+                        'bank_name' => $bankName,
+                        'total_request' => $items->sum('total_request'),
+                        'total_nominal' => $items->sum('total_nominal'),
+                    ];
+                })
+                ->sortByDesc('total_nominal')
+                ->values();
             $summaryCardHtml = view('admin.deposit.partials.summary-card', [
                 'monitoringSummary' => $monitoringSummary,
                 'monitoringByBank' => $monitoringByBank,
