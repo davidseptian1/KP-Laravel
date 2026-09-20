@@ -160,6 +160,7 @@ class DepositFormController extends Controller
         $latestUpdatedAt = (clone $itemsQuery)->max('updated_at');
         $latestActivityItem = (clone $itemsQuery)->orderByDesc('updated_at')->orderByDesc('id')->first();
         $todayDepositSummary = (clone $itemsQuery)
+            ->reorder()
             ->selectRaw('COUNT(*) as total_request, COALESCE(SUM(nominal), 0) as total_nominal')
             ->first();
 
@@ -373,6 +374,7 @@ class DepositFormController extends Controller
         $latestUpdatedAt = (clone $query)->max('updated_at');
         $latestActivityItem = (clone $query)->orderByDesc('updated_at')->orderByDesc('id')->first();
         $todayDepositSummary = (clone $query)
+            ->reorder()
             ->selectRaw('COUNT(*) as total_request, COALESCE(SUM(nominal), 0) as total_nominal')
             ->first();
 
@@ -473,6 +475,7 @@ class DepositFormController extends Controller
         $latestUpdatedAt = (clone $query)->max('updated_at');
         $latestActivityItem = (clone $query)->orderByDesc('updated_at')->orderByDesc('id')->first();
         $todayDepositSummary = (clone $query)
+            ->reorder()
             ->selectRaw('COUNT(*) as total_request, COALESCE(SUM(nominal), 0) as total_nominal')
             ->first();
 

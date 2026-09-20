@@ -162,6 +162,7 @@ class AdminDepositController extends Controller
         $perPage = $filters['per_page'] ?? 50;
         $items = $query->paginate($perPage)->withQueryString();
         $monitoringSummary = (clone $query)
+            ->reorder()
             ->selectRaw('COUNT(*) as total_request, COALESCE(SUM(nominal), 0) as total_nominal')
             ->first();
         $bankGroupExpression = DB::raw("COALESCE(NULLIF(TRIM(bank), ''), '-')");
@@ -232,6 +233,7 @@ class AdminDepositController extends Controller
         $perPage = $filters['per_page'] ?? 50;
         $items = $query->paginate($perPage)->withQueryString();
         $monitoringSummary = (clone $query)
+            ->reorder()
             ->selectRaw('COUNT(*) as total_request, COALESCE(SUM(nominal), 0) as total_nominal')
             ->first();
         $bankGroupExpression = DB::raw("COALESCE(NULLIF(TRIM(bank), ''), '-')");
@@ -391,6 +393,7 @@ class AdminDepositController extends Controller
                 'latestIncomingServerColor' => $latestIncomingServerColor,
             ])->render();
             $monitoringSummary = (clone $query)
+                ->reorder()
                 ->selectRaw('COUNT(*) as total_request, COALESCE(SUM(nominal), 0) as total_nominal')
                 ->first();
             $bankGroupExpression = DB::raw("COALESCE(NULLIF(TRIM(bank), ''), '-')");
@@ -524,6 +527,7 @@ class AdminDepositController extends Controller
                 'latestIncomingServerColor' => $latestIncomingServerColor,
             ])->render();
             $monitoringSummary = (clone $query)
+                ->reorder()
                 ->selectRaw('COUNT(*) as total_request, COALESCE(SUM(nominal), 0) as total_nominal')
                 ->first();
             $bankGroupExpression = DB::raw("COALESCE(NULLIF(TRIM(bank), ''), '-')");
