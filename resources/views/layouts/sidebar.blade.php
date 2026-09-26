@@ -438,7 +438,7 @@
 
                 @endif
 
-                @if (auth()->check() && in_array(auth()->user()->jabatan, ['Staff','Superadmin']))
+                @if (auth()->check() && (in_array(strtolower(trim(auth()->user()->jabatan ?? '')), ['staff','superadmin']) || auth()->user()->has_pendataan_access))
 
                 <li class="pc-item pc-caption">
                     <label>Data</label>
