@@ -342,7 +342,7 @@
                 @endif
 
 
-                @if (auth()->check() && auth()->user()->jabatan === 'Superadmin')
+                @if (auth()->check() && in_array(strtolower(trim(auth()->user()->jabatan ?? '')), ['superadmin']))
 
                 <li class="pc-item pc-caption">
                     <label>System</label>
