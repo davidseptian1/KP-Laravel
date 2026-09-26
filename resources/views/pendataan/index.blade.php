@@ -969,7 +969,20 @@ document.addEventListener('DOMContentLoaded', function() {
             setTimeout(triggerParseTambah, 50);
         });
 
+        deskripsiTambah.addEventListener('input', function() {
+            triggerParseTambah();
+        });
+
         document.getElementById('btnPilahDeskripsiTambah').addEventListener('click', triggerParseTambah);
+
+        const formTambah = document.getElementById('formTambahPendataan');
+        if (formTambah) {
+            formTambah.addEventListener('submit', function() {
+                if (!document.getElementById('tambah_nama_produk').value.trim()) {
+                    triggerParseTambah();
+                }
+            });
+        }
     }
 
     // Auto-parse on Edit textarea
@@ -999,7 +1012,24 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         };
 
+        deskripsiEdit.addEventListener('paste', function() {
+            setTimeout(triggerParseEdit, 50);
+        });
+
+        deskripsiEdit.addEventListener('input', function() {
+            triggerParseEdit();
+        });
+
         document.getElementById('btnPilahDeskripsiEdit').addEventListener('click', triggerParseEdit);
+
+        const formEdit = document.getElementById('formEditPendataan');
+        if (formEdit) {
+            formEdit.addEventListener('submit', function() {
+                if (!document.getElementById('edit_nama_produk').value.trim()) {
+                    triggerParseEdit();
+                }
+            });
+        }
     }
 });
 </script>
