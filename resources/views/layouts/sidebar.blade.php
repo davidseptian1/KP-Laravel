@@ -357,14 +357,12 @@
                 </li>
 
                 <!-- Pengaturan Akses Fitur Pendataan -->
-                @if (Route::has('admin.pendataan.access'))
-                <li class="pc-item {{ request()->routeIs('admin.pendataan.*') ? 'active' : '' }}">
-                    <a href="{{ route('admin.pendataan.access') }}" class="pc-link">
+                <li class="pc-item {{ request()->is('superadmin/pendataan-access*') ? 'active' : '' }}">
+                    <a href="{{ url('superadmin/pendataan-access') }}" class="pc-link">
                         <span class="pc-micon"><i class="ti ti-shield-lock"></i></span>
                         <span class="pc-mtext">Akses Fitur Pendataan</span>
                     </a>
                 </li>
-                @endif
 
                 <!-- Supplier Management -->
                 <li class="pc-item {{ $menuAdminSupplier ?? '' }}">
@@ -493,8 +491,8 @@
                     <label>Fitur Pendataan</label>
                 </li>
 
-                <li class="pc-item {{ request()->routeIs('pendataan.*') ? 'active' : '' }}">
-                    <a href="{{ route('pendataan.index') }}" class="pc-link">
+                <li class="pc-item {{ request()->is('pendataan*') ? 'active' : '' }}">
+                    <a href="{{ url('pendataan') }}" class="pc-link">
                         <span class="pc-micon"><i class="ti ti-notes"></i></span>
                         <span class="pc-mtext">Pendataan</span>
                     </a>

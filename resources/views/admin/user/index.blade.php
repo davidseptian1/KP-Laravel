@@ -9,8 +9,8 @@
             <a href="{{ route('userCreate') }}" class="btn btn-sm btn-primary">
                 <i class="fas fa-plus me-1"></i> Tambah User
             </a>
-            @if(auth()->user()->jabatan === 'Superadmin' && Route::has('admin.pendataan.access'))
-                <a href="{{ route('admin.pendataan.access') }}" class="btn btn-sm btn-outline-primary ms-2">
+            @if(auth()->user()->jabatan === 'Superadmin')
+                <a href="{{ url('superadmin/pendataan-access') }}" class="btn btn-sm btn-outline-primary ms-2">
                     <i class="fas fa-shield-alt me-1"></i> Kelola Akses Pendataan
                 </a>
             @endif

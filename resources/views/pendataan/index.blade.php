@@ -11,7 +11,7 @@
             <i class="ti ti-plus me-1"></i> Tambah Pendataan
         </button>
         @if(auth()->user()->jabatan === 'Superadmin')
-            <a href="{{ route('admin.pendataan.access') }}" class="btn btn-outline-secondary ms-2" title="Pengaturan Akses Staff">
+            <a href="{{ url('superadmin/pendataan-access') }}" class="btn btn-outline-secondary ms-2" title="Pengaturan Akses Staff">
                 <i class="ti ti-settings me-1"></i> Pengaturan Akses
             </a>
         @endif

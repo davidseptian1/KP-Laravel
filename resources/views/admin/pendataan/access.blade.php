@@ -7,7 +7,7 @@
         <p class="text-muted mb-0">Kelola dan tentukan akun staf yang diizinkan untuk melihat dan menggunakan fitur Pendataan di dashboard mereka.</p>
     </div>
     <div class="col-md-4 text-md-end mt-3 mt-md-0">
-        <a href="{{ route('pendataan.index') }}" class="btn btn-outline-primary">
+        <a href="{{ url('pendataan') }}" class="btn btn-outline-primary">
             <i class="ti ti-notes me-1"></i> Buka Fitur Pendataan
         </a>
     </div>
