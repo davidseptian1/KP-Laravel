@@ -357,12 +357,14 @@
                 </li>
 
                 <!-- Pengaturan Akses Fitur Pendataan -->
+                @if (Route::has('admin.pendataan.access'))
                 <li class="pc-item {{ request()->routeIs('admin.pendataan.*') ? 'active' : '' }}">
                     <a href="{{ route('admin.pendataan.access') }}" class="pc-link">
                         <span class="pc-micon"><i class="ti ti-shield-lock"></i></span>
                         <span class="pc-mtext">Akses Fitur Pendataan</span>
                     </a>
                 </li>
+                @endif
 
                 <!-- Supplier Management -->
                 <li class="pc-item {{ $menuAdminSupplier ?? '' }}">
@@ -483,7 +485,7 @@
                 </li>
 
                 <!-- Fitur Pendataan (Hanya muncul jika Superadmin atau akun Staff yang diberi izin akses) -->
-                @if (auth()->check() && (strtolower(trim(auth()->user()->jabatan ?? '')) === 'superadmin' || auth()->user()->has_pendataan_access))
+                @if (Route::has('pendataan.index') && auth()->check() && (strtolower(trim(auth()->user()->jabatan ?? '')) === 'superadmin' || auth()->user()->has_pendataan_access))
                 <li class="pc-item {{ request()->routeIs('pendataan.*') ? 'active' : '' }}">
                     <a href="{{ route('pendataan.index') }}" class="pc-link">
                         <span class="pc-micon"><i class="ti ti-notes"></i></span>
