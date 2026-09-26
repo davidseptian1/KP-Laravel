@@ -38,6 +38,8 @@ use App\Http\Controllers\AdminActivityLogController;
 use App\Http\Controllers\DataCuttingController;
 use App\Http\Controllers\SosmedPublicFormController;
 use App\Http\Controllers\AdminSosmedController;
+use App\Http\Controllers\PendataanController;
+use App\Http\Controllers\AdminPendataanAccessController;
 use App\Models\DataRequest;
 use App\Models\Deposit;
 use App\Models\LoanRequest;
@@ -111,6 +113,15 @@ Route::get('storage/sosmed_photos/{filename}', function ($filename) {
     }
     return response()->file($path);
 })->name('sosmed.photo.view');
+
+// Public route for viewing uploaded pendataan photos (fallback if storage symlink missing)
+Route::get('storage/pendataan/{filename}', function ($filename) {
+    $path = storage_path('app/public/pendataan/' . $filename);
+    if (!file_exists($path)) {
+        abort(404);
+    }
+    return response()->file($path);
+})->name('pendataan.photo.view');
 
 // Public signed download for recap PDFs
 Route::get('recap/download/{file}', [RecapDownloadController::class, 'download'])
@@ -239,6 +250,14 @@ Route::middleware(['checkLogin', 'admin.activity.log'])->group(function () {
     
     // Import status polling
     Route::get('imports/status', [ImportStatusController::class, 'status'])->name('imports.status');
+
+    // Pendataan (CRUD & Filter for authorized users)
+    Route::get('pendataan', [PendataanController::class, 'index'])->name('pendataan.index');
+    Route::post('pendataan', [PendataanController::class, 'store'])->name('pendataan.store');
+    Route::post('pendataan/parse-text', [PendataanController::class, 'parseText'])->name('pendataan.parse-text');
+    Route::get('pendataan/{id}', [PendataanController::class, 'show'])->name('pendataan.show');
+    Route::put('pendataan/{id}', [PendataanController::class, 'update'])->name('pendataan.update');
+    Route::delete('pendataan/{id}', [PendataanController::class, 'destroy'])->name('pendataan.destroy');
 
     // Middleware isAdmin
     Route::middleware('isAdmin')->group(function () {
@@ -419,6 +438,11 @@ Route::middleware(['checkLogin', 'admin.activity.log'])->group(function () {
         Route::post('data-cutting/preview', [DataCuttingController::class, 'preview'])->name('data-cutting.preview');
         Route::post('data-cutting', [DataCuttingController::class, 'store'])->name('data-cutting.store');
         Route::get('data-cutting/{id}/download', [DataCuttingController::class, 'download'])->name('data-cutting.download');
+
+        // Pengaturan Akses Fitur Pendataan (Superadmin only)
+        Route::get('superadmin/pendataan-access', [AdminPendataanAccessController::class, 'index'])->name('admin.pendataan.access');
+        Route::post('superadmin/pendataan-access/{id}/toggle', [AdminPendataanAccessController::class, 'toggle'])->name('admin.pendataan.access.toggle');
+        Route::post('superadmin/pendataan-access/batch', [AdminPendataanAccessController::class, 'batchUpdate'])->name('admin.pendataan.access.batch');
     });
 
     Route::get('admin/deposit/analysis', [AdminDepositController::class, 'analysis'])->name('admin.deposit.analysis');

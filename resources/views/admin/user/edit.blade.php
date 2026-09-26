@@ -98,6 +98,22 @@
                 </div>
             </div>
 
+            @if(auth()->user()->jabatan === 'Superadmin')
+            <div class="row mb-3">
+                <div class="col-12">
+                    <div class="card bg-light border p-3 rounded">
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" name="has_pendataan_access" id="has_pendataan_access" value="1" {{ $user->has_pendataan_access ? 'checked' : '' }} style="cursor: pointer; width: 2.5em; height: 1.3em;">
+                            <label class="form-check-label ms-2 fw-semibold" for="has_pendataan_access">
+                                Berikan Akses Fitur Pendataan
+                            </label>
+                        </div>
+                        <small class="text-muted d-block mt-1">Jika diaktifkan, akun ini dapat melihat menu dan menggunakan fitur Pendataan di dashboard mereka.</small>
+                    </div>
+                </div>
+            </div>
+            @endif
+
             <div class="form-group mt-3">
                 <button type="submit" class="btn btn-sm btn-primary">
                     <i class="fas fa-edit mr-1"></i> Edit

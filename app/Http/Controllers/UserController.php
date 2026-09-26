@@ -74,6 +74,9 @@ class UserController extends Controller
         $user->nama        = $request->nama;
         $user->email       = $request->email;
         $user->jabatan     = $request->jabatan;
+        if (auth()->user()?->jabatan === 'Superadmin') {
+            $user->has_pendataan_access = $request->boolean('has_pendataan_access');
+        }
         $user->password    = Hash::make($request->password);
         $user->save();
 
@@ -118,6 +121,10 @@ class UserController extends Controller
         $user->nama        = $request->nama;
         $user->email       = $request->email;
         $user->jabatan     = $request->jabatan;
+
+        if (auth()->user()?->jabatan === 'Superadmin') {
+            $user->has_pendataan_access = $request->boolean('has_pendataan_access');
+        }
 
         if ($request->filled('password')) {
             $user->password    = Hash::make($request->password);

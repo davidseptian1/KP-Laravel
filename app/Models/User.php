@@ -22,6 +22,7 @@ class User extends Authenticatable
         'email',
         'no_hp',
         'jabatan',
+        'has_pendataan_access',
         'password',
         'google_id',
         'otp_code',
@@ -46,5 +47,22 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'has_pendataan_access' => 'boolean',
     ];
+
+    /**
+     * Check if user can access the Pendataan feature.
+     */
+    public function canAccessPendataan(): bool
+    {
+        return strtolower(trim($this->jabatan ?? '')) === 'superadmin' || (bool) $this->has_pendataan_access;
+    }
+
+    /**
+     * Relationship with Pendataan.
+     */
+    public function pendataans()
+    {
+        return $this->hasMany(Pendataan::class, 'user_id');
+    }
 }
