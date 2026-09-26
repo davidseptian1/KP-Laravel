@@ -484,15 +484,21 @@
                     </a>
                 </li>
 
-                <!-- Fitur Pendataan (Hanya muncul jika Superadmin atau akun Staff yang diberi izin akses) -->
-                @if (Route::has('pendataan.index') && auth()->check() && (strtolower(trim(auth()->user()->jabatan ?? '')) === 'superadmin' || auth()->user()->has_pendataan_access))
+                @endif
+
+                <!-- Section Khusus Fitur Pendataan (Hanya untuk Staff yang memiliki izin akses & Superadmin) -->
+                @if (auth()->check() && auth()->user()->canAccessPendataan())
+
+                <li class="pc-item pc-caption">
+                    <label>Fitur Pendataan</label>
+                </li>
+
                 <li class="pc-item {{ request()->routeIs('pendataan.*') ? 'active' : '' }}">
                     <a href="{{ route('pendataan.index') }}" class="pc-link">
                         <span class="pc-micon"><i class="ti ti-notes"></i></span>
                         <span class="pc-mtext">Pendataan</span>
                     </a>
                 </li>
-                @endif
 
                 @endif
 

@@ -207,7 +207,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
                     'Accept': 'application/json'
-                }
+                },
+                body: JSON.stringify({ state: isChecked ? 1 : 0 })
             })
             .then(res => res.json())
             .then(data => {

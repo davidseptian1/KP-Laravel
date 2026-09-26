@@ -52,11 +52,15 @@ class AdminPendataanAccessController extends Controller
     /**
      * AJAX toggle for granting or revoking pendataan access.
      */
-    public function toggle($id)
+    public function toggle(Request $request, $id)
     {
         $user = User::findOrFail($id);
 
-        $user->has_pendataan_access = !$user->has_pendataan_access;
+        if ($request->has('state')) {
+            $user->has_pendataan_access = $request->boolean('state');
+        } else {
+            $user->has_pendataan_access = !$user->has_pendataan_access;
+        }
         $user->save();
 
         return response()->json([
@@ -71,17 +75,15 @@ class AdminPendataanAccessController extends Controller
      */
     public function batchUpdate(Request $request)
     {
-        $selectedIds = $request->input('accessible_user_ids', []);
+        $selectedIds = (array) $request->input('accessible_user_ids', []);
 
-        // Update all staff users: set true if selected, false if not
-        $targetUsers = User::where('jabatan', 'Staff')->get();
+        // Update all users who are not superadmin
+        $targetUsers = User::whereNotIn('jabatan', ['Superadmin'])->get();
 
         foreach ($targetUsers as $staff) {
-            $hasAccess = in_array((string) $staff->id, $selectedIds, true) || in_array($staff->id, $selectedIds, true);
-            if ($staff->has_pendataan_access !== $hasAccess) {
-                $staff->has_pendataan_access = $hasAccess;
-                $staff->save();
-            }
+            $hasAccess = in_array((string) $staff->id, $selectedIds, true) || in_array((int) $staff->id, $selectedIds, true);
+            $staff->has_pendataan_access = $hasAccess;
+            $staff->save();
         }
 
         return redirect()->route('admin.pendataan.access')->with('success', 'Pengaturan akses fitur Pendataan berhasil disimpan!');
