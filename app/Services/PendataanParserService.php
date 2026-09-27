@@ -51,6 +51,14 @@ class PendataanParserService
             }
         }
 
+        // 2b. Text-based stepper: Indonesian app format
+        // e.g. "kurangi jumlah\n10\ntambah jumlah" or "kurangi\n10\ntambah"
+        if ($result['qty'] <= 1) {
+            if (preg_match('/(?:kurangi(?:\s+jumlah)?)\s*\n\s*(\d+)\s*\n\s*(?:tambah(?:\s+jumlah)?)/i', $cleanText, $m)) {
+                $result['qty'] = (int) $m[1];
+            }
+        }
+
         // 3. Fallback extraction from lines (mobile app format)
         $lines = array_map('trim', explode("\n", $cleanText));
         $nonEmptyLines = array_values(array_filter($lines, function ($l) {
@@ -62,7 +70,8 @@ class PendataanParserService
             $ignoreKeywords = [
                 'konfirmasi', 'detail transaksi', 'rincian transaksi', 'metode pembayaran',
                 'saldo dompul', 'pin dompul', 'pin keuangan', 'masukkan pin',
-                'total tagihan', 'total qty', 'total bayar', 'pembayaran', 'ringkasan'
+                'total tagihan', 'total qty', 'total bayar', 'pembayaran', 'ringkasan',
+                'kurangi jumlah', 'tambah jumlah', 'kurangi', 'hapus item',
             ];
 
             foreach ($nonEmptyLines as $line) {

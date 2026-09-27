@@ -602,6 +602,13 @@ function parseTransactionText(text) {
         if (mCounter) res.qty = parseInt(mCounter[1], 10) || 1;
     }
 
+    // 2b. Text-based stepper: Indonesian app format
+    // e.g. "kurangi jumlah\n10\ntambah jumlah" or "kurangi\n10\ntambah"
+    if (res.qty <= 1) {
+        const mTextCounter = clean.match(/(?:kurangi(?:\s+jumlah)?)\s*\n\s*(\d+)\s*\n\s*(?:tambah(?:\s+jumlah)?)/i);
+        if (mTextCounter) res.qty = parseInt(mTextCounter[1], 10) || 1;
+    }
+
     // 3. Fallback per-line inspection
     const lines = clean.split('\n').map(l => l.trim()).filter(l => l !== '');
 
@@ -610,7 +617,8 @@ function parseTransactionText(text) {
         const ignoreKeywords = [
             'konfirmasi', 'detail transaksi', 'rincian transaksi', 'metode pembayaran',
             'saldo dompul', 'pin dompul', 'pin keuangan', 'masukkan pin',
-            'total tagihan', 'total qty', 'total bayar', 'pembayaran', 'ringkasan'
+            'total tagihan', 'total qty', 'total bayar', 'pembayaran', 'ringkasan',
+            'kurangi jumlah', 'tambah jumlah', 'kurangi', 'hapus item',
         ];
 
         for (let line of lines) {
