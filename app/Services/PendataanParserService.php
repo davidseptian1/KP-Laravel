@@ -42,30 +42,38 @@ class PendataanParserService
             $result['qty'] = (int) $m[1];
         }
 
-        // 2. Extract Qty from +/- stepper block: e.g. "- \n 200 \n +" or just "- \n 200"
-        // Require the "-" to be at the start of a line (avoids matching "5hr - 15.000").
-        // The trailing "+" is made optional so qty is captured even if user only copied "-\nQTY".
-        if ($result['qty'] <= 1) {
-            if (preg_match('/(?:^|\n)[ \t]*[-–—][ \t]*\n[ \t]*(\d+)[ \t]*(?:\n[ \t]*[+＋])?/m', $cleanText, $m)) {
-                $result['qty'] = (int) $m[1];
-            }
-        }
-
-        // 2b. Text-based stepper: Indonesian app format
-        // e.g. "kurangi jumlah\n10\ntambah jumlah" or "kurangi\n10\ntambah"
-        if ($result['qty'] <= 1) {
-            if (preg_match('/(?:kurangi(?:\s+jumlah)?)\s*\n\s*(\d+)\s*\n\s*(?:tambah(?:\s+jumlah)?)/i', $cleanText, $m)) {
-                $result['qty'] = (int) $m[1];
-            }
-        }
-
-        // 3. Fallback extraction from lines (mobile app format)
+        // 2. Lines breakdown and stepper detection
         $lines = array_map('trim', explode("\n", $cleanText));
         $nonEmptyLines = array_values(array_filter($lines, function ($l) {
             return $l !== '';
         }));
 
+        $stepperStartIndex = null;
+        $stepperEndIndex = null;
+        for ($i = 0; $i < count($nonEmptyLines); $i++) {
+            $line = $nonEmptyLines[$i];
+            // Symbol stepper: "-" \n QTY [\n "+"]
+            if (in_array($line, ['-', '–', '—']) && isset($nonEmptyLines[$i + 1]) && ctype_digit($nonEmptyLines[$i + 1])) {
+                $stepperStartIndex = $i;
+                $stepperEndIndex = (isset($nonEmptyLines[$i + 2]) && in_array($nonEmptyLines[$i + 2], ['+', '＋'])) ? $i + 2 : $i + 1;
+                if ($result['qty'] <= 1) {
+                    $result['qty'] = (int) $nonEmptyLines[$i + 1];
+                }
+                break;
+            }
+            // Text stepper: "kurangi [jumlah]" \n QTY [\n "tambah [jumlah]"]
+            if (preg_match('/^kurangi(?:\s+jumlah)?$/i', $line) && isset($nonEmptyLines[$i + 1]) && ctype_digit($nonEmptyLines[$i + 1])) {
+                $stepperStartIndex = $i;
+                $stepperEndIndex = (isset($nonEmptyLines[$i + 2]) && preg_match('/^tambah(?:\s+jumlah)?$/i', $nonEmptyLines[$i + 2])) ? $i + 2 : $i + 1;
+                if ($result['qty'] <= 1) {
+                    $result['qty'] = (int) $nonEmptyLines[$i + 1];
+                }
+                break;
+            }
+        }
+
         // Find product name if not set
+        $productIndex = 0;
         if (empty($result['nama_produk'])) {
             $ignoreKeywords = [
                 'konfirmasi', 'detail transaksi', 'rincian transaksi', 'metode pembayaran',
@@ -74,17 +82,11 @@ class PendataanParserService
                 'kurangi jumlah', 'tambah jumlah', 'kurangi', 'hapus item',
             ];
 
-            foreach ($nonEmptyLines as $line) {
+            foreach ($nonEmptyLines as $idx => $line) {
                 $lower = strtolower($line);
-                if (in_array($line, ['-', '+', '–', '—', '＋'])) {
-                    continue;
-                }
-                if (is_numeric($line)) {
-                    continue;
-                }
-                if (preg_match('/^(?:rp\.?|idr)\s*[\d.,]+/i', $line)) {
-                    continue;
-                }
+                if (in_array($line, ['-', '+', '–', '—', '＋'])) continue;
+                if (is_numeric($line)) continue;
+                if (preg_match('/^(?:rp\.?|idr)\s*[\d.,]+/i', $line)) continue;
 
                 $isIgnored = false;
                 foreach ($ignoreKeywords as $keyword) {
@@ -96,6 +98,7 @@ class PendataanParserService
 
                 if (!$isIgnored) {
                     $result['nama_produk'] = $line;
+                    $productIndex = $idx;
                     break;
                 }
             }
@@ -138,49 +141,100 @@ class PendataanParserService
             }
         }
 
-        // Find unit price (harga qty)
-        if ($result['harga_qty'] <= 0) {
-            // Check lines after product name and before 'Metode Pembayaran' or 'Total Tagihan'
-            $foundProduct = empty($result['nama_produk']);
-            for ($i = 0; $i < count($nonEmptyLines); $i++) {
-                if (!$foundProduct) {
-                    if ($nonEmptyLines[$i] === $result['nama_produk']) {
-                        $foundProduct = true;
-                    }
-                    continue;
-                }
+        // Collect all price candidates outside of the stepper lines
+        $pricesBeforeStepper = [];
+        $pricesAfterStepper = [];
+        $allPriceCandidates = [];
 
-                if (preg_match('/(?:Metode\s*Pembayaran|Total\s*(?:Tagihan|Bayar|Pembayaran))/i', $nonEmptyLines[$i])) {
-                    break; // Stop before payment method or total
-                }
-
-                // Skip numeric lines flanked by stepper keywords (kurangi/tambah)
-                // to prevent the qty number being misread as unit price.
-                if (is_numeric($nonEmptyLines[$i])) {
-                    $prev = strtolower($nonEmptyLines[$i - 1] ?? '');
-                    $next = strtolower($nonEmptyLines[$i + 1] ?? '');
-                    if (str_contains($prev, 'kurangi') || str_contains($next, 'tambah')) {
-                        continue;
-                    }
-                }
-
-                if (self::isPriceLine($nonEmptyLines[$i])) {
-                    $p = self::cleanPrice($nonEmptyLines[$i]);
-                    if ($p > 0) {
-                        $result['harga_qty'] = $p;
-                        break;
+        foreach ($nonEmptyLines as $idx => $line) {
+            if ($idx === $productIndex) continue;
+            if ($stepperStartIndex !== null && $idx >= $stepperStartIndex && $idx <= $stepperEndIndex) {
+                continue;
+            }
+            if (self::isPriceLine($line)) {
+                $p = self::cleanPrice($line);
+                if ($p > 0) {
+                    $allPriceCandidates[] = ['index' => $idx, 'price' => $p];
+                    if ($stepperStartIndex !== null) {
+                        if ($idx < $stepperStartIndex) {
+                            $pricesBeforeStepper[] = $p;
+                        } elseif ($idx > $stepperEndIndex) {
+                            $pricesAfterStepper[] = $p;
+                        }
                     }
                 }
             }
         }
 
-        // Cross-calculate if one is missing
-        if ($result['harga_qty'] <= 0 && $result['total_harga'] > 0 && $result['qty'] > 0) {
-            $result['harga_qty'] = round($result['total_harga'] / $result['qty'], 2);
+        $qty = $result['qty'] > 0 ? $result['qty'] : 1;
+
+        // Resolve prices based on stepper position
+        if ($stepperStartIndex !== null) {
+            if (!empty($pricesBeforeStepper)) {
+                // Case 1: Price BEFORE stepper is the unit price (e.g. Flex Mini)
+                if ($result['harga_qty'] <= 0) {
+                    $result['harga_qty'] = $pricesBeforeStepper[0];
+                }
+                if ($result['total_harga'] <= 0) {
+                    if (!empty($pricesAfterStepper)) {
+                        $result['total_harga'] = end($pricesAfterStepper);
+                    } else {
+                        $result['total_harga'] = round($result['harga_qty'] * $qty, 2);
+                    }
+                }
+            } elseif (!empty($pricesAfterStepper)) {
+                // Case 2: NO price before stepper; price(s) appear AFTER stepper (e.g. Kuota Nonstop)
+                $uniquePrices = array_values(array_unique($pricesAfterStepper));
+                if (count($uniquePrices) >= 2) {
+                    sort($uniquePrices);
+                    $pSmall = $uniquePrices[0];
+                    $pLarge = end($uniquePrices);
+                    if (abs(($pSmall * $qty) - $pLarge) < 2) {
+                        if ($result['harga_qty'] <= 0) $result['harga_qty'] = $pSmall;
+                        if ($result['total_harga'] <= 0) $result['total_harga'] = $pLarge;
+                    } else {
+                        if ($result['total_harga'] <= 0) $result['total_harga'] = $pLarge;
+                        if ($result['harga_qty'] <= 0) $result['harga_qty'] = round($pLarge / $qty, 2);
+                    }
+                } else {
+                    // All prices after stepper are identical (or only 1 price exists).
+                    // Because there was NO price before stepper, this price is TOTAL HARGA!
+                    $totalCandidate = $pricesAfterStepper[0];
+                    if ($result['total_harga'] <= 0) {
+                        $result['total_harga'] = $totalCandidate;
+                    }
+                    if ($result['harga_qty'] <= 0) {
+                        $result['harga_qty'] = round($result['total_harga'] / $qty, 2);
+                    }
+                }
+            }
+        } else {
+            // No stepper detected
+            if ($result['harga_qty'] <= 0 && !empty($allPriceCandidates)) {
+                $uniquePrices = array_values(array_unique(array_column($allPriceCandidates, 'price')));
+                if ($qty > 1 && count($uniquePrices) === 1) {
+                    // Only 1 unique price with qty > 1
+                    if ($result['total_harga'] <= 0) {
+                        $result['total_harga'] = $uniquePrices[0];
+                    }
+                    $result['harga_qty'] = round($result['total_harga'] / $qty, 2);
+                } else {
+                    $result['harga_qty'] = $allPriceCandidates[0]['price'];
+                }
+            }
         }
 
-        if ($result['total_harga'] <= 0 && $result['harga_qty'] > 0 && $result['qty'] > 0) {
-            $result['total_harga'] = round($result['harga_qty'] * $result['qty'], 2);
+        // Safety checks & cross-calculation
+        if ($result['total_harga'] <= 0 && $result['harga_qty'] > 0 && $qty > 0) {
+            $result['total_harga'] = round($result['harga_qty'] * $qty, 2);
+        }
+        if ($result['harga_qty'] <= 0 && $result['total_harga'] > 0 && $qty > 0) {
+            $result['harga_qty'] = round($result['total_harga'] / $qty, 2);
+        }
+
+        // If qty > 1 and harga_qty was accidentally set equal to total_harga
+        if ($qty > 1 && $result['total_harga'] > 0 && $result['harga_qty'] == $result['total_harga']) {
+            $result['harga_qty'] = round($result['total_harga'] / $qty, 2);
         }
 
         return $result;

@@ -310,13 +310,13 @@
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label small fw-semibold text-muted">Qty</label>
-                                <input type="number" name="qty" id="tambah_qty" class="form-control text-center" value="1" min="1" oninput="calculateTotalTambah()">
+                                <input type="number" name="qty" id="tambah_qty" class="form-control text-center" value="1" min="1" oninput="onQtyChangeTambah()">
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label small fw-semibold text-muted">Total Harga</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-white">Rp</span>
-                                    <input type="text" name="total_harga" id="tambah_total_harga" class="form-control js-currency-input" placeholder="0">
+                                    <input type="text" name="total_harga" id="tambah_total_harga" class="form-control js-currency-input" placeholder="0" oninput="calculateUnitTambah()">
                                 </div>
                             </div>
                         </div>
@@ -422,13 +422,13 @@
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label small fw-semibold text-muted">Qty</label>
-                                <input type="number" name="qty" id="edit_qty" class="form-control text-center" min="1" oninput="calculateTotalEdit()">
+                                <input type="number" name="qty" id="edit_qty" class="form-control text-center" min="1" oninput="onQtyChangeEdit()">
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label small fw-semibold text-muted">Total Harga</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-white">Rp</span>
-                                    <input type="text" name="total_harga" id="edit_total_harga" class="form-control js-currency-input">
+                                    <input type="text" name="total_harga" id="edit_total_harga" class="form-control js-currency-input" oninput="calculateUnitEdit()">
                                 </div>
                             </div>
                         </div>
@@ -621,25 +621,35 @@ function parseTransactionText(text) {
     const mQty = clean.match(/(?:Total\s*Qty|Qty|Jumlah)\s*[:=]?\s*\n?\s*(\d+)/i);
     if (mQty) res.qty = parseInt(mQty[1], 10) || 1;
 
-    // 2. Check +/- counter block
-    // Require the "-" at the start of a line so it doesn't match "5hr - 15.000".
-    // Make the trailing "+" optional in case user didn't copy it.
-    if (res.qty <= 1) {
-        const mCounter = clean.match(/(?:^|\n)[ \t]*[-\u2013\u2014][ \t]*\n[ \t]*(\d+)[ \t]*(?:\n[ \t]*[+\uff0b])?/m);
-        if (mCounter) res.qty = parseInt(mCounter[1], 10) || 1;
-    }
-
-    // 2b. Text-based stepper: Indonesian app format
-    // e.g. "kurangi jumlah\n10\ntambah jumlah" or "kurangi\n10\ntambah"
-    if (res.qty <= 1) {
-        const mTextCounter = clean.match(/(?:kurangi(?:\s+jumlah)?)\s*\n\s*(\d+)\s*\n\s*(?:tambah(?:\s+jumlah)?)/i);
-        if (mTextCounter) res.qty = parseInt(mTextCounter[1], 10) || 1;
-    }
-
-    // 3. Fallback per-line inspection
+    // 2. Lines breakdown and stepper detection
     const lines = clean.split('\n').map(l => l.trim()).filter(l => l !== '');
 
+    let stepperStartIndex = null;
+    let stepperEndIndex = null;
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        // Symbol stepper: "-" \n QTY [\n "+"]
+        if (['-', '–', '—'].includes(line) && lines[i + 1] && /^\d+$/.test(lines[i + 1])) {
+            stepperStartIndex = i;
+            stepperEndIndex = (lines[i + 2] && ['+', '＋'].includes(lines[i + 2])) ? i + 2 : i + 1;
+            if (res.qty <= 1) {
+                res.qty = parseInt(lines[i + 1], 10) || 1;
+            }
+            break;
+        }
+        // Text stepper: "kurangi [jumlah]" \n QTY [\n "tambah [jumlah]"]
+        if (/^kurangi(?:\s+jumlah)?$/i.test(line) && lines[i + 1] && /^\d+$/.test(lines[i + 1])) {
+            stepperStartIndex = i;
+            stepperEndIndex = (lines[i + 2] && /^tambah(?:\s+jumlah)?$/i.test(lines[i + 2])) ? i + 2 : i + 1;
+            if (res.qty <= 1) {
+                res.qty = parseInt(lines[i + 1], 10) || 1;
+            }
+            break;
+        }
+    }
+
     // Product name fallback
+    let productIndex = 0;
     if (!res.nama_produk) {
         const ignoreKeywords = [
             'konfirmasi', 'detail transaksi', 'rincian transaksi', 'metode pembayaran',
@@ -648,7 +658,8 @@ function parseTransactionText(text) {
             'kurangi jumlah', 'tambah jumlah', 'kurangi', 'hapus item',
         ];
 
-        for (let line of lines) {
+        for (let idx = 0; idx < lines.length; idx++) {
+            const line = lines[idx];
             const lower = line.toLowerCase();
             if (['-', '+', '–', '—', '＋'].includes(line)) continue;
             if (/^\d+$/.test(line)) continue;
@@ -664,6 +675,7 @@ function parseTransactionText(text) {
 
             if (!ignored) {
                 res.nama_produk = line;
+                productIndex = idx;
                 break;
             }
         }
@@ -703,42 +715,103 @@ function parseTransactionText(text) {
         }
     }
 
-    // Fallback Harga Qty
-    if (res.harga_qty <= 0) {
-        let foundProduct = !res.nama_produk;
-        for (let i = 0; i < lines.length; i++) {
-            if (!foundProduct) {
-                if (lines[i] === res.nama_produk) foundProduct = true;
-                continue;
-            }
-            if (/(?:Metode\s*Pembayaran|Total\s*(?:Tagihan|Bayar|Pembayaran))/i.test(lines[i])) break;
+    // Collect all price candidates outside of the stepper lines
+    const pricesBeforeStepper = [];
+    const pricesAfterStepper = [];
+    const allPriceCandidates = [];
 
-            // Skip numeric lines flanked by stepper keywords (kurangi/tambah)
-            if (/^\d+$/.test(lines[i])) {
-                const prev = (lines[i - 1] || '').toLowerCase();
-                const next = (lines[i + 1] || '').toLowerCase();
-                if (prev.includes('kurangi') || next.includes('tambah')) continue;
-            }
+    for (let idx = 0; idx < lines.length; idx++) {
+        if (idx === productIndex) continue;
+        if (stepperStartIndex !== null && idx >= stepperStartIndex && idx <= stepperEndIndex) {
+            continue;
+        }
 
-            // Require Rp/IDR prefix OR thousands separator for bare numbers
-            const isRpLine = /^(?:Rp\.?|IDR)\s*[\d.,]+\s*$/i.test(lines[i]);
-            const isBareFormatted = /^[\d.,]+$/.test(lines[i]) && /[.,]/.test(lines[i]);
-            if ((isRpLine || isBareFormatted) && /\d/.test(lines[i])) {
-                const p = cleanPriceText(lines[i]);
-                if (p > 0) {
-                    res.harga_qty = p;
-                    break;
+        const line = lines[idx];
+        const isRpLine = /^(?:Rp\.?|IDR)\s*[\d.,]+\s*$/i.test(line) || /(?:Rp\.?|IDR)\s*[\d.,]+/i.test(line);
+        const isBareFormatted = /^[\d.,]+$/.test(line) && /[.,]/.test(line);
+        if ((isRpLine || isBareFormatted) && /\d/.test(line)) {
+            const p = cleanPriceText(line);
+            if (p > 0) {
+                allPriceCandidates.push({ index: idx, price: p });
+                if (stepperStartIndex !== null) {
+                    if (idx < stepperStartIndex) {
+                        pricesBeforeStepper.push(p);
+                    } else if (idx > stepperEndIndex) {
+                        pricesAfterStepper.push(p);
+                    }
                 }
             }
         }
     }
 
-    // Cross calculations
-    if (res.harga_qty <= 0 && res.total_harga > 0 && res.qty > 0) {
-        res.harga_qty = Math.round(res.total_harga / res.qty);
+    const qty = res.qty > 0 ? res.qty : 1;
+
+    // Resolve prices based on stepper position
+    if (stepperStartIndex !== null) {
+        if (pricesBeforeStepper.length > 0) {
+            // Case 1: Price BEFORE stepper is the unit price (e.g. Flex Mini)
+            if (res.harga_qty <= 0) {
+                res.harga_qty = pricesBeforeStepper[0];
+            }
+            if (res.total_harga <= 0) {
+                if (pricesAfterStepper.length > 0) {
+                    res.total_harga = pricesAfterStepper[pricesAfterStepper.length - 1];
+                } else {
+                    res.total_harga = Math.round(res.harga_qty * qty);
+                }
+            }
+        } else if (pricesAfterStepper.length > 0) {
+            // Case 2: NO price before stepper; price(s) appear AFTER stepper (e.g. Kuota Nonstop)
+            const uniquePrices = [...new Set(pricesAfterStepper)];
+            if (uniquePrices.length >= 2) {
+                uniquePrices.sort((a, b) => a - b);
+                const pSmall = uniquePrices[0];
+                const pLarge = uniquePrices[uniquePrices.length - 1];
+                if (Math.abs((pSmall * qty) - pLarge) < 2) {
+                    if (res.harga_qty <= 0) res.harga_qty = pSmall;
+                    if (res.total_harga <= 0) res.total_harga = pLarge;
+                } else {
+                    if (res.total_harga <= 0) res.total_harga = pLarge;
+                    if (res.harga_qty <= 0) res.harga_qty = Math.round(pLarge / qty);
+                }
+            } else {
+                // All prices after stepper are identical (or only 1 price exists).
+                // Because there was NO price before stepper, this price is TOTAL HARGA!
+                const totalCandidate = pricesAfterStepper[0];
+                if (res.total_harga <= 0) {
+                    res.total_harga = totalCandidate;
+                }
+                if (res.harga_qty <= 0) {
+                    res.harga_qty = Math.round(res.total_harga / qty);
+                }
+            }
+        }
+    } else {
+        // No stepper detected
+        if (res.harga_qty <= 0 && allPriceCandidates.length > 0) {
+            const uniquePrices = [...new Set(allPriceCandidates.map(c => c.price))];
+            if (qty > 1 && uniquePrices.length === 1) {
+                if (res.total_harga <= 0) {
+                    res.total_harga = uniquePrices[0];
+                }
+                res.harga_qty = Math.round(res.total_harga / qty);
+            } else {
+                res.harga_qty = allPriceCandidates[0].price;
+            }
+        }
     }
-    if (res.total_harga <= 0 && res.harga_qty > 0 && res.qty > 0) {
-        res.total_harga = Math.round(res.harga_qty * res.qty);
+
+    // Safety checks & cross calculations
+    if (res.total_harga <= 0 && res.harga_qty > 0 && qty > 0) {
+        res.total_harga = Math.round(res.harga_qty * qty);
+    }
+    if (res.harga_qty <= 0 && res.total_harga > 0 && qty > 0) {
+        res.harga_qty = Math.round(res.total_harga / qty);
+    }
+
+    // If qty > 1 and harga_qty was accidentally set equal to total_harga
+    if (qty > 1 && res.total_harga > 0 && res.harga_qty === res.total_harga) {
+        res.harga_qty = Math.round(res.total_harga / qty);
     }
 
     return res;
@@ -753,12 +826,52 @@ function calculateTotalTambah() {
     }
 }
 
+// Auto-calculate unit in modal Tambah
+function calculateUnitTambah() {
+    const totalHarga = cleanPriceText(document.getElementById('tambah_total_harga').value);
+    const qty = parseInt(document.getElementById('tambah_qty').value, 10) || 1;
+    if (totalHarga > 0 && qty > 0) {
+        document.getElementById('tambah_harga_qty').value = formatRupiahNumber(totalHarga / qty);
+    }
+}
+
+function onQtyChangeTambah() {
+    const hargaQty = cleanPriceText(document.getElementById('tambah_harga_qty').value);
+    const totalHarga = cleanPriceText(document.getElementById('tambah_total_harga').value);
+    const qty = parseInt(document.getElementById('tambah_qty').value, 10) || 1;
+    if (hargaQty > 0) {
+        document.getElementById('tambah_total_harga').value = formatRupiahNumber(hargaQty * qty);
+    } else if (totalHarga > 0 && qty > 0) {
+        document.getElementById('tambah_harga_qty').value = formatRupiahNumber(totalHarga / qty);
+    }
+}
+
 // Auto-calculate total in modal Edit
 function calculateTotalEdit() {
     const hargaQty = cleanPriceText(document.getElementById('edit_harga_qty').value);
     const qty = parseInt(document.getElementById('edit_qty').value, 10) || 1;
     if (hargaQty > 0) {
         document.getElementById('edit_total_harga').value = formatRupiahNumber(hargaQty * qty);
+    }
+}
+
+// Auto-calculate unit in modal Edit
+function calculateUnitEdit() {
+    const totalHarga = cleanPriceText(document.getElementById('edit_total_harga').value);
+    const qty = parseInt(document.getElementById('edit_qty').value, 10) || 1;
+    if (totalHarga > 0 && qty > 0) {
+        document.getElementById('edit_harga_qty').value = formatRupiahNumber(totalHarga / qty);
+    }
+}
+
+function onQtyChangeEdit() {
+    const hargaQty = cleanPriceText(document.getElementById('edit_harga_qty').value);
+    const totalHarga = cleanPriceText(document.getElementById('edit_total_harga').value);
+    const qty = parseInt(document.getElementById('edit_qty').value, 10) || 1;
+    if (hargaQty > 0) {
+        document.getElementById('edit_total_harga').value = formatRupiahNumber(hargaQty * qty);
+    } else if (totalHarga > 0 && qty > 0) {
+        document.getElementById('edit_harga_qty').value = formatRupiahNumber(totalHarga / qty);
     }
 }
 
