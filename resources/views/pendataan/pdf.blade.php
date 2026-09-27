@@ -257,7 +257,7 @@
                 <th style="width: 100px;">Tanggal & Jam</th>
                 <th style="width: 80px;">Nama</th>
                 <th style="width: 170px;">Nama Produk</th>
-                <th class="text-right" style="width: 90px;">Harga Qty</th>
+                <th class="text-right" style="width: 90px;">Postcal</th>
                 <th class="text-center" style="width: 45px;">Qty</th>
                 <th class="text-right" style="width: 95px;">Total Harga</th>
                 <th>Rincian Deskripsi</th>
