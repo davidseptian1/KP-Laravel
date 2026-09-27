@@ -171,6 +171,11 @@
                                     {{ Str::limit(str_replace(["\r", "\n"], ' ', $item->deskripsi), 45) }}
                                 </small>
                             @endif
+                            @if($item->alasan_edit)
+                                <span class="badge bg-warning bg-opacity-10 text-warning border border-warning-subtle mt-1" title="Alasan Edit: {{ $item->alasan_edit }}">
+                                    <i class="ti ti-history me-1"></i>Pernah Diedit
+                                </span>
+                            @endif
                         </td>
                         <td class="text-end fw-semibold text-secondary">
                             {{ $item->formatted_harga_qty }}
@@ -456,6 +461,21 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Field: Alasan Edit (Wajib) -->
+                    <div class="mt-3 pt-3 border-top">
+                        <label class="form-label fw-semibold text-danger">
+                            <i class="ti ti-message-exclamation me-1"></i>Alasan Edit <span class="text-danger">*</span>
+                        </label>
+                        <textarea name="alasan_edit" id="edit_alasan" rows="2" class="form-control border-warning" required placeholder="Wajib sertakan alasan perubahan data (contoh: Koreksi salah ketik nominal / revisi qty)..."></textarea>
+                        <div class="form-text text-muted small">
+                            <i class="ti ti-info-circle me-1"></i>Setiap perubahan data wajib disertai alasan yang jelas untuk pencatatan riwayat (audit trail).
+                        </div>
+                        <div id="riwayatAlasanSection" class="mt-2 d-none">
+                            <small class="text-muted fw-semibold d-block mb-1">Riwayat Edit Sebelumnya:</small>
+                            <pre id="riwayatAlasanText" class="bg-light p-2 rounded border small text-muted mb-0" style="white-space: pre-wrap; word-break: break-word; max-height: 100px; overflow-y: auto; font-size: 11px;"></pre>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer bg-light">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
@@ -506,6 +526,13 @@
                 <div class="mb-3" id="detail_deskripsi_section">
                     <small class="text-muted fw-semibold d-block mb-1">Rincian Deskripsi Mentah:</small>
                     <pre class="bg-light p-3 rounded border text-secondary small mb-0" id="detail_deskripsi" style="white-space: pre-wrap; word-break: break-word; max-height: 200px; overflow-y: auto;"></pre>
+                </div>
+
+                <div class="mb-3 d-none" id="detail_alasan_section">
+                    <small class="text-danger fw-semibold d-block mb-1">
+                        <i class="ti ti-history me-1"></i>Riwayat Alasan Perubahan Data:
+                    </small>
+                    <pre class="bg-warning bg-opacity-10 border border-warning-subtle text-dark p-3 rounded small mb-0" id="detail_alasan" style="white-space: pre-wrap; word-break: break-word; max-height: 150px; overflow-y: auto; font-family: inherit; font-size: 12px;"></pre>
                 </div>
 
                 <div id="detail_gambar_section" class="text-center mt-3 pt-3 border-top d-none">
@@ -876,6 +903,18 @@ function openEditModal(item) {
     document.getElementById('edit_gambar_base64').value = '';
     document.getElementById('edit_gambar_input').value = '';
 
+    // Reset and prepare Alasan Edit
+    document.getElementById('edit_alasan').value = '';
+    const riwayatSec = document.getElementById('riwayatAlasanSection');
+    const riwayatText = document.getElementById('riwayatAlasanText');
+    if (item.alasan_edit && item.alasan_edit.trim()) {
+        riwayatText.textContent = item.alasan_edit;
+        riwayatSec.classList.remove('d-none');
+    } else {
+        riwayatText.textContent = '';
+        riwayatSec.classList.add('d-none');
+    }
+
     const preview = document.getElementById('dropzonePreviewEdit');
     const placeholder = document.getElementById('dropzonePlaceholderEdit');
     const previewImg = document.getElementById('previewImgEdit');
@@ -925,6 +964,15 @@ function openDetailModal(id) {
                 gambarSec.classList.remove('d-none');
             } else {
                 gambarSec.classList.add('d-none');
+            }
+
+            // Alasan Edit history in Detail modal
+            const alasanSec = document.getElementById('detail_alasan_section');
+            if (data.alasan_edit && data.alasan_edit.trim()) {
+                document.getElementById('detail_alasan').textContent = data.alasan_edit;
+                alasanSec.classList.remove('d-none');
+            } else {
+                alasanSec.classList.add('d-none');
             }
 
             const modal = new bootstrap.Modal(document.getElementById('modalDetailPendataan'));

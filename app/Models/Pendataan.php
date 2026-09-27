@@ -40,6 +40,7 @@ class Pendataan extends Model
         'total_harga',
         'qty',
         'gambar',
+        'alasan_edit',
     ];
 
     protected $casts = [

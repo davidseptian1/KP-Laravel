@@ -366,6 +366,7 @@ class PendataanController extends Controller
                     'formatted_total_harga' => $pendataan->formatted_total_harga,
                     'qty' => $pendataan->qty,
                     'deskripsi' => $pendataan->deskripsi,
+                    'alasan_edit' => $pendataan->alasan_edit,
                     'gambar_url' => $pendataan->gambar_url,
                     'created_at' => $pendataan->created_at->format('d/m/Y H:i'),
                     'user_nama' => $pendataan->user?->nama ?? '-',
@@ -391,9 +392,13 @@ class PendataanController extends Controller
             'harga_qty' => 'required',
             'total_harga' => 'required',
             'qty' => 'required|integer|min:1',
+            'alasan_edit' => 'required|string|min:3|max:1000',
             'gambar' => 'nullable|file|mimes:jpeg,png,jpg,webp,gif|max:10240',
             'gambar_base64' => 'nullable|string',
             'hapus_gambar' => 'nullable|boolean',
+        ], [
+            'alasan_edit.required' => 'Alasan edit wajib diisi!',
+            'alasan_edit.min' => 'Alasan edit minimal 3 karakter.',
         ]);
 
         $hargaQty = PendataanParserService::cleanPrice((string) $request->input('harga_qty'));
@@ -428,6 +433,14 @@ class PendataanController extends Controller
             $gambarPath = $this->saveBase64Image($request->input('gambar_base64'));
         }
 
+        // Audit-trail edit reason with timestamp and staff name
+        $editor = session('pendataan_staff_nama') ?: (auth()->user()->nama ?: 'Staff');
+        $inputAlasan = trim($request->input('alasan_edit'));
+        $entryAlasan = '[' . date('d/m/Y H:i') . ' - ' . $editor . ']: ' . $inputAlasan;
+        $alasanFinal = $pendataan->alasan_edit
+            ? $pendataan->alasan_edit . "\n" . $entryAlasan
+            : $entryAlasan;
+
         // Preserve original nama - cannot be altered
         $pendataan->update([
             'nama' => $pendataan->nama,
@@ -437,6 +450,7 @@ class PendataanController extends Controller
             'total_harga' => $totalHarga,
             'qty' => $qty,
             'gambar' => $gambarPath,
+            'alasan_edit' => $alasanFinal,
         ]);
 
         return redirect()->route('pendataan.index')->with('success', 'Data Pendataan berhasil diperbarui!');
