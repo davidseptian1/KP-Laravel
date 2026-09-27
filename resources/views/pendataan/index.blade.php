@@ -2,17 +2,23 @@
 
 @section('content')
 <div class="row align-items-center mb-4">
-    <div class="col-md-7">
+    <div class="col-md-6">
         <h3 class="mb-1 fw-bold text-dark"><i class="ti ti-notes text-primary me-2"></i>Pendataan</h3>
-        <p class="text-muted mb-0">Catat dan pantau transaksi produk dengan fitur pemilahan teks otomatis dan upload gambar via Ctrl+V.</p>
+        <p class="text-muted mb-0">Catat dan pantau transaksi produk dengan fitur pemilahan teks otomatis dan upload screenshot.</p>
     </div>
-    <div class="col-md-5 text-md-end mt-3 mt-md-0">
+    <div class="col-md-6 text-md-end mt-3 mt-md-0 d-flex justify-content-md-end align-items-center flex-wrap gap-2">
+        <span class="badge bg-light text-dark border px-3 py-2 fs-6 shadow-sm">
+            <i class="ti ti-user-check text-primary me-1"></i>Staf: <strong class="text-primary">{{ $activeStaffNama }}</strong>
+        </span>
+        <a href="{{ url('pendataan/lock') }}" class="btn btn-sm btn-outline-danger shadow-sm" title="Kunci / Ganti Akun Staf">
+            <i class="ti ti-lock me-1"></i>Ganti Staf
+        </a>
         <button type="button" class="btn btn-primary shadow-sm px-3" data-bs-toggle="modal" data-bs-target="#modalTambahPendataan">
             <i class="ti ti-plus me-1"></i> Tambah Pendataan
         </button>
         @if(auth()->user()->jabatan === 'Superadmin')
-            <a href="{{ url('superadmin/pendataan-access') }}" class="btn btn-outline-secondary ms-2" title="Pengaturan Akses Staff">
-                <i class="ti ti-settings me-1"></i> Pengaturan Akses
+            <a href="{{ url('superadmin/pendataan-access') }}" class="btn btn-outline-secondary" title="Pengaturan Akses Staff">
+                <i class="ti ti-settings me-1"></i> Akses
             </a>
         @endif
     </div>
@@ -251,27 +257,16 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4">
-                    <!-- Field: Nama Otomatis -->
+                    <!-- Field: Nama Penanggung Jawab (Terkunci Sesuai Akun Staf Aktif) -->
                     <div class="mb-3">
-                        <label class="form-label fw-semibold text-dark">Nama Penanggung Jawab <span class="text-danger">*</span></label>
-                        <select name="nama" id="tambah_nama" class="form-select" required onchange="syncPillActive('tambah', this.value)">
-                            <option value="" disabled {{ !in_array(auth()->user()->nama, $daftarNama) ? 'selected' : '' }}>-- Pilih Nama Penanggung Jawab --</option>
-                            @foreach($daftarNama as $itemNama)
-                                <option value="{{ $itemNama }}" {{ strcasecmp(auth()->user()->nama, $itemNama) === 0 ? 'selected' : '' }}>
-                                    {{ $itemNama }}
-                                </option>
-                            @endforeach
-                        </select>
-                        <!-- Quick Pill Buttons for instant selection -->
-                        <div class="mt-2 d-flex flex-wrap gap-1 align-items-center">
-                            <span class="text-muted small me-1" style="font-size: 0.78rem;">Pilih cepat:</span>
-                            @foreach($daftarNama as $itemNama)
-                                <button type="button" class="btn btn-xs py-1 px-2 btn-pill-tambah {{ strcasecmp(auth()->user()->nama, $itemNama) === 0 ? 'btn-primary text-white' : 'btn-outline-secondary' }}" style="font-size: 0.75rem;" onclick="selectTambahNama('{{ $itemNama }}')">
-                                    {{ $itemNama }}
-                                </button>
-                            @endforeach
+                        <label class="form-label fw-semibold text-dark">Nama Penanggung Jawab</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light text-primary"><i class="ti ti-user-check"></i></span>
+                            <input type="text" class="form-control bg-light fw-bold text-dark" value="{{ $activeStaffNama }}" readonly disabled>
                         </div>
-                        <div class="form-text">Pilih salah satu dari 13 nama otomatis staf di atas atau klik tombol cepat.</div>
+                        <div class="form-text text-muted small">
+                            <i class="ti ti-lock me-1 text-primary"></i>Tercatat otomatis atas nama <strong>{{ $activeStaffNama }}</strong> (sesuai akun staf yang sedang membuka fitur ini).
+                        </div>
                     </div>
 
                     <!-- Field: Deskripsi (Auto-Pilah) -->
@@ -377,23 +372,15 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4">
-                    <!-- Field: Nama Otomatis -->
+                    <!-- Field: Nama Penanggung Jawab (Terkunci) -->
                     <div class="mb-3">
-                        <label class="form-label fw-semibold text-dark">Nama Penanggung Jawab <span class="text-danger">*</span></label>
-                        <select name="nama" id="edit_nama" class="form-select" required onchange="syncPillActive('edit', this.value)">
-                            <option value="" disabled>-- Pilih Nama Penanggung Jawab --</option>
-                            @foreach($daftarNama as $itemNama)
-                                <option value="{{ $itemNama }}">{{ $itemNama }}</option>
-                            @endforeach
-                        </select>
-                        <!-- Quick Pill Buttons for instant selection -->
-                        <div class="mt-2 d-flex flex-wrap gap-1 align-items-center">
-                            <span class="text-muted small me-1" style="font-size: 0.78rem;">Pilih cepat:</span>
-                            @foreach($daftarNama as $itemNama)
-                                <button type="button" class="btn btn-xs btn-outline-secondary py-1 px-2 btn-pill-edit" style="font-size: 0.75rem;" onclick="selectEditNama('{{ $itemNama }}')">
-                                    {{ $itemNama }}
-                                </button>
-                            @endforeach
+                        <label class="form-label fw-semibold text-dark">Nama Penanggung Jawab</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light text-muted"><i class="ti ti-user-lock"></i></span>
+                            <input type="text" id="edit_nama" class="form-control bg-light fw-bold text-dark" readonly disabled>
+                        </div>
+                        <div class="form-text text-muted small">
+                            <i class="ti ti-lock me-1"></i>Nama penanggung jawab transaksi terkunci dan tidak dapat diubah.
                         </div>
                     </div>
 
@@ -855,32 +842,6 @@ function setupDropzone(zoneId, inputId, isEdit) {
     });
 }
 
-// Quick Pill Selection Handlers for Nama
-function selectTambahNama(nama) {
-    const sel = document.getElementById('tambah_nama');
-    sel.value = nama;
-    syncPillActive('tambah', nama);
-}
-
-function selectEditNama(nama) {
-    const sel = document.getElementById('edit_nama');
-    sel.value = nama;
-    syncPillActive('edit', nama);
-}
-
-function syncPillActive(context, activeNama) {
-    const pills = document.querySelectorAll('.btn-pill-' + context);
-    pills.forEach(pill => {
-        if (pill.textContent.trim().toLowerCase() === String(activeNama).toLowerCase()) {
-            pill.classList.remove('btn-outline-secondary');
-            pill.classList.add('btn-primary', 'text-white');
-        } else {
-            pill.classList.remove('btn-primary', 'text-white');
-            pill.classList.add('btn-outline-secondary');
-        }
-    });
-}
-
 // =========================================================================
 // MODAL & ACTION HANDLERS
 // =========================================================================
@@ -888,26 +849,7 @@ function openEditModal(item) {
     const form = document.getElementById('formEditPendataan');
     form.action = "{{ url('pendataan') }}/" + item.id;
 
-    const editNamaSelect = document.getElementById('edit_nama');
-    if (item.nama) {
-        let exists = false;
-        for (let i = 0; i < editNamaSelect.options.length; i++) {
-            if (editNamaSelect.options[i].value.toLowerCase() === item.nama.toLowerCase()) {
-                editNamaSelect.selectedIndex = i;
-                exists = true;
-                break;
-            }
-        }
-        if (!exists) {
-            const opt = new Option(item.nama, item.nama, true, true);
-            editNamaSelect.add(opt);
-        }
-        syncPillActive('edit', item.nama);
-    } else {
-        editNamaSelect.selectedIndex = 0;
-        syncPillActive('edit', '');
-    }
-
+    document.getElementById('edit_nama').value = item.nama || '';
     document.getElementById('edit_deskripsi').value = item.deskripsi || '';
     document.getElementById('edit_nama_produk').value = item.nama_produk || '';
     document.getElementById('edit_harga_qty').value = formatRupiahNumber(item.harga_qty);
@@ -1014,12 +956,6 @@ function confirmDeletePendataan(e, productName) {
 document.addEventListener('DOMContentLoaded', function() {
     setupDropzone('dropzoneTambah', 'tambah_gambar_input', false);
     setupDropzone('dropzoneEdit', 'edit_gambar_input', true);
-
-    // Initial pill highlight for Tambah modal
-    const tambahNamaElem = document.getElementById('tambah_nama');
-    if (tambahNamaElem && tambahNamaElem.value) {
-        syncPillActive('tambah', tambahNamaElem.value);
-    }
 
     // Format currency inputs on blur / input
     document.querySelectorAll('.js-currency-input').forEach(input => {

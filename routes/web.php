@@ -251,7 +251,10 @@ Route::middleware(['checkLogin', 'admin.activity.log'])->group(function () {
     // Import status polling
     Route::get('imports/status', [ImportStatusController::class, 'status'])->name('imports.status');
 
-    // Pendataan (CRUD, Filter & Export for authorized users)
+    // Pendataan (CRUD, Filter, Export & Staff Unlock for authorized users)
+    Route::get('pendataan/unlock', [PendataanController::class, 'showUnlock'])->name('pendataan.unlock');
+    Route::post('pendataan/unlock', [PendataanController::class, 'unlock'])->name('pendataan.unlock.post');
+    Route::match(['get', 'post'], 'pendataan/lock', [PendataanController::class, 'lock'])->name('pendataan.lock');
     Route::get('pendataan', [PendataanController::class, 'index'])->name('pendataan.index');
     Route::post('pendataan', [PendataanController::class, 'store'])->name('pendataan.store');
     Route::post('pendataan/parse-text', [PendataanController::class, 'parseText'])->name('pendataan.parse-text');
@@ -445,6 +448,7 @@ Route::middleware(['checkLogin', 'admin.activity.log'])->group(function () {
         Route::get('superadmin/pendataan-access', [AdminPendataanAccessController::class, 'index'])->name('admin.pendataan.access');
         Route::post('superadmin/pendataan-access/{id}/toggle', [AdminPendataanAccessController::class, 'toggle'])->name('admin.pendataan.access.toggle');
         Route::post('superadmin/pendataan-access/batch', [AdminPendataanAccessController::class, 'batchUpdate'])->name('admin.pendataan.access.batch');
+        Route::put('superadmin/pendataan-access/staff/{id}/password', [AdminPendataanAccessController::class, 'updateStaffPassword'])->name('admin.pendataan.staff.password');
     });
 
     Route::get('admin/deposit/analysis', [AdminDepositController::class, 'analysis'])->name('admin.deposit.analysis');

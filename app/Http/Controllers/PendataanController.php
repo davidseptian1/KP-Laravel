@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Exports\PendataanExport;
 use App\Models\Pendataan;
+use App\Models\PendataanStaff;
 use App\Services\PendataanParserService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -23,6 +24,79 @@ class PendataanController extends Controller
         if (!$user || !$user->canAccessPendataan()) {
             abort(403, 'Anda tidak memiliki izin untuk mengakses fitur Pendataan.');
         }
+    }
+
+    /**
+     * Show unlock login screen for staff before accessing Pendataan.
+     */
+    public function showUnlock()
+    {
+        $this->checkAccess();
+
+        if (session()->has('pendataan_staff_nama')) {
+            return redirect()->route('pendataan.index');
+        }
+
+        return view('pendataan.unlock', [
+            'title' => 'Buka Fitur Pendataan',
+        ]);
+    }
+
+    /**
+     * Process staff unlock authentication.
+     */
+    public function unlock(Request $request)
+    {
+        $this->checkAccess();
+
+        // Superadmin bypass option
+        if ($request->boolean('superadmin_bypass') && auth()->user()->jabatan === 'Superadmin') {
+            session([
+                'pendataan_staff_nama' => auth()->user()->nama ?? 'Super Admin',
+                'pendataan_staff_username' => 'superadmin',
+            ]);
+            return redirect()->route('pendataan.index')->with('success', 'Berhasil masuk sebagai Superadmin.');
+        }
+
+        $request->validate([
+            'username' => 'required|string',
+            'password' => 'required|string',
+        ], [
+            'username.required' => 'Username staf wajib diisi.',
+            'password.required' => 'Password staf (5 huruf) wajib diisi.',
+        ]);
+
+        $inputUsername = strtolower(trim($request->input('username')));
+        $inputPassword = trim($request->input('password'));
+
+        $staff = PendataanStaff::where('is_active', true)
+            ->where(function ($q) use ($inputUsername) {
+                $q->whereRaw('LOWER(username) = ?', [$inputUsername])
+                  ->orWhereRaw('LOWER(nama) = ?', [$inputUsername]);
+            })
+            ->first();
+
+        if (!$staff || strcasecmp($staff->password, $inputPassword) !== 0) {
+            return back()->withInput()->with('error', 'Username atau Password staf (5 huruf) tidak sesuai.');
+        }
+
+        session([
+            'pendataan_staff_id' => $staff->id,
+            'pendataan_staff_nama' => $staff->nama,
+            'pendataan_staff_username' => $staff->username,
+        ]);
+
+        return redirect()->route('pendataan.index')->with('success', "Akses berhasil dibuka! Anda aktif sebagai staf {$staff->nama}.");
+    }
+
+    /**
+     * Lock the pendataan feature / switch active staff.
+     */
+    public function lock()
+    {
+        session()->forget(['pendataan_staff_id', 'pendataan_staff_nama', 'pendataan_staff_username']);
+
+        return redirect()->route('pendataan.unlock')->with('success', 'Fitur Pendataan telah dikunci.');
     }
 
     /**
@@ -65,6 +139,17 @@ class PendataanController extends Controller
     {
         $this->checkAccess();
 
+        // Check if staff has unlocked pendataan session
+        if (!session()->has('pendataan_staff_nama')) {
+            if (auth()->user()->jabatan === 'Superadmin') {
+                session(['pendataan_staff_nama' => auth()->user()->nama ?? 'Super Admin']);
+            } else {
+                return redirect()->route('pendataan.unlock');
+            }
+        }
+
+        $activeStaffNama = session('pendataan_staff_nama') ?? auth()->user()->nama;
+
         $query = $this->buildQuery($request);
 
         // Summary calculations based on filtered data
@@ -91,6 +176,7 @@ class PendataanController extends Controller
             'totalNominal' => $totalNominal,
             'daftarNama' => $daftarNama,
             'uniqueProducts' => $uniqueProducts,
+            'activeStaffNama' => $activeStaffNama,
             'filters' => [
                 'start_date' => $request->start_date,
                 'end_date' => $request->end_date,
@@ -173,7 +259,6 @@ class PendataanController extends Controller
         $this->checkAccess();
 
         $request->validate([
-            'nama' => 'required|string|max:255',
             'deskripsi' => 'nullable|string',
             'nama_produk' => 'nullable|string|max:255',
             'harga_qty' => 'nullable',
@@ -182,7 +267,6 @@ class PendataanController extends Controller
             'gambar' => 'nullable|file|mimes:jpeg,png,jpg,webp,gif|max:10240',
             'gambar_base64' => 'nullable|string',
         ], [
-            'nama.required' => 'Field Nama wajib diisi.',
             'gambar.mimes' => 'Format gambar harus jpeg, png, jpg, webp, atau gif.',
             'gambar.max' => 'Ukuran gambar maksimal 10MB.',
         ]);
@@ -228,9 +312,12 @@ class PendataanController extends Controller
             $gambarPath = $this->saveBase64Image($request->input('gambar_base64'));
         }
 
+        // Strictly lock nama to authenticated staff session
+        $nama = session('pendataan_staff_nama') ?: (auth()->user()->nama ?: 'Staff');
+
         Pendataan::create([
             'user_id' => auth()->id(),
-            'nama' => trim($request->input('nama')),
+            'nama' => $nama,
             'deskripsi' => $deskripsi,
             'nama_produk' => $namaProduk,
             'harga_qty' => $hargaQty,
@@ -239,7 +326,7 @@ class PendataanController extends Controller
             'gambar' => $gambarPath,
         ]);
 
-        return redirect()->route('pendataan.index')->with('success', 'Data Pendataan berhasil disimpan!');
+        return redirect()->route('pendataan.index')->with('success', 'Data Pendataan berhasil disimpan atas nama ' . $nama . '!');
     }
 
     /**
@@ -284,7 +371,6 @@ class PendataanController extends Controller
         $pendataan = Pendataan::findOrFail($id);
 
         $request->validate([
-            'nama' => 'required|string|max:255',
             'deskripsi' => 'nullable|string',
             'nama_produk' => 'required|string|max:255',
             'harga_qty' => 'required',
@@ -327,8 +413,9 @@ class PendataanController extends Controller
             $gambarPath = $this->saveBase64Image($request->input('gambar_base64'));
         }
 
+        // Preserve original nama - cannot be altered
         $pendataan->update([
-            'nama' => trim($request->input('nama')),
+            'nama' => $pendataan->nama,
             'deskripsi' => $request->input('deskripsi', ''),
             'nama_produk' => trim($request->input('nama_produk')),
             'harga_qty' => $hargaQty,

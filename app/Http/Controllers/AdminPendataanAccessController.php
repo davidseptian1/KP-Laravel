@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\PendataanStaff;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -37,6 +38,9 @@ class AdminPendataanAccessController extends Controller
         $staffWithAccess = $allStaff->where('has_pendataan_access', true)->count();
         $staffWithoutAccess = $totalStaff - $staffWithAccess;
 
+        // 13 Staff Credentials for Pendataan
+        $staffAccounts = PendataanStaff::orderBy('nama', 'asc')->get();
+
         return view('admin.pendataan.access', [
             'title' => 'Pengaturan Akses Fitur Pendataan',
             'menuPendataanAccess' => 'active',
@@ -44,6 +48,7 @@ class AdminPendataanAccessController extends Controller
             'totalStaff' => $totalStaff,
             'staffWithAccess' => $staffWithAccess,
             'staffWithoutAccess' => $staffWithoutAccess,
+            'staffAccounts' => $staffAccounts,
             'currentSearch' => $search,
             'currentRole' => $roleFilter,
         ]);
@@ -87,5 +92,25 @@ class AdminPendataanAccessController extends Controller
         }
 
         return redirect()->route('admin.pendataan.access')->with('success', 'Pengaturan akses fitur Pendataan berhasil disimpan!');
+    }
+
+    /**
+     * Update password for a PendataanStaff account.
+     */
+    public function updateStaffPassword(Request $request, $id)
+    {
+        $request->validate([
+            'password' => 'required|string|min:3|max:10',
+        ], [
+            'password.required' => 'Password staf wajib diisi.',
+            'password.min' => 'Password minimal 3 karakter.',
+            'password.max' => 'Password maksimal 10 karakter.',
+        ]);
+
+        $staff = PendataanStaff::findOrFail($id);
+        $staff->password = trim($request->password);
+        $staff->save();
+
+        return redirect()->back()->with('success', "Password untuk staf {$staff->nama} berhasil diperbarui menjadi '{$staff->password}'!");
     }
 }

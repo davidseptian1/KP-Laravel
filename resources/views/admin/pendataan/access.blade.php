@@ -62,8 +62,109 @@
         <strong class="d-block mb-1">Informasi Hak Akses Fitur Pendataan:</strong>
         <span class="text-secondary">
             • <strong>Superadmin</strong> secara otomatis memiliki hak akses penuh ke fitur Pendataan.<br>
-            • Untuk akun <strong>Staff</strong>, menu dan halaman Pendataan hanya akan muncul jika saklar akses diaktifkan di bawah ini.
+            • Untuk akun <strong>Staff</strong>, menu di sidebar hanya akan muncul jika saklar akses diaktifkan di bawah ini.<br>
+            • Ketika staf membuka fitur Pendataan, staf harus memasukkan <strong>Username</strong> dan <strong>Password (5 huruf)</strong> miliknya terlebih dahulu. Nama penanggung jawab transaksi akan otomatis terkunci sesuai akun staf tersebut.
         </span>
+    </div>
+</div>
+
+<!-- Card: 13 Akun Staf Pendataan & Password (5 Huruf) -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <h5 class="mb-0 fw-bold text-dark d-flex align-items-center">
+            <i class="ti ti-key text-warning me-2"></i>Daftar Akun & Password Staf Pendataan (5 Huruf)
+        </h5>
+        <span class="badge bg-primary-subtle text-primary border px-3 py-2 fw-semibold">
+            <i class="ti ti-users me-1"></i>13 Akun Staf Otomatis
+        </span>
+    </div>
+    <div class="card-body p-0">
+        <div class="p-3 bg-light border-bottom small text-muted">
+            <i class="ti ti-info-circle me-1 text-primary"></i>
+            Berikan Username dan Password 5 huruf berikut ke masing-masing staf. Saat staf membuka fitur Pendataan, nama transaksi akan otomatis terkunci sesuai akun yang login.
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4" style="width: 50px;">No</th>
+                        <th>Nama Staf</th>
+                        <th>Username</th>
+                        <th>Password (5 Huruf)</th>
+                        <th class="text-center" style="width: 120px;">Status</th>
+                        <th class="text-center pe-4" style="width: 140px;">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($staffAccounts as $idx => $st)
+                    <tr>
+                        <td class="ps-4 text-muted fw-semibold">{{ $idx + 1 }}</td>
+                        <td>
+                            <strong class="text-dark">{{ $st->nama }}</strong>
+                        </td>
+                        <td>
+                            <code class="bg-light px-2 py-1 rounded text-primary">{{ $st->username }}</code>
+                        </td>
+                        <td>
+                            <div class="d-inline-flex align-items-center gap-2">
+                                <span class="badge bg-light text-dark font-monospace border px-3 py-1 fs-6">
+                                    {{ $st->password }}
+                                </span>
+                                <button type="button" class="btn btn-xs btn-outline-secondary py-1 px-2" title="Salin password" onclick="copyStaffPass('{{ $st->password }}', '{{ $st->nama }}')">
+                                    <i class="ti ti-copy"></i>
+                                </button>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            @if($st->is_active)
+                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">Aktif</span>
+                            @else
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">Nonaktif</span>
+                            @endif
+                        </td>
+                        <td class="text-center pe-4">
+                            <button type="button" class="btn btn-sm btn-outline-warning" onclick="openEditStaffPassModal({{ $st->id }}, '{{ $st->nama }}', '{{ $st->password }}')">
+                                <i class="ti ti-edit me-1"></i>Ubah
+                            </button>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Ubah Password Staf -->
+<div class="modal fade" id="modalEditStaffPass" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form method="POST" id="formEditStaffPass" action="">
+                @csrf
+                @method('PUT')
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title fw-bold text-dark">
+                        <i class="ti ti-key text-warning me-2"></i>Ubah Password Staf
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-semibold">Nama Staf</label>
+                        <input type="text" id="modalStaffNama" class="form-control bg-light" readonly disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark">Password Baru (5 Huruf)</label>
+                        <input type="text" name="password" id="modalStaffPassword" class="form-control form-control-lg font-monospace" maxlength="10" required placeholder="Contoh: abcde">
+                        <div class="form-text">Gunakan 5 huruf acak untuk akun staf ini.</div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary px-4">Simpan Password</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
@@ -71,7 +172,7 @@
 <div class="card border-0 shadow-sm rounded-3">
     <div class="card-header bg-white py-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
         <h5 class="mb-0 fw-bold text-dark d-flex align-items-center">
-            <i class="ti ti-list-check me-2 text-primary"></i>Daftar Pengguna & Status Akses
+            <i class="ti ti-list-check me-2 text-primary"></i>Hak Akses Menu Dashboard Akun Pengguna
         </h5>
         <form method="GET" action="{{ route('admin.pendataan.access') }}" class="d-flex align-items-center gap-2">
             <select name="role" class="form-select form-select-sm" style="min-width: 140px;" onchange="this.form.submit()">
@@ -258,8 +359,53 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                 }
             });
-        });
     });
 });
+
+function copyStaffPass(pass, nama) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(pass).then(() => {
+            showCopySuccess(pass, nama);
+        }).catch(() => {
+            fallbackCopy(pass, nama);
+        });
+    } else {
+        fallbackCopy(pass, nama);
+    }
+}
+
+function fallbackCopy(pass, nama) {
+    const tempInput = document.createElement('input');
+    tempInput.value = pass;
+    document.body.appendChild(tempInput);
+    tempInput.select();
+    document.execCommand('copy');
+    document.body.removeChild(tempInput);
+    showCopySuccess(pass, nama);
+}
+
+function showCopySuccess(pass, nama) {
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: 'Password ' + nama + ' (' + pass + ') berhasil disalin!',
+            showConfirmButton: false,
+            timer: 2000
+        });
+    } else {
+        alert('Password ' + nama + ' (' + pass + ') berhasil disalin!');
+    }
+}
+
+function openEditStaffPassModal(id, nama, currentPass) {
+    const form = document.getElementById('formEditStaffPass');
+    form.action = "{{ url('superadmin/pendataan-access/staff') }}/" + id + "/password";
+    document.getElementById('modalStaffNama').value = nama;
+    document.getElementById('modalStaffPassword').value = currentPass;
+    const modal = new bootstrap.Modal(document.getElementById('modalEditStaffPass'));
+    modal.show();
+}
 </script>
 @endpush
