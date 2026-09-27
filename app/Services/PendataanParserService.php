@@ -42,9 +42,11 @@ class PendataanParserService
             $result['qty'] = (int) $m[1];
         }
 
-        // 2. Extract Qty from +/- block if not found: e.g. "-\n1\n+" or "- 1 +"
+        // 2. Extract Qty from +/- stepper block: e.g. "- \n 200 \n +" or just "- \n 200"
+        // Require the "-" to be at the start of a line (avoids matching "5hr - 15.000").
+        // The trailing "+" is made optional so qty is captured even if user only copied "-\nQTY".
         if ($result['qty'] <= 1) {
-            if (preg_match('/[-–—]\s*\n?\s*(\d+)\s*\n?\s*[+＋]/', $cleanText, $m)) {
+            if (preg_match('/(?:^|\n)[ \t]*[-–—][ \t]*\n[ \t]*(\d+)[ \t]*(?:\n[ \t]*[+＋])?/m', $cleanText, $m)) {
                 $result['qty'] = (int) $m[1];
             }
         }

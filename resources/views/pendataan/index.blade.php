@@ -600,8 +600,10 @@ function parseTransactionText(text) {
     if (mQty) res.qty = parseInt(mQty[1], 10) || 1;
 
     // 2. Check +/- counter block
+    // Require the "-" at the start of a line so it doesn't match "5hr - 15.000".
+    // Make the trailing "+" optional in case user didn't copy it.
     if (res.qty <= 1) {
-        const mCounter = clean.match(/[-–—]\s*\n?\s*(\d+)\s*\n?\s*[+＋]/);
+        const mCounter = clean.match(/(?:^|\n)[ \t]*[-\u2013\u2014][ \t]*\n[ \t]*(\d+)[ \t]*(?:\n[ \t]*[+\uff0b])?/m);
         if (mCounter) res.qty = parseInt(mCounter[1], 10) || 1;
     }
 
