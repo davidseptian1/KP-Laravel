@@ -27,6 +27,81 @@ class PendataanController extends Controller
     }
 
     /**
+     * Enforce user permission and strict 8-hour shift staff session.
+     * Even 0.1s past the 8-hour limit will immediately terminate the session and redirect.
+     */
+    private function enforceStaffSession()
+    {
+        $this->checkAccess();
+
+        // If no staff session
+        if (!session()->has('pendataan_staff_nama')) {
+            if (auth()->user()->jabatan === 'Superadmin') {
+                $now = microtime(true);
+                session([
+                    'pendataan_staff_nama' => auth()->user()->nama ?? 'Super Admin',
+                    'pendataan_staff_username' => 'superadmin',
+                    'pendataan_staff_login_at' => $now,
+                    'pendataan_staff_expires_at' => $now + (8 * 3600),
+                ]);
+                return;
+            }
+
+            if (request()->wantsJson() || request()->ajax()) {
+                throw new \Illuminate\Http\Exceptions\HttpResponseException(
+                    response()->json([
+                        'success' => false,
+                        'expired' => true,
+                        'message' => 'Sesi staf belum aktif. Silakan buka fitur Pendataan terlebih dahulu.',
+                        'redirect' => route('pendataan.unlock'),
+                    ], 401)
+                );
+            }
+
+            throw new \Illuminate\Http\Exceptions\HttpResponseException(
+                redirect()->route('pendataan.unlock')->with('error', 'Silakan buka fitur Pendataan dengan akun staf Anda.')
+            );
+        }
+
+        // Check 8-hour shift expiration with sub-second microtime precision
+        $expiresAt = (float) session('pendataan_staff_expires_at', 0);
+        $currentTime = microtime(true);
+
+        // If expires_at is not set for existing session, initialize from login_at or now
+        if ($expiresAt <= 0) {
+            $loginAt = (float) session('pendataan_staff_login_at', $currentTime);
+            $expiresAt = $loginAt + (8 * 3600);
+            session(['pendataan_staff_expires_at' => $expiresAt]);
+        }
+
+        if ($currentTime >= $expiresAt) {
+            $staffNama = session('pendataan_staff_nama', 'Staf');
+            session()->forget([
+                'pendataan_staff_id',
+                'pendataan_staff_nama',
+                'pendataan_staff_username',
+                'pendataan_staff_login_at',
+                'pendataan_staff_expires_at',
+            ]);
+
+            if (request()->wantsJson() || request()->ajax()) {
+                throw new \Illuminate\Http\Exceptions\HttpResponseException(
+                    response()->json([
+                        'success' => false,
+                        'expired' => true,
+                        'message' => 'Sesi shift 8 jam Anda telah berakhir. Anda telah otomatis logout.',
+                        'redirect' => route('pendataan.unlock'),
+                    ], 401)
+                );
+            }
+
+            throw new \Illuminate\Http\Exceptions\HttpResponseException(
+                redirect()->route('pendataan.unlock')->with('error', "Sesi shift 8 jam untuk staf {$staffNama} telah berakhir. Sistem telah otomatis logout. Silakan login kembali untuk shift berikutnya.")
+            );
+        }
+    }
+
+    /**
      * Show unlock login screen for staff before accessing Pendataan.
      */
     public function showUnlock()
@@ -34,7 +109,18 @@ class PendataanController extends Controller
         $this->checkAccess();
 
         if (session()->has('pendataan_staff_nama')) {
-            return redirect()->route('pendataan.index');
+            $expiresAt = (float) session('pendataan_staff_expires_at', 0);
+            if ($expiresAt > 0 && microtime(true) >= $expiresAt) {
+                session()->forget([
+                    'pendataan_staff_id',
+                    'pendataan_staff_nama',
+                    'pendataan_staff_username',
+                    'pendataan_staff_login_at',
+                    'pendataan_staff_expires_at',
+                ]);
+            } else {
+                return redirect()->route('pendataan.index');
+            }
         }
 
         return view('pendataan.unlock', [
@@ -49,13 +135,18 @@ class PendataanController extends Controller
     {
         $this->checkAccess();
 
+        $now = microtime(true);
+        $expiresAt = $now + (8 * 3600); // exactly 8 hours shift (28,800 seconds)
+
         // Superadmin bypass option
         if ($request->boolean('superadmin_bypass') && auth()->user()->jabatan === 'Superadmin') {
             session([
                 'pendataan_staff_nama' => auth()->user()->nama ?? 'Super Admin',
                 'pendataan_staff_username' => 'superadmin',
+                'pendataan_staff_login_at' => $now,
+                'pendataan_staff_expires_at' => $expiresAt,
             ]);
-            return redirect()->route('pendataan.index')->with('success', 'Berhasil masuk sebagai Superadmin.');
+            return redirect()->route('pendataan.index')->with('success', 'Berhasil masuk sebagai Superadmin. Sesi shift 8 jam dimulai.');
         }
 
         $request->validate([
@@ -84,17 +175,29 @@ class PendataanController extends Controller
             'pendataan_staff_id' => $staff->id,
             'pendataan_staff_nama' => $staff->nama,
             'pendataan_staff_username' => $staff->username,
+            'pendataan_staff_login_at' => $now,
+            'pendataan_staff_expires_at' => $expiresAt,
         ]);
 
-        return redirect()->route('pendataan.index')->with('success', "Akses berhasil dibuka! Anda aktif sebagai staf {$staff->nama}.");
+        return redirect()->route('pendataan.index')->with('success', "Akses berhasil dibuka! Anda aktif sebagai staf {$staff->nama} (Sesi shift 8 jam dimulai).");
     }
 
     /**
      * Lock the pendataan feature / switch active staff.
      */
-    public function lock()
+    public function lock(Request $request)
     {
-        session()->forget(['pendataan_staff_id', 'pendataan_staff_nama', 'pendataan_staff_username']);
+        session()->forget([
+            'pendataan_staff_id',
+            'pendataan_staff_nama',
+            'pendataan_staff_username',
+            'pendataan_staff_login_at',
+            'pendataan_staff_expires_at',
+        ]);
+
+        if ($request->boolean('expired')) {
+            return redirect()->route('pendataan.unlock')->with('error', 'Sesi shift 8 jam Anda telah berakhir. Sistem telah otomatis logout.');
+        }
 
         return redirect()->route('pendataan.unlock')->with('success', 'Berhasil logout dari fitur Pendataan. Akun utama Anda tetap aktif.');
     }
@@ -137,16 +240,7 @@ class PendataanController extends Controller
      */
     public function index(Request $request)
     {
-        $this->checkAccess();
-
-        // Check if staff has unlocked pendataan session
-        if (!session()->has('pendataan_staff_nama')) {
-            if (auth()->user()->jabatan === 'Superadmin') {
-                session(['pendataan_staff_nama' => auth()->user()->nama ?? 'Super Admin']);
-            } else {
-                return redirect()->route('pendataan.unlock');
-            }
-        }
+        $this->enforceStaffSession();
 
         $activeStaffNama = session('pendataan_staff_nama') ?? auth()->user()->nama;
 
@@ -177,6 +271,8 @@ class PendataanController extends Controller
             'daftarNama' => $daftarNama,
             'uniqueProducts' => $uniqueProducts,
             'activeStaffNama' => $activeStaffNama,
+            'shiftLoginAt' => session('pendataan_staff_login_at'),
+            'shiftExpiresAt' => session('pendataan_staff_expires_at'),
             'filters' => [
                 'start_date' => $request->start_date,
                 'end_date' => $request->end_date,
@@ -191,7 +287,7 @@ class PendataanController extends Controller
      */
     public function exportExcel(Request $request)
     {
-        $this->checkAccess();
+        $this->enforceStaffSession();
 
         $items = $this->buildQuery($request)->get();
 
@@ -213,7 +309,7 @@ class PendataanController extends Controller
      */
     public function exportPdf(Request $request)
     {
-        $this->checkAccess();
+        $this->enforceStaffSession();
 
         $items = $this->buildQuery($request)->get();
         $totalTransaksi = $items->count();
@@ -240,7 +336,7 @@ class PendataanController extends Controller
      */
     public function parseText(Request $request)
     {
-        $this->checkAccess();
+        $this->enforceStaffSession();
 
         $text = (string) $request->input('text', '');
         $parsed = PendataanParserService::parse($text);
@@ -256,7 +352,7 @@ class PendataanController extends Controller
      */
     public function store(Request $request)
     {
-        $this->checkAccess();
+        $this->enforceStaffSession();
 
         // ----------------------------------------------------------------
         // Server-side idempotency guard: block duplicate submissions
@@ -349,7 +445,7 @@ class PendataanController extends Controller
      */
     public function show($id)
     {
-        $this->checkAccess();
+        $this->enforceStaffSession();
 
         $pendataan = Pendataan::with('user')->findOrFail($id);
 
@@ -382,7 +478,7 @@ class PendataanController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $this->checkAccess();
+        $this->enforceStaffSession();
 
         $pendataan = Pendataan::findOrFail($id);
 
@@ -461,7 +557,7 @@ class PendataanController extends Controller
      */
     public function destroy($id)
     {
-        $this->checkAccess();
+        $this->enforceStaffSession();
 
         $pendataan = Pendataan::findOrFail($id);
 

@@ -7,8 +7,17 @@
         <p class="text-muted mb-0">Catat dan pantau transaksi produk dengan fitur pemilahan teks otomatis dan upload screenshot.</p>
     </div>
     <div class="col-md-6 text-md-end mt-3 mt-md-0 d-flex justify-content-md-end align-items-center flex-wrap gap-2">
+        @php
+            $shiftLoginTs = (float) ($shiftLoginAt ?? session('pendataan_staff_login_at', 0));
+            $shiftExpiresTs = (float) ($shiftExpiresAt ?? session('pendataan_staff_expires_at', 0));
+            $shiftLoginStr = $shiftLoginTs > 0 ? \Carbon\Carbon::createFromTimestamp($shiftLoginTs)->format('H:i') : '-';
+            $shiftExpiresStr = $shiftExpiresTs > 0 ? \Carbon\Carbon::createFromTimestamp($shiftExpiresTs)->format('H:i') : '-';
+        @endphp
         <span class="badge bg-light text-dark border px-3 py-2 fs-6 shadow-sm">
             <i class="ti ti-user-check text-primary me-1"></i>Staf: <strong class="text-primary">{{ $activeStaffNama }}</strong>
+        </span>
+        <span class="badge bg-warning bg-opacity-10 text-dark border border-warning-subtle px-3 py-2 fs-6 shadow-sm d-inline-flex align-items-center" id="shiftTimerBadge" title="Sesi Shift 8 Jam (Login: {{ $shiftLoginStr }} • Berakhir: {{ $shiftExpiresStr }})" data-bs-toggle="tooltip">
+            <i class="ti ti-clock-hour-4 text-warning me-1"></i>Sisa Shift: <strong class="text-danger ms-1" id="shiftCountdownText">08:00:00</strong>
         </span>
         <a href="{{ url('pendataan/lock') }}" class="btn btn-sm btn-outline-danger shadow-sm" 
            title="Kunci / Logout Fitur Pendataan (Hanya keluar dari fitur ini)"
@@ -1051,8 +1060,19 @@ function openDetailModal(id) {
     fetch("{{ url('pendataan') }}/" + id, {
         headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
     })
-    .then(res => res.json())
+    .then(res => {
+        if (res.status === 401) {
+            window.location.replace("{{ route('pendataan.unlock') }}");
+            return null;
+        }
+        return res.json();
+    })
     .then(payload => {
+        if (!payload) return;
+        if (payload.expired && payload.redirect) {
+            window.location.replace(payload.redirect);
+            return;
+        }
         if (payload.success) {
             const data = payload.data;
             document.getElementById('detail_nama_produk').textContent = data.nama_produk;
@@ -1259,6 +1279,66 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     }
+
+    // =========================================================================
+    // STRICT 8-HOUR SHIFT AUTO-LOGOUT TIMER (Real-time sub-second precision)
+    // =========================================================================
+    (function initShiftTimer() {
+        const shiftExpiresAtMs = {{ (float) ($shiftExpiresAt ?? session('pendataan_staff_expires_at', 0)) * 1000 }};
+        if (!shiftExpiresAtMs || shiftExpiresAtMs <= 0) return;
+
+        const timerBadge = document.getElementById('shiftTimerBadge');
+        const countdownText = document.getElementById('shiftCountdownText');
+        const lockUrl = "{{ route('pendataan.lock', ['expired' => 1]) }}";
+        let hasLoggedOut = false;
+
+        function checkShiftExpiry() {
+            if (hasLoggedOut) return;
+
+            const now = Date.now();
+            const remainingMs = shiftExpiresAtMs - now;
+
+            if (remainingMs <= 0) {
+                hasLoggedOut = true;
+                if (countdownText) countdownText.textContent = "00:00:00 (Habis)";
+                if (timerBadge) {
+                    timerBadge.className = "badge bg-danger text-white border border-danger px-3 py-2 fs-6 shadow-sm d-inline-flex align-items-center";
+                }
+
+                // Instant auto-logout even if 0.1s past 8 hours!
+                window.location.replace(lockUrl);
+                return;
+            }
+
+            const totalSeconds = Math.floor(remainingMs / 1000);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+
+            const formatted = 
+                String(hours).padStart(2, '0') + ':' +
+                String(minutes).padStart(2, '0') + ':' +
+                String(seconds).padStart(2, '0');
+
+            if (countdownText) {
+                countdownText.textContent = formatted;
+            }
+
+            if (timerBadge) {
+                if (totalSeconds < 900) { // < 15 minutes left
+                    timerBadge.className = "badge bg-danger text-white border border-danger px-3 py-2 fs-6 shadow-sm d-inline-flex align-items-center";
+                } else if (totalSeconds < 3600) { // < 1 hour left
+                    timerBadge.className = "badge bg-warning text-dark border border-warning px-3 py-2 fs-6 shadow-sm d-inline-flex align-items-center";
+                }
+            }
+        }
+
+        // Run immediately
+        checkShiftExpiry();
+
+        // Check every 250ms for sub-second real-time precision
+        setInterval(checkShiftExpiry, 250);
+    })();
 });
 </script>
 @endpush
