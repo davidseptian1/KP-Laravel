@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\PendataanExport;
 use App\Models\Pendataan;
 use App\Services\PendataanParserService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Maatwebsite\Excel\Facades\Excel;
 
 class PendataanController extends Controller
 {
@@ -23,12 +26,10 @@ class PendataanController extends Controller
     }
 
     /**
-     * Display a listing of pendataan with filters and summary.
+     * Build shared Eloquent query with active filters.
      */
-    public function index(Request $request)
+    private function buildQuery(Request $request)
     {
-        $this->checkAccess();
-
         $query = Pendataan::with('user')->latest('created_at');
 
         // Filter: Tanggal (Start Date & End Date)
@@ -54,17 +55,31 @@ class PendataanController extends Controller
             $query->where('nama_produk', 'like', "%{$produkFilter}%");
         }
 
+        return $query;
+    }
+
+    /**
+     * Display a listing of pendataan with filters and summary.
+     */
+    public function index(Request $request)
+    {
+        $this->checkAccess();
+
+        $query = $this->buildQuery($request);
+
         // Summary calculations based on filtered data
         $summaryQuery = clone $query;
         $totalTransaksi = $summaryQuery->count();
         $totalQty = (int) $summaryQuery->sum('qty');
         $totalNominal = (float) $summaryQuery->sum('total_harga');
 
-        // Paginated list or get all for DataTables
+        // Paginated list
         $pendataans = $query->paginate(25)->withQueryString();
 
-        // Get distinct names and products for filter dropdowns/suggestions
-        $uniqueNames = Pendataan::select('nama')->distinct()->whereNotNull('nama')->pluck('nama');
+        // Get predefined names and any additional existing names from DB
+        $dbNames = Pendataan::select('nama')->distinct()->whereNotNull('nama')->pluck('nama')->toArray();
+        $daftarNama = array_values(array_unique(array_merge(Pendataan::DAFTAR_NAMA, $dbNames)));
+
         $uniqueProducts = Pendataan::select('nama_produk')->distinct()->whereNotNull('nama_produk')->pluck('nama_produk');
 
         return view('pendataan.index', [
@@ -74,7 +89,7 @@ class PendataanController extends Controller
             'totalTransaksi' => $totalTransaksi,
             'totalQty' => $totalQty,
             'totalNominal' => $totalNominal,
-            'uniqueNames' => $uniqueNames,
+            'daftarNama' => $daftarNama,
             'uniqueProducts' => $uniqueProducts,
             'filters' => [
                 'start_date' => $request->start_date,
@@ -83,6 +98,55 @@ class PendataanController extends Controller
                 'nama_produk' => $request->nama_produk,
             ],
         ]);
+    }
+
+    /**
+     * Export pendataan records to Excel (.xlsx).
+     */
+    public function exportExcel(Request $request)
+    {
+        $this->checkAccess();
+
+        $items = $this->buildQuery($request)->get();
+
+        $filename = 'Laporan-Pendataan-' . now()->format('Ymd_His') . '.xlsx';
+
+        return Excel::download(
+            new PendataanExport($items, [
+                'start_date' => $request->start_date,
+                'end_date' => $request->end_date,
+                'nama' => $request->nama,
+                'nama_produk' => $request->nama_produk,
+            ]),
+            $filename
+        );
+    }
+
+    /**
+     * Export pendataan records to PDF (.pdf).
+     */
+    public function exportPdf(Request $request)
+    {
+        $this->checkAccess();
+
+        $items = $this->buildQuery($request)->get();
+        $totalTransaksi = $items->count();
+        $totalQty = (int) $items->sum('qty');
+        $totalNominal = (float) $items->sum('total_harga');
+
+        $filters = [
+            'start_date' => $request->start_date,
+            'end_date' => $request->end_date,
+            'nama' => $request->nama,
+            'nama_produk' => $request->nama_produk,
+        ];
+
+        $pdf = Pdf::loadView('pendataan.pdf', compact('items', 'filters', 'totalTransaksi', 'totalQty', 'totalNominal'))
+            ->setPaper('a4', 'landscape');
+
+        $filename = 'Laporan-Pendataan-' . now()->format('Ymd_His') . '.pdf';
+
+        return $pdf->download($filename);
     }
 
     /**

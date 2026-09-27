@@ -251,10 +251,12 @@ Route::middleware(['checkLogin', 'admin.activity.log'])->group(function () {
     // Import status polling
     Route::get('imports/status', [ImportStatusController::class, 'status'])->name('imports.status');
 
-    // Pendataan (CRUD & Filter for authorized users)
+    // Pendataan (CRUD, Filter & Export for authorized users)
     Route::get('pendataan', [PendataanController::class, 'index'])->name('pendataan.index');
     Route::post('pendataan', [PendataanController::class, 'store'])->name('pendataan.store');
     Route::post('pendataan/parse-text', [PendataanController::class, 'parseText'])->name('pendataan.parse-text');
+    Route::get('pendataan/export-excel', [PendataanController::class, 'exportExcel'])->name('pendataan.export.excel');
+    Route::get('pendataan/export-pdf', [PendataanController::class, 'exportPdf'])->name('pendataan.export.pdf');
     Route::get('pendataan/{id}', [PendataanController::class, 'show'])->name('pendataan.show');
     Route::put('pendataan/{id}', [PendataanController::class, 'update'])->name('pendataan.update');
     Route::delete('pendataan/{id}', [PendataanController::class, 'destroy'])->name('pendataan.destroy');

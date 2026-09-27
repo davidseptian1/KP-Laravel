@@ -80,12 +80,12 @@
             </div>
             <div class="col-md-3">
                 <label class="form-label small fw-semibold text-muted">Nama</label>
-                <input type="text" name="nama" class="form-control form-control-sm" placeholder="Cari nama..." value="{{ $filters['nama'] ?? '' }}" list="listNamaOptions">
-                <datalist id="listNamaOptions">
-                    @foreach($uniqueNames as $uName)
-                        <option value="{{ $uName }}">
+                <select name="nama" class="form-select form-select-sm">
+                    <option value="">-- Semua Nama --</option>
+                    @foreach($daftarNama as $itemNama)
+                        <option value="{{ $itemNama }}" {{ ($filters['nama'] ?? '') === $itemNama ? 'selected' : '' }}>{{ $itemNama }}</option>
                     @endforeach
-                </datalist>
+                </select>
             </div>
             <div class="col-md-3">
                 <label class="form-label small fw-semibold text-muted">Nama Produk</label>
@@ -96,15 +96,29 @@
                     @endforeach
                 </datalist>
             </div>
-            <div class="col-12 d-flex justify-content-end gap-2 pt-2">
-                @if(!empty($filters['start_date']) || !empty($filters['end_date']) || !empty($filters['nama']) || !empty($filters['nama_produk']))
-                    <a href="{{ route('pendataan.index') }}" class="btn btn-sm btn-outline-secondary">
-                        <i class="ti ti-refresh me-1"></i> Reset Filter
+            <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2 pt-3 border-top mt-2">
+                <!-- Export / Download Buttons with active filters -->
+                <div class="d-flex align-items-center gap-2">
+                    <span class="small fw-semibold text-muted"><i class="ti ti-download me-1"></i>Download Data:</span>
+                    <a href="{{ url('pendataan/export-excel') }}?{{ http_build_query(request()->query()) }}" class="btn btn-sm btn-success px-3 shadow-sm" title="Download data dalam format Excel">
+                        <i class="ti ti-file-spreadsheet me-1"></i> Excel (.xlsx)
                     </a>
-                @endif
-                <button type="submit" class="btn btn-sm btn-primary px-3">
-                    <i class="ti ti-search me-1"></i> Terapkan Filter
-                </button>
+                    <a href="{{ url('pendataan/export-pdf') }}?{{ http_build_query(request()->query()) }}" class="btn btn-sm btn-danger px-3 shadow-sm" title="Download data dalam format PDF" target="_blank">
+                        <i class="ti ti-file-type-pdf me-1"></i> PDF
+                    </a>
+                </div>
+
+                <!-- Filter Action Buttons -->
+                <div class="d-flex align-items-center gap-2">
+                    @if(!empty($filters['start_date']) || !empty($filters['end_date']) || !empty($filters['nama']) || !empty($filters['nama_produk']))
+                        <a href="{{ route('pendataan.index') }}" class="btn btn-sm btn-outline-secondary">
+                            <i class="ti ti-refresh me-1"></i> Reset Filter
+                        </a>
+                    @endif
+                    <button type="submit" class="btn btn-sm btn-primary px-3">
+                        <i class="ti ti-search me-1"></i> Terapkan Filter
+                    </button>
+                </div>
             </div>
         </form>
     </div>
@@ -237,11 +251,27 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4">
-                    <!-- Field: Nama -->
+                    <!-- Field: Nama Otomatis -->
                     <div class="mb-3">
-                        <label class="form-label fw-semibold text-dark">Nama <span class="text-danger">*</span></label>
-                        <input type="text" name="nama" id="tambah_nama" class="form-control" placeholder="Masukkan nama..." value="{{ auth()->user()->nama }}" required>
-                        <div class="form-text">Nama penanggung jawab atau pembuat transaksi.</div>
+                        <label class="form-label fw-semibold text-dark">Nama Penanggung Jawab <span class="text-danger">*</span></label>
+                        <select name="nama" id="tambah_nama" class="form-select" required onchange="syncPillActive('tambah', this.value)">
+                            <option value="" disabled {{ !in_array(auth()->user()->nama, $daftarNama) ? 'selected' : '' }}>-- Pilih Nama Penanggung Jawab --</option>
+                            @foreach($daftarNama as $itemNama)
+                                <option value="{{ $itemNama }}" {{ strcasecmp(auth()->user()->nama, $itemNama) === 0 ? 'selected' : '' }}>
+                                    {{ $itemNama }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <!-- Quick Pill Buttons for instant selection -->
+                        <div class="mt-2 d-flex flex-wrap gap-1 align-items-center">
+                            <span class="text-muted small me-1" style="font-size: 0.78rem;">Pilih cepat:</span>
+                            @foreach($daftarNama as $itemNama)
+                                <button type="button" class="btn btn-xs py-1 px-2 btn-pill-tambah {{ strcasecmp(auth()->user()->nama, $itemNama) === 0 ? 'btn-primary text-white' : 'btn-outline-secondary' }}" style="font-size: 0.75rem;" onclick="selectTambahNama('{{ $itemNama }}')">
+                                    {{ $itemNama }}
+                                </button>
+                            @endforeach
+                        </div>
+                        <div class="form-text">Pilih salah satu dari 13 nama otomatis staf di atas atau klik tombol cepat.</div>
                     </div>
 
                     <!-- Field: Deskripsi (Auto-Pilah) -->
@@ -347,10 +377,24 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4">
-                    <!-- Field: Nama -->
+                    <!-- Field: Nama Otomatis -->
                     <div class="mb-3">
-                        <label class="form-label fw-semibold text-dark">Nama <span class="text-danger">*</span></label>
-                        <input type="text" name="nama" id="edit_nama" class="form-control" required>
+                        <label class="form-label fw-semibold text-dark">Nama Penanggung Jawab <span class="text-danger">*</span></label>
+                        <select name="nama" id="edit_nama" class="form-select" required onchange="syncPillActive('edit', this.value)">
+                            <option value="" disabled>-- Pilih Nama Penanggung Jawab --</option>
+                            @foreach($daftarNama as $itemNama)
+                                <option value="{{ $itemNama }}">{{ $itemNama }}</option>
+                            @endforeach
+                        </select>
+                        <!-- Quick Pill Buttons for instant selection -->
+                        <div class="mt-2 d-flex flex-wrap gap-1 align-items-center">
+                            <span class="text-muted small me-1" style="font-size: 0.78rem;">Pilih cepat:</span>
+                            @foreach($daftarNama as $itemNama)
+                                <button type="button" class="btn btn-xs btn-outline-secondary py-1 px-2 btn-pill-edit" style="font-size: 0.75rem;" onclick="selectEditNama('{{ $itemNama }}')">
+                                    {{ $itemNama }}
+                                </button>
+                            @endforeach
+                        </div>
                     </div>
 
                     <!-- Field: Deskripsi -->
@@ -811,6 +855,32 @@ function setupDropzone(zoneId, inputId, isEdit) {
     });
 }
 
+// Quick Pill Selection Handlers for Nama
+function selectTambahNama(nama) {
+    const sel = document.getElementById('tambah_nama');
+    sel.value = nama;
+    syncPillActive('tambah', nama);
+}
+
+function selectEditNama(nama) {
+    const sel = document.getElementById('edit_nama');
+    sel.value = nama;
+    syncPillActive('edit', nama);
+}
+
+function syncPillActive(context, activeNama) {
+    const pills = document.querySelectorAll('.btn-pill-' + context);
+    pills.forEach(pill => {
+        if (pill.textContent.trim().toLowerCase() === String(activeNama).toLowerCase()) {
+            pill.classList.remove('btn-outline-secondary');
+            pill.classList.add('btn-primary', 'text-white');
+        } else {
+            pill.classList.remove('btn-primary', 'text-white');
+            pill.classList.add('btn-outline-secondary');
+        }
+    });
+}
+
 // =========================================================================
 // MODAL & ACTION HANDLERS
 // =========================================================================
@@ -818,7 +888,26 @@ function openEditModal(item) {
     const form = document.getElementById('formEditPendataan');
     form.action = "{{ url('pendataan') }}/" + item.id;
 
-    document.getElementById('edit_nama').value = item.nama || '';
+    const editNamaSelect = document.getElementById('edit_nama');
+    if (item.nama) {
+        let exists = false;
+        for (let i = 0; i < editNamaSelect.options.length; i++) {
+            if (editNamaSelect.options[i].value.toLowerCase() === item.nama.toLowerCase()) {
+                editNamaSelect.selectedIndex = i;
+                exists = true;
+                break;
+            }
+        }
+        if (!exists) {
+            const opt = new Option(item.nama, item.nama, true, true);
+            editNamaSelect.add(opt);
+        }
+        syncPillActive('edit', item.nama);
+    } else {
+        editNamaSelect.selectedIndex = 0;
+        syncPillActive('edit', '');
+    }
+
     document.getElementById('edit_deskripsi').value = item.deskripsi || '';
     document.getElementById('edit_nama_produk').value = item.nama_produk || '';
     document.getElementById('edit_harga_qty').value = formatRupiahNumber(item.harga_qty);
@@ -925,6 +1014,12 @@ function confirmDeletePendataan(e, productName) {
 document.addEventListener('DOMContentLoaded', function() {
     setupDropzone('dropzoneTambah', 'tambah_gambar_input', false);
     setupDropzone('dropzoneEdit', 'edit_gambar_input', true);
+
+    // Initial pill highlight for Tambah modal
+    const tambahNamaElem = document.getElementById('tambah_nama');
+    if (tambahNamaElem && tambahNamaElem.value) {
+        syncPillActive('tambah', tambahNamaElem.value);
+    }
 
     // Format currency inputs on blur / input
     document.querySelectorAll('.js-currency-input').forEach(input => {

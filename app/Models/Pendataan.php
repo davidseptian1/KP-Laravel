@@ -10,6 +10,25 @@ class Pendataan extends Model
 {
     use HasFactory;
 
+    /**
+     * Predefined staff names for Pendataan
+     */
+    public const DAFTAR_NAMA = [
+        'Ginta',
+        'Sinta',
+        'Reno',
+        'Dira',
+        'Pise',
+        'Rani',
+        'Diah',
+        'Diya',
+        'Rafi',
+        'Rudi',
+        'Khodam',
+        'Nadir',
+        'Nuni',
+    ];
+
     protected $table = 'pendataans';
 
     protected $fillable = [
