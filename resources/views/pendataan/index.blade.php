@@ -212,14 +212,7 @@
                                 <i class="ti ti-edit"></i>
                             </button>
 
-                            <!-- Delete Form -->
-                            <form action="{{ route('pendataan.destroy', $item->id) }}" method="POST" class="d-inline" onsubmit="return confirmDeletePendataan(event, '{{ addslashes($item->nama_produk) }}')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-sm btn-icon btn-outline-danger ms-1" title="Hapus Data">
-                                    <i class="ti ti-trash"></i>
-                                </button>
-                            </form>
+
                         </td>
                     </tr>
                     @empty
@@ -252,6 +245,8 @@
         <div class="modal-content border-0 shadow">
             <form action="{{ route('pendataan.store') }}" method="POST" enctype="multipart/form-data" id="formTambahPendataan">
                 @csrf
+                {{-- Idempotency token: refreshed every time modal opens (see JS) to prevent double-submit --}}
+                <input type="hidden" name="_idempotency_token" id="tambah_idempotency_token" value="">
                 <div class="modal-header bg-light">
                     <h5 class="modal-title fw-bold text-dark" id="modalTambahPendataanLabel">
                         <i class="ti ti-plus-circle text-primary me-2"></i>Tambah Pendataan Baru
@@ -928,31 +923,7 @@ function previewLightboxImage(url, caption) {
     modal.show();
 }
 
-function confirmDeletePendataan(e, productName) {
-    e.preventDefault();
-    const form = e.target;
-    if (typeof Swal !== 'undefined') {
-        Swal.fire({
-            title: 'Hapus Data Pendataan?',
-            text: 'Data "' + productName + '" akan dihapus secara permanen.',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Ya, Hapus!',
-            cancelButtonText: 'Batal'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                form.submit();
-            }
-        });
-    } else {
-        if (confirm('Yakin ingin menghapus data "' + productName + '"?')) {
-            form.submit();
-        }
-    }
-    return false;
-}
+
 
 // =========================================================================
 // DOM INITIALIZATION
@@ -960,6 +931,23 @@ function confirmDeletePendataan(e, productName) {
 document.addEventListener('DOMContentLoaded', function() {
     setupDropzone('dropzoneTambah', 'tambah_gambar_input', false);
     setupDropzone('dropzoneEdit', 'edit_gambar_input', true);
+
+    // Refresh idempotency token every time the Tambah modal opens
+    const modalTambahEl = document.getElementById('modalTambahPendataan');
+    if (modalTambahEl) {
+        modalTambahEl.addEventListener('show.bs.modal', function() {
+            const tokenField = document.getElementById('tambah_idempotency_token');
+            if (tokenField) {
+                tokenField.value = 'tok_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
+            }
+            // Re-enable submit button in case it was disabled from a previous attempt
+            const btn = document.querySelector('#formTambahPendataan button[type="submit"]');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="ti ti-device-floppy me-1"></i> Simpan Pendataan';
+            }
+        });
+    }
 
     // Format currency inputs on blur / input
     document.querySelectorAll('.js-currency-input').forEach(input => {
@@ -1012,9 +1000,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const formTambah = document.getElementById('formTambahPendataan');
         if (formTambah) {
-            formTambah.addEventListener('submit', function() {
+            let _tambahSubmitting = false;
+            formTambah.addEventListener('submit', function(e) {
+                // Auto-parse if product name is empty
                 if (!document.getElementById('tambah_nama_produk').value.trim()) {
                     triggerParseTambah();
+                }
+                // Prevent double-submit
+                if (_tambahSubmitting) {
+                    e.preventDefault();
+                    return false;
+                }
+                _tambahSubmitting = true;
+                const btn = formTambah.querySelector('button[type="submit"]');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...';
                 }
             });
         }
@@ -1059,9 +1060,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const formEdit = document.getElementById('formEditPendataan');
         if (formEdit) {
-            formEdit.addEventListener('submit', function() {
+            let _editSubmitting = false;
+            formEdit.addEventListener('submit', function(e) {
+                // Auto-parse if product name is empty
                 if (!document.getElementById('edit_nama_produk').value.trim()) {
                     triggerParseEdit();
+                }
+                // Prevent double-submit
+                if (_editSubmitting) {
+                    e.preventDefault();
+                    return false;
+                }
+                _editSubmitting = true;
+                const btn = formEdit.querySelector('button[type="submit"]');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...';
                 }
             });
         }

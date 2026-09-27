@@ -258,6 +258,21 @@ class PendataanController extends Controller
     {
         $this->checkAccess();
 
+        // ----------------------------------------------------------------
+        // Server-side idempotency guard: block duplicate submissions
+        // submitted within 10 seconds with the same token.
+        // ----------------------------------------------------------------
+        $token = (string) $request->input('_idempotency_token', '');
+        if ($token !== '') {
+            $cacheKey = 'pendataan_submit_' . auth()->id() . '_' . $token;
+            if (cache()->has($cacheKey)) {
+                return redirect()->route('pendataan.index')
+                    ->with('warning', 'Data sudah berhasil disimpan sebelumnya (duplikasi dicegah).');
+            }
+            // Store the token for 10 seconds to block retries
+            cache()->put($cacheKey, true, now()->addSeconds(10));
+        }
+
         $request->validate([
             'deskripsi' => 'nullable|string',
             'nama_produk' => 'nullable|string|max:255',
