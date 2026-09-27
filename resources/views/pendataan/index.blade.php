@@ -10,8 +10,10 @@
         <span class="badge bg-light text-dark border px-3 py-2 fs-6 shadow-sm">
             <i class="ti ti-user-check text-primary me-1"></i>Staf: <strong class="text-primary">{{ $activeStaffNama }}</strong>
         </span>
-        <a href="{{ url('pendataan/lock') }}" class="btn btn-sm btn-outline-danger shadow-sm" title="Kunci / Ganti Akun Staf">
-            <i class="ti ti-lock me-1"></i>Ganti Staf
+        <a href="{{ url('pendataan/lock') }}" class="btn btn-sm btn-outline-danger shadow-sm" 
+           title="Kunci / Logout Fitur Pendataan (Hanya keluar dari fitur ini)"
+           onclick="return confirm('Logout dari fitur Pendataan? (Akun login utama Anda akan tetap aktif)')">
+            <i class="ti ti-lock me-1"></i>Logout Fitur
         </a>
         <button type="button" class="btn btn-primary shadow-sm px-3" data-bs-toggle="modal" data-bs-target="#modalTambahPendataan">
             <i class="ti ti-plus me-1"></i> Tambah Pendataan

@@ -96,7 +96,7 @@ class PendataanController extends Controller
     {
         session()->forget(['pendataan_staff_id', 'pendataan_staff_nama', 'pendataan_staff_username']);
 
-        return redirect()->route('pendataan.unlock')->with('success', 'Fitur Pendataan telah dikunci.');
+        return redirect()->route('pendataan.unlock')->with('success', 'Berhasil logout dari fitur Pendataan. Akun utama Anda tetap aktif.');
     }
 
     /**
