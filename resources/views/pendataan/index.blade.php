@@ -686,7 +686,17 @@ function parseTransactionText(text) {
             }
             if (/(?:Metode\s*Pembayaran|Total\s*(?:Tagihan|Bayar|Pembayaran))/i.test(lines[i])) break;
 
-            if (/^(?:Rp\.?|IDR)?\s*[\d.,]+\s*$/i.test(lines[i]) && /\d/.test(lines[i])) {
+            // Skip numeric lines flanked by stepper keywords (kurangi/tambah)
+            if (/^\d+$/.test(lines[i])) {
+                const prev = (lines[i - 1] || '').toLowerCase();
+                const next = (lines[i + 1] || '').toLowerCase();
+                if (prev.includes('kurangi') || next.includes('tambah')) continue;
+            }
+
+            // Require Rp/IDR prefix OR thousands separator for bare numbers
+            const isRpLine = /^(?:Rp\.?|IDR)\s*[\d.,]+\s*$/i.test(lines[i]);
+            const isBareFormatted = /^[\d.,]+$/.test(lines[i]) && /[.,]/.test(lines[i]);
+            if ((isRpLine || isBareFormatted) && /\d/.test(lines[i])) {
                 const p = cleanPriceText(lines[i]);
                 if (p > 0) {
                     res.harga_qty = p;

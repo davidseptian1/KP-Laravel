@@ -154,6 +154,16 @@ class PendataanParserService
                     break; // Stop before payment method or total
                 }
 
+                // Skip numeric lines flanked by stepper keywords (kurangi/tambah)
+                // to prevent the qty number being misread as unit price.
+                if (is_numeric($nonEmptyLines[$i])) {
+                    $prev = strtolower($nonEmptyLines[$i - 1] ?? '');
+                    $next = strtolower($nonEmptyLines[$i + 1] ?? '');
+                    if (str_contains($prev, 'kurangi') || str_contains($next, 'tambah')) {
+                        continue;
+                    }
+                }
+
                 if (self::isPriceLine($nonEmptyLines[$i])) {
                     $p = self::cleanPrice($nonEmptyLines[$i]);
                     if ($p > 0) {
@@ -182,14 +192,21 @@ class PendataanParserService
     public static function isPriceLine(string $line): bool
     {
         $line = trim($line);
-        // Explicit Rp or IDR
-        if (preg_match('/^(?:Rp\.?|IDR)?\s*[\d.,]+\s*$/i', $line)) {
-            // Must have digits
+
+        // Line explicitly starts with Rp or IDR → always a price line
+        if (preg_match('/^(?:Rp\.?|IDR)\s*[\d.,]+\s*$/i', $line)) {
             return (bool) preg_match('/\d/', $line);
         }
 
+        // Embedded Rp / IDR anywhere on the line
         if (preg_match('/(?:Rp\.?|IDR)\s*[\d.,]+/i', $line)) {
             return true;
+        }
+
+        // Bare number (no prefix): only treat as price if it contains a
+        // thousands separator (. or ,) — e.g. "624.990" yes, "10" no.
+        if (preg_match('/^[\d.,]+$/', $line) && preg_match('/[.,]/', $line)) {
+            return (bool) preg_match('/\d/', $line);
         }
 
         return false;
