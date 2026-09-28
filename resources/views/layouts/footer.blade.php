@@ -1,18 +1,28 @@
         <!-- jQuery (needed for DataTables) -->
         <script src="{{ asset('sbadmin2/vendor/jquery/jquery.min.js') }}"></script>
 
-        <!-- Hide Preloader Immediately -->
+        <!-- Fast Preloader Dismissal (DOMContentLoaded + immediate fallback) -->
         <script>
-            window.addEventListener('load', function() {
-                const loader = document.querySelector('.loader-bg');
-                if (loader) {
-                    loader.style.transition = 'opacity 0.3s';
-                    loader.style.opacity = '0';
-                    setTimeout(() => {
-                        loader.style.display = 'none';
-                    }, 300);
+            (function() {
+                function hideLoader() {
+                    const loader = document.querySelector('.loader-bg');
+                    if (loader) {
+                        loader.style.transition = 'opacity 0.2s ease-out';
+                        loader.style.opacity = '0';
+                        loader.style.pointerEvents = 'none';
+                        setTimeout(() => {
+                            loader.style.display = 'none';
+                        }, 200);
+                    }
                 }
-            });
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', hideLoader);
+                } else {
+                    hideLoader();
+                }
+                // Fallback guarantee: never keep loader visible more than 600ms
+                setTimeout(hideLoader, 600);
+            })();
         </script>
 
         <!-- Popper JS -->
@@ -25,8 +35,7 @@
         <script src="{{ asset('mantis/js/pcoded.js') }}"></script>
         <script src="{{ asset('mantis/js/plugins/feather.min.js') }}"></script>
 
-
-        Custom JS
+        <!-- Custom JS -->
         <script src="{{ asset('mantis/js/custom.js') }}"></script>
 
         <!-- Sidebar Toggle Fix - Inline Script -->

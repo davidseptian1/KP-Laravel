@@ -285,7 +285,7 @@
                         <td class="text-center">
                             @if($item->gambar)
                                 <a href="javascript:void(0)" onclick="previewLightboxImage('{{ $item->gambar_url }}', '{{ addslashes($item->nama_produk) }}')" title="Lihat gambar">
-                                    <img src="{{ $item->gambar_url }}" alt="Thumbnail" class="rounded border shadow-sm" style="width: 44px; height: 44px; object-fit: cover;">
+                                    <img src="{{ $item->gambar_url }}" alt="Thumbnail" loading="lazy" decoding="async" class="rounded border shadow-sm" style="width: 44px; height: 44px; object-fit: cover;">
                                 </a>
                             @else
                                 <span class="text-muted small">-</span>
@@ -1396,7 +1396,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 String(minutes).padStart(2, '0') + ':' +
                 String(seconds).padStart(2, '0');
 
-            if (countdownText) {
+            if (countdownText && countdownText.textContent !== formatted) {
                 countdownText.textContent = formatted;
             }
 

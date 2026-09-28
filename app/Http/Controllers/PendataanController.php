@@ -301,25 +301,32 @@ class PendataanController extends Controller
 
         $query = $this->buildQuery($request);
 
-        // Summary calculations based on filtered data
-        $summaryQuery = clone $query;
-        $totalTransaksi = $summaryQuery->count();
-        $totalQty = (int) $summaryQuery->sum('qty');
-        $totalNominal = (float) $summaryQuery->sum('total_harga');
+        // Summary calculations in ONE single aggregate query (replaces 3 separate full table queries)
+        $summary = (clone $query)
+            ->selectRaw('COUNT(*) as total_transaksi, COALESCE(SUM(qty), 0) as total_qty, COALESCE(SUM(total_harga), 0) as total_nominal')
+            ->first();
+
+        $totalTransaksi = (int) ($summary->total_transaksi ?? 0);
+        $totalQty = (int) ($summary->total_qty ?? 0);
+        $totalNominal = (float) ($summary->total_nominal ?? 0);
 
         // Paginated list
         $pendataans = $query->paginate(25)->withQueryString();
 
-        // Get predefined names and any additional existing names from DB (clean base names for staff filter dropdown)
-        $dbRawNames = Pendataan::select('nama')->distinct()->whereNotNull('nama')->pluck('nama')->toArray();
-        $cleanedDbNames = array_map(function ($n) {
-            return trim(preg_replace('/\s*\(\s*Shift\s*\d+\s*\)\s*$/i', '', $n));
-        }, $dbRawNames);
+        // Get predefined names and any additional existing names from DB (cached for 120s to avoid repeated distinct scans)
+        $cleanedDbNames = cache()->remember('pendataan_filter_staff_names', 120, function () {
+            $dbRawNames = Pendataan::select('nama')->distinct()->whereNotNull('nama')->pluck('nama')->toArray();
+            return array_map(function ($n) {
+                return trim(preg_replace('/\s*\(\s*Shift\s*\d+\s*\)\s*$/i', '', $n));
+            }, $dbRawNames);
+        });
 
         $daftarNama = array_values(array_filter(array_unique(array_merge(Pendataan::DAFTAR_NAMA, $cleanedDbNames))));
         sort($daftarNama, SORT_NATURAL | SORT_FLAG_CASE);
 
-        $uniqueProducts = Pendataan::select('nama_produk')->distinct()->whereNotNull('nama_produk')->pluck('nama_produk');
+        $uniqueProducts = cache()->remember('pendataan_filter_products', 120, function () {
+            return Pendataan::select('nama_produk')->distinct()->whereNotNull('nama_produk')->pluck('nama_produk');
+        });
 
         return view('pendataan.index', [
             'title' => 'Pendataan',
@@ -510,6 +517,9 @@ class PendataanController extends Controller
             'gambar' => $gambarPath,
         ]);
 
+        cache()->forget('pendataan_filter_staff_names');
+        cache()->forget('pendataan_filter_products');
+
         return redirect()->route('pendataan.index')->with('success', 'Data Pendataan berhasil disimpan atas nama ' . $nama . '!');
     }
 
@@ -639,6 +649,9 @@ class PendataanController extends Controller
         }
 
         $pendataan->delete();
+
+        cache()->forget('pendataan_filter_staff_names');
+        cache()->forget('pendataan_filter_products');
 
         return redirect()->route('pendataan.index')->with('success', 'Data Pendataan berhasil dihapus!');
     }

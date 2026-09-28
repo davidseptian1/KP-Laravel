@@ -14,7 +14,9 @@
     <!-- [Favicon] icon -->
     <link rel="icon" href="{{ asset('mantis/images/favicon.svg') }}" type="image/x-icon">
 
-    <!-- [Google Font] Family -->
+    <!-- [Google Font] Preconnect & Family -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" id="main-font-link">
 
     <!-- [Tabler Icons] https://tablericons.com -->
