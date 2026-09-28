@@ -248,7 +248,7 @@ class PendataanController extends Controller
      */
     private function buildQuery(Request $request)
     {
-        $query = Pendataan::with('user')->latest('created_at');
+        $query = Pendataan::with('user');
 
         // Filter: Tanggal (Start Date & End Date)
         if ($request->filled('start_date')) {
@@ -301,8 +301,10 @@ class PendataanController extends Controller
 
         $query = $this->buildQuery($request);
 
-        // Summary calculations in ONE single aggregate query (replaces 3 separate full table queries)
+        // Summary calculations in ONE single aggregate query (strictly without ORDER BY to prevent MySQL 1140 error)
         $summary = (clone $query)
+            ->reorder()
+            ->toBase()
             ->selectRaw('COUNT(*) as total_transaksi, COALESCE(SUM(qty), 0) as total_qty, COALESCE(SUM(total_harga), 0) as total_nominal')
             ->first();
 
@@ -310,8 +312,8 @@ class PendataanController extends Controller
         $totalQty = (int) ($summary->total_qty ?? 0);
         $totalNominal = (float) ($summary->total_nominal ?? 0);
 
-        // Paginated list
-        $pendataans = $query->paginate(25)->withQueryString();
+        // Paginated list ordered by latest
+        $pendataans = $query->latest('created_at')->paginate(25)->withQueryString();
 
         // Get predefined names and any additional existing names from DB (cached for 120s to avoid repeated distinct scans)
         $cleanedDbNames = cache()->remember('pendataan_filter_staff_names', 120, function () {
@@ -357,7 +359,7 @@ class PendataanController extends Controller
     {
         $this->enforceStaffSession();
 
-        $items = $this->buildQuery($request)->get();
+        $items = $this->buildQuery($request)->latest('created_at')->get();
 
         $activeShift = $request->input('shift', 'All Shift');
         $shiftSuffix = (!empty($activeShift) && !in_array($activeShift, ['all', 'All', 'All Shift']))
@@ -385,7 +387,7 @@ class PendataanController extends Controller
     {
         $this->enforceStaffSession();
 
-        $items = $this->buildQuery($request)->get();
+        $items = $this->buildQuery($request)->latest('created_at')->get();
         $totalTransaksi = $items->count();
         $totalQty = (int) $items->sum('qty');
         $totalNominal = (float) $items->sum('total_harga');
