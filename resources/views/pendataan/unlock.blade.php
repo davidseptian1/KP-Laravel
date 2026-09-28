@@ -58,6 +58,46 @@
                         </div>
                     </div>
 
+                    <!-- Field Pilihan Shift 1/2/3 -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold text-dark d-flex align-items-center justify-content-between mb-2">
+                            <span><i class="ti ti-clock-play text-primary me-1"></i>Pilih Shift</span>
+                            <span class="badge bg-light text-primary border border-primary-subtle fw-medium">Wajib Dipilih</span>
+                        </label>
+                        <div class="row g-2">
+                            <div class="col-4">
+                                <input type="radio" class="btn-check" name="shift" id="shift1" value="Shift 1" {{ old('shift', 'Shift 1') === 'Shift 1' ? 'checked' : '' }} required>
+                                <label class="btn btn-outline-primary w-100 py-2 d-flex flex-column align-items-center justify-content-center rounded-3 shadow-none shift-select-card" for="shift1">
+                                    <i class="ti ti-sun fs-3 mb-1"></i>
+                                    <span class="fw-bold fs-6">Shift 1</span>
+                                    <span class="shift-subtext small opacity-75">Pagi</span>
+                                </label>
+                            </div>
+                            <div class="col-4">
+                                <input type="radio" class="btn-check" name="shift" id="shift2" value="Shift 2" {{ old('shift') === 'Shift 2' ? 'checked' : '' }} required>
+                                <label class="btn btn-outline-primary w-100 py-2 d-flex flex-column align-items-center justify-content-center rounded-3 shadow-none shift-select-card" for="shift2">
+                                    <i class="ti ti-sunset fs-3 mb-1"></i>
+                                    <span class="fw-bold fs-6">Shift 2</span>
+                                    <span class="shift-subtext small opacity-75">Siang / Sore</span>
+                                </label>
+                            </div>
+                            <div class="col-4">
+                                <input type="radio" class="btn-check" name="shift" id="shift3" value="Shift 3" {{ old('shift') === 'Shift 3' ? 'checked' : '' }} required>
+                                <label class="btn btn-outline-primary w-100 py-2 d-flex flex-column align-items-center justify-content-center rounded-3 shadow-none shift-select-card" for="shift3">
+                                    <i class="ti ti-moon-stars fs-3 mb-1"></i>
+                                    <span class="fw-bold fs-6">Shift 3</span>
+                                    <span class="shift-subtext small opacity-75">Malam</span>
+                                </label>
+                            </div>
+                        </div>
+                        @error('shift')
+                            <div class="text-danger small mt-1">{{ $message }}</div>
+                        @enderror
+                        <div class="form-text text-muted small mt-2">
+                            <i class="ti ti-info-circle me-1"></i>Nama akan otomatis tercatat: <strong class="text-primary" id="shiftPreviewText">Nuni ( Shift 1 )</strong>
+                        </div>
+                    </div>
+
                     <button type="submit" class="btn btn-primary btn-lg w-100 shadow-sm fw-semibold">
                         <i class="ti ti-unlock me-2"></i>Buka Fitur Pendataan
                     </button>
@@ -69,9 +109,25 @@
                         <form method="POST" action="{{ route('pendataan.unlock.post') }}">
                             @csrf
                             <input type="hidden" name="superadmin_bypass" value="1">
-                            <button type="submit" class="btn btn-sm btn-outline-secondary">
-                                <i class="ti ti-shield-check me-1"></i>Masuk Langsung sebagai Superadmin
-                            </button>
+                            <div class="d-inline-flex align-items-center gap-2 mb-2 p-1 bg-light rounded-pill border">
+                                <div class="form-check form-check-inline m-0 ps-3">
+                                    <input class="form-check-input" type="radio" name="shift" id="saShift1" value="Shift 1" checked>
+                                    <label class="form-check-label small fw-semibold" for="saShift1">Shift 1</label>
+                                </div>
+                                <div class="form-check form-check-inline m-0">
+                                    <input class="form-check-input" type="radio" name="shift" id="saShift2" value="Shift 2">
+                                    <label class="form-check-label small fw-semibold" for="saShift2">Shift 2</label>
+                                </div>
+                                <div class="form-check form-check-inline m-0 pe-3">
+                                    <input class="form-check-input" type="radio" name="shift" id="saShift3" value="Shift 3">
+                                    <label class="form-check-label small fw-semibold" for="saShift3">Shift 3</label>
+                                </div>
+                            </div>
+                            <div>
+                                <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                    <i class="ti ti-shield-check me-1"></i>Masuk Langsung sebagai Superadmin
+                                </button>
+                            </div>
                         </form>
                     </div>
                 @endif
@@ -84,6 +140,28 @@
         </div>
     </div>
 </div>
+
+<style>
+.shift-select-card {
+    transition: all 0.2s ease-in-out;
+    cursor: pointer;
+    border-width: 2px;
+}
+.shift-select-card:hover {
+    transform: translateY(-2px);
+}
+.btn-check:checked + .shift-select-card {
+    background-color: var(--bs-primary, #0d6efd) !important;
+    border-color: var(--bs-primary, #0d6efd) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25) !important;
+}
+.btn-check:checked + .shift-select-card i,
+.btn-check:checked + .shift-select-card span,
+.btn-check:checked + .shift-select-card .shift-subtext {
+    color: #ffffff !important;
+}
+</style>
 
 @push('scripts')
 <script>
@@ -100,6 +178,32 @@ function togglePasswordVisibility() {
         icon.classList.add('ti-eye');
     }
 }
+
+function updateShiftPreview() {
+    const usernameInput = document.querySelector('input[name="username"]');
+    const checkedShift = document.querySelector('input[name="shift"]:checked');
+    const previewEl = document.getElementById('shiftPreviewText');
+    if (!previewEl) return;
+
+    let rawName = usernameInput && usernameInput.value.trim() ? usernameInput.value.trim() : 'Nuni';
+    let displayName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
+    let shiftVal = checkedShift ? checkedShift.value : 'Shift 1';
+
+    previewEl.textContent = `${displayName} ( ${shiftVal} )`;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const usernameInput = document.querySelector('input[name="username"]');
+    const shiftRadios = document.querySelectorAll('input[name="shift"]');
+
+    if (usernameInput) {
+        usernameInput.addEventListener('input', updateShiftPreview);
+    }
+    shiftRadios.forEach(function(radio) {
+        radio.addEventListener('change', updateShiftPreview);
+    });
+    updateShiftPreview();
+});
 </script>
 @endpush
 @endsection

@@ -38,8 +38,12 @@ class PendataanController extends Controller
         if (!session()->has('pendataan_staff_nama')) {
             if (auth()->user()->jabatan === 'Superadmin') {
                 $now = microtime(true);
+                $superadminNama = auth()->user()->nama ?? 'Super Admin';
+                $baseSuperadminNama = preg_replace('/\s*\(\s*Shift\s*\d+\s*\)\s*$/i', '', $superadminNama);
                 session([
-                    'pendataan_staff_nama' => auth()->user()->nama ?? 'Super Admin',
+                    'pendataan_staff_nama' => "{$baseSuperadminNama} ( Shift 1 )",
+                    'pendataan_staff_raw_nama' => $baseSuperadminNama,
+                    'pendataan_staff_shift' => 'Shift 1',
                     'pendataan_staff_username' => 'superadmin',
                     'pendataan_staff_login_at' => $now,
                     'pendataan_staff_expires_at' => $now + (8 * 3600),
@@ -79,6 +83,8 @@ class PendataanController extends Controller
             session()->forget([
                 'pendataan_staff_id',
                 'pendataan_staff_nama',
+                'pendataan_staff_raw_nama',
+                'pendataan_staff_shift',
                 'pendataan_staff_username',
                 'pendataan_staff_login_at',
                 'pendataan_staff_expires_at',
@@ -114,6 +120,8 @@ class PendataanController extends Controller
                 session()->forget([
                     'pendataan_staff_id',
                     'pendataan_staff_nama',
+                    'pendataan_staff_raw_nama',
+                    'pendataan_staff_shift',
                     'pendataan_staff_username',
                     'pendataan_staff_login_at',
                     'pendataan_staff_expires_at',
@@ -138,23 +146,46 @@ class PendataanController extends Controller
         $now = microtime(true);
         $expiresAt = $now + (8 * 3600); // exactly 8 hours shift (28,800 seconds)
 
+        // Helper to normalize shift input to 'Shift 1', 'Shift 2', or 'Shift 3'
+        $normalizeShift = function ($shiftInput) {
+            $shiftStr = trim((string) $shiftInput);
+            if (in_array($shiftStr, ['2', 'Shift 2', 'shift 2', 'SHIFT 2'])) {
+                return 'Shift 2';
+            }
+            if (in_array($shiftStr, ['3', 'Shift 3', 'shift 3', 'SHIFT 3'])) {
+                return 'Shift 3';
+            }
+            return 'Shift 1';
+        };
+
         // Superadmin bypass option
         if ($request->boolean('superadmin_bypass') && auth()->user()->jabatan === 'Superadmin') {
+            $shiftLabel = $normalizeShift($request->input('shift', 'Shift 1'));
+            $baseNama = auth()->user()->nama ?? 'Super Admin';
+            $baseNama = preg_replace('/\s*\(\s*Shift\s*\d+\s*\)\s*$/i', '', $baseNama);
+            $namaWithShift = "{$baseNama} ( {$shiftLabel} )";
+
             session([
-                'pendataan_staff_nama' => auth()->user()->nama ?? 'Super Admin',
+                'pendataan_staff_id' => null,
+                'pendataan_staff_nama' => $namaWithShift,
+                'pendataan_staff_raw_nama' => $baseNama,
+                'pendataan_staff_shift' => $shiftLabel,
                 'pendataan_staff_username' => 'superadmin',
                 'pendataan_staff_login_at' => $now,
                 'pendataan_staff_expires_at' => $expiresAt,
             ]);
-            return redirect()->route('pendataan.index')->with('success', 'Berhasil masuk sebagai Superadmin. Sesi shift 8 jam dimulai.');
+            return redirect()->route('pendataan.index')->with('success', "Berhasil masuk sebagai {$namaWithShift}. Sesi shift 8 jam dimulai.");
         }
 
         $request->validate([
             'username' => 'required|string',
             'password' => 'required|string',
+            'shift' => 'required|in:1,2,3,Shift 1,Shift 2,Shift 3',
         ], [
             'username.required' => 'Username staf wajib diisi.',
             'password.required' => 'Password staf (5 huruf) wajib diisi.',
+            'shift.required' => 'Pilihan shift (Shift 1 / 2 / 3) wajib dipilih.',
+            'shift.in' => 'Pilihan shift harus Shift 1, Shift 2, atau Shift 3.',
         ]);
 
         $inputUsername = strtolower(trim($request->input('username')));
@@ -171,15 +202,23 @@ class PendataanController extends Controller
             return back()->withInput()->with('error', 'Username atau Password staf (5 huruf) tidak sesuai.');
         }
 
+        $shiftLabel = $normalizeShift($request->input('shift', 'Shift 1'));
+
+        // Clean staff base name in case it already contains "( Shift ... )"
+        $baseStaffNama = preg_replace('/\s*\(\s*Shift\s*\d+\s*\)\s*$/i', '', $staff->nama);
+        $namaWithShift = "{$baseStaffNama} ( {$shiftLabel} )";
+
         session([
             'pendataan_staff_id' => $staff->id,
-            'pendataan_staff_nama' => $staff->nama,
+            'pendataan_staff_nama' => $namaWithShift,
+            'pendataan_staff_raw_nama' => $baseStaffNama,
+            'pendataan_staff_shift' => $shiftLabel,
             'pendataan_staff_username' => $staff->username,
             'pendataan_staff_login_at' => $now,
             'pendataan_staff_expires_at' => $expiresAt,
         ]);
 
-        return redirect()->route('pendataan.index')->with('success', "Akses berhasil dibuka! Anda aktif sebagai staf {$staff->nama} (Sesi shift 8 jam dimulai).");
+        return redirect()->route('pendataan.index')->with('success', "Akses berhasil dibuka! Anda aktif sebagai staf {$namaWithShift} (Sesi shift 8 jam dimulai).");
     }
 
     /**
@@ -190,6 +229,8 @@ class PendataanController extends Controller
         session()->forget([
             'pendataan_staff_id',
             'pendataan_staff_nama',
+            'pendataan_staff_raw_nama',
+            'pendataan_staff_shift',
             'pendataan_staff_username',
             'pendataan_staff_login_at',
             'pendataan_staff_expires_at',
@@ -257,7 +298,8 @@ class PendataanController extends Controller
 
         // Get predefined names and any additional existing names from DB
         $dbNames = Pendataan::select('nama')->distinct()->whereNotNull('nama')->pluck('nama')->toArray();
-        $daftarNama = array_values(array_unique(array_merge(Pendataan::DAFTAR_NAMA, $dbNames)));
+        $daftarNama = array_values(array_filter(array_unique(array_merge(Pendataan::DAFTAR_NAMA, $dbNames))));
+        sort($daftarNama, SORT_NATURAL | SORT_FLAG_CASE);
 
         $uniqueProducts = Pendataan::select('nama_produk')->distinct()->whereNotNull('nama_produk')->pluck('nama_produk');
 

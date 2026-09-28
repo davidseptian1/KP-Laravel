@@ -96,12 +96,19 @@
                 <input type="date" name="end_date" class="form-control form-control-sm" value="{{ $filters['end_date'] ?? '' }}">
             </div>
             <div class="col-md-3">
-                <label class="form-label small fw-semibold text-muted">Nama</label>
+                <label class="form-label small fw-semibold text-muted">Nama / Shift</label>
                 <select name="nama" class="form-select form-select-sm">
-                    <option value="">-- Semua Nama --</option>
-                    @foreach($daftarNama as $itemNama)
-                        <option value="{{ $itemNama }}" {{ ($filters['nama'] ?? '') === $itemNama ? 'selected' : '' }}>{{ $itemNama }}</option>
-                    @endforeach
+                    <option value="">-- Semua Nama & Shift --</option>
+                    <optgroup label="Filter Per Shift">
+                        <option value="Shift 1" {{ ($filters['nama'] ?? '') === 'Shift 1' ? 'selected' : '' }}>Semua Shift 1</option>
+                        <option value="Shift 2" {{ ($filters['nama'] ?? '') === 'Shift 2' ? 'selected' : '' }}>Semua Shift 2</option>
+                        <option value="Shift 3" {{ ($filters['nama'] ?? '') === 'Shift 3' ? 'selected' : '' }}>Semua Shift 3</option>
+                    </optgroup>
+                    <optgroup label="Nama Staf">
+                        @foreach($daftarNama as $itemNama)
+                            <option value="{{ $itemNama }}" {{ ($filters['nama'] ?? '') === $itemNama ? 'selected' : '' }}>{{ $itemNama }}</option>
+                        @endforeach
+                    </optgroup>
                 </select>
             </div>
             <div class="col-md-3">

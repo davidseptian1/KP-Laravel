@@ -31,7 +31,7 @@ class PendataanExport implements FromArray, WithColumnWidths, WithEvents
         return [
             'A' => 8,   // NO
             'B' => 20,  // TANGGAL & JAM
-            'C' => 16,  // NAMA
+            'C' => 24,  // NAMA (e.g. Nuni ( Shift 1 ))
             'D' => 40,  // NAMA PRODUK
             'E' => 18,  // POSTCAL
             'F' => 12,  // QTY
