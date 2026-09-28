@@ -212,6 +212,11 @@
     <!-- Filter Notification (if any) -->
     @php
         $filterTexts = [];
+        if (!empty($filters['shift']) && $filters['shift'] !== 'All Shift' && $filters['shift'] !== 'all') {
+            $filterTexts[] = "Shift: <strong>" . e($filters['shift']) . "</strong>";
+        } else {
+            $filterTexts[] = "Shift: <strong>All Shift</strong>";
+        }
         if (!empty($filters['start_date']) || !empty($filters['end_date'])) {
             $sd = !empty($filters['start_date']) ? \Carbon\Carbon::parse($filters['start_date'])->format('d/m/Y') : 'Awal';
             $ed = !empty($filters['end_date']) ? \Carbon\Carbon::parse($filters['end_date'])->format('d/m/Y') : 'Sekarang';

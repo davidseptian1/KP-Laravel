@@ -261,6 +261,20 @@ class PendataanController extends Controller
             $query->where('created_at', '<=', $endDate);
         }
 
+        // Filter: Shift (All Shift, Shift 1, Shift 2, Shift 3)
+        if ($request->filled('shift')) {
+            $shift = trim((string) $request->shift);
+            if (!in_array($shift, ['All Shift', 'all', 'All', ''])) {
+                if (in_array($shift, ['1', 'Shift 1', 'shift 1', 'SHIFT 1'])) {
+                    $query->where('nama', 'like', '%Shift 1%');
+                } elseif (in_array($shift, ['2', 'Shift 2', 'shift 2', 'SHIFT 2'])) {
+                    $query->where('nama', 'like', '%Shift 2%');
+                } elseif (in_array($shift, ['3', 'Shift 3', 'shift 3', 'SHIFT 3'])) {
+                    $query->where('nama', 'like', '%Shift 3%');
+                }
+            }
+        }
+
         // Filter: Nama
         if ($request->filled('nama')) {
             $namaFilter = trim($request->nama);
@@ -296,9 +310,13 @@ class PendataanController extends Controller
         // Paginated list
         $pendataans = $query->paginate(25)->withQueryString();
 
-        // Get predefined names and any additional existing names from DB
-        $dbNames = Pendataan::select('nama')->distinct()->whereNotNull('nama')->pluck('nama')->toArray();
-        $daftarNama = array_values(array_filter(array_unique(array_merge(Pendataan::DAFTAR_NAMA, $dbNames))));
+        // Get predefined names and any additional existing names from DB (clean base names for staff filter dropdown)
+        $dbRawNames = Pendataan::select('nama')->distinct()->whereNotNull('nama')->pluck('nama')->toArray();
+        $cleanedDbNames = array_map(function ($n) {
+            return trim(preg_replace('/\s*\(\s*Shift\s*\d+\s*\)\s*$/i', '', $n));
+        }, $dbRawNames);
+
+        $daftarNama = array_values(array_filter(array_unique(array_merge(Pendataan::DAFTAR_NAMA, $cleanedDbNames))));
         sort($daftarNama, SORT_NATURAL | SORT_FLAG_CASE);
 
         $uniqueProducts = Pendataan::select('nama_produk')->distinct()->whereNotNull('nama_produk')->pluck('nama_produk');
@@ -318,6 +336,7 @@ class PendataanController extends Controller
             'filters' => [
                 'start_date' => $request->start_date,
                 'end_date' => $request->end_date,
+                'shift' => $request->shift ?: 'All Shift',
                 'nama' => $request->nama,
                 'nama_produk' => $request->nama_produk,
             ],
@@ -333,12 +352,18 @@ class PendataanController extends Controller
 
         $items = $this->buildQuery($request)->get();
 
-        $filename = 'Laporan-Pendataan-' . now()->format('Ymd_His') . '.xlsx';
+        $activeShift = $request->input('shift', 'All Shift');
+        $shiftSuffix = (!empty($activeShift) && !in_array($activeShift, ['all', 'All', 'All Shift']))
+            ? '-' . str_replace(' ', '', $activeShift)
+            : '';
+
+        $filename = 'Laporan-Pendataan' . $shiftSuffix . '-' . now()->format('Ymd_His') . '.xlsx';
 
         return Excel::download(
             new PendataanExport($items, [
                 'start_date' => $request->start_date,
                 'end_date' => $request->end_date,
+                'shift' => $activeShift,
                 'nama' => $request->nama,
                 'nama_produk' => $request->nama_produk,
             ]),
@@ -358,17 +383,23 @@ class PendataanController extends Controller
         $totalQty = (int) $items->sum('qty');
         $totalNominal = (float) $items->sum('total_harga');
 
+        $activeShift = $request->input('shift', 'All Shift');
         $filters = [
             'start_date' => $request->start_date,
             'end_date' => $request->end_date,
+            'shift' => $activeShift,
             'nama' => $request->nama,
             'nama_produk' => $request->nama_produk,
         ];
 
+        $shiftSuffix = (!empty($activeShift) && !in_array($activeShift, ['all', 'All', 'All Shift']))
+            ? '-' . str_replace(' ', '', $activeShift)
+            : '';
+
         $pdf = Pdf::loadView('pendataan.pdf', compact('items', 'filters', 'totalTransaksi', 'totalQty', 'totalNominal'))
             ->setPaper('a4', 'landscape');
 
-        $filename = 'Laporan-Pendataan-' . now()->format('Ymd_His') . '.pdf';
+        $filename = 'Laporan-Pendataan' . $shiftSuffix . '-' . now()->format('Ymd_His') . '.pdf';
 
         return $pdf->download($filename);
     }

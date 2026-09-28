@@ -112,16 +112,17 @@ class PendataanExport implements FromArray, WithColumnWidths, WithEvents
         $rows[] = ['Total Transaksi', ': ' . $this->items->count() . ' Data', '', '', '', '', '', '', '', ''];
         $rows[] = ['Waktu Download', ': ' . now()->format('d/m/Y H:i:s'), '', '', '', '', '', '', '', ''];
 
+        $rows[] = ['Filter Shift', ': ' . (!empty($this->filters['shift']) ? $this->filters['shift'] : 'All Shift (Semua Shift)'), '', '', '', '', '', '', '', ''];
         if (!empty($this->filters['start_date']) || !empty($this->filters['end_date'])) {
             $sd = !empty($this->filters['start_date']) ? Carbon::parse($this->filters['start_date'])->format('d/m/Y') : 'Awal';
             $ed = !empty($this->filters['end_date']) ? Carbon::parse($this->filters['end_date'])->format('d/m/Y') : 'Sekarang';
-            $rows[] = ['Filter Periode', ": {$sd} s/d {$ed}", '', '', '', '', '', '', ''];
+            $rows[] = ['Filter Periode', ": {$sd} s/d {$ed}", '', '', '', '', '', '', '', ''];
         }
         if (!empty($this->filters['nama'])) {
-            $rows[] = ['Filter Nama', ': ' . $this->filters['nama'], '', '', '', '', '', '', ''];
+            $rows[] = ['Filter Nama', ': ' . $this->filters['nama'], '', '', '', '', '', '', '', ''];
         }
         if (!empty($this->filters['nama_produk'])) {
-            $rows[] = ['Filter Produk', ': ' . $this->filters['nama_produk'], '', '', '', '', '', '', ''];
+            $rows[] = ['Filter Produk', ': ' . $this->filters['nama_produk'], '', '', '', '', '', '', '', ''];
         }
 
         return $rows;

@@ -87,31 +87,33 @@
     </div>
     <div class="card-body">
         <form method="GET" action="{{ route('pendataan.index') }}" class="row g-3">
-            <div class="col-md-3">
+            <div class="col-md-2 col-sm-6">
                 <label class="form-label small fw-semibold text-muted">Tanggal Mulai</label>
                 <input type="date" name="start_date" class="form-control form-control-sm" value="{{ $filters['start_date'] ?? '' }}">
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2 col-sm-6">
                 <label class="form-label small fw-semibold text-muted">Tanggal Selesai</label>
                 <input type="date" name="end_date" class="form-control form-control-sm" value="{{ $filters['end_date'] ?? '' }}">
             </div>
-            <div class="col-md-3">
-                <label class="form-label small fw-semibold text-muted">Nama / Shift</label>
-                <select name="nama" class="form-select form-select-sm">
-                    <option value="">-- Semua Nama & Shift --</option>
-                    <optgroup label="Filter Per Shift">
-                        <option value="Shift 1" {{ ($filters['nama'] ?? '') === 'Shift 1' ? 'selected' : '' }}>Semua Shift 1</option>
-                        <option value="Shift 2" {{ ($filters['nama'] ?? '') === 'Shift 2' ? 'selected' : '' }}>Semua Shift 2</option>
-                        <option value="Shift 3" {{ ($filters['nama'] ?? '') === 'Shift 3' ? 'selected' : '' }}>Semua Shift 3</option>
-                    </optgroup>
-                    <optgroup label="Nama Staf">
-                        @foreach($daftarNama as $itemNama)
-                            <option value="{{ $itemNama }}" {{ ($filters['nama'] ?? '') === $itemNama ? 'selected' : '' }}>{{ $itemNama }}</option>
-                        @endforeach
-                    </optgroup>
+            <div class="col-md-2 col-sm-6">
+                <label class="form-label small fw-semibold text-muted">Pilihan Shift</label>
+                <select name="shift" class="form-select form-select-sm fw-semibold">
+                    <option value="All Shift" {{ ($filters['shift'] ?? 'All Shift') === 'All Shift' ? 'selected' : '' }}>All Shift (Semua)</option>
+                    <option value="Shift 1" {{ ($filters['shift'] ?? '') === 'Shift 1' ? 'selected' : '' }}>Shift 1 (Pagi)</option>
+                    <option value="Shift 2" {{ ($filters['shift'] ?? '') === 'Shift 2' ? 'selected' : '' }}>Shift 2 (Siang/Sore)</option>
+                    <option value="Shift 3" {{ ($filters['shift'] ?? '') === 'Shift 3' ? 'selected' : '' }}>Shift 3 (Malam)</option>
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-3 col-sm-6">
+                <label class="form-label small fw-semibold text-muted">Nama Staf</label>
+                <select name="nama" class="form-select form-select-sm">
+                    <option value="">-- Semua Staf --</option>
+                    @foreach($daftarNama as $itemNama)
+                        <option value="{{ $itemNama }}" {{ ($filters['nama'] ?? '') === $itemNama ? 'selected' : '' }}>{{ $itemNama }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-md-3 col-sm-12">
                 <label class="form-label small fw-semibold text-muted">Nama Produk</label>
                 <input type="text" name="nama_produk" class="form-control form-control-sm" placeholder="Cari produk..." value="{{ $filters['nama_produk'] ?? '' }}" list="listProdukOptions">
                 <datalist id="listProdukOptions">
@@ -121,20 +123,57 @@
                 </datalist>
             </div>
             <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2 pt-3 border-top mt-2">
-                <!-- Export / Download Buttons with active filters -->
-                <div class="d-flex align-items-center gap-2">
+                <!-- Export / Download Buttons with active filters & Shift Dropdown -->
+                <div class="d-flex align-items-center gap-2 flex-wrap">
                     <span class="small fw-semibold text-muted"><i class="ti ti-download me-1"></i>Download Data:</span>
-                    <a href="{{ url('pendataan/export-excel') }}?{{ http_build_query(request()->query()) }}" class="btn btn-sm btn-success px-3 shadow-sm" title="Download data dalam format Excel">
-                        <i class="ti ti-file-spreadsheet me-1"></i> Excel (.xlsx)
-                    </a>
-                    <a href="{{ url('pendataan/export-pdf') }}?{{ http_build_query(request()->query()) }}" class="btn btn-sm btn-danger px-3 shadow-sm" title="Download data dalam format PDF" target="_blank">
-                        <i class="ti ti-file-type-pdf me-1"></i> PDF
-                    </a>
+
+                    @php
+                        $baseExportQuery = request()->except(['page']);
+                        $currentShift = $filters['shift'] ?? 'All Shift';
+                    @endphp
+
+                    <!-- Excel Download Button with Shift Selector Dropdown -->
+                    <div class="btn-group">
+                        <a href="{{ url('pendataan/export-excel') }}?{{ http_build_query(request()->query()) }}" class="btn btn-sm btn-success px-3 shadow-sm" title="Download data dalam format Excel">
+                            <i class="ti ti-file-spreadsheet me-1"></i> Excel (.xlsx)
+                            <span class="badge bg-white text-success ms-1 fw-bold">{{ $currentShift }}</span>
+                        </a>
+                        <button type="button" class="btn btn-sm btn-success dropdown-toggle dropdown-toggle-split shadow-sm" data-bs-toggle="dropdown" aria-expanded="false" title="Pilih Shift Download Excel">
+                            <span class="visually-hidden">Pilihan Shift</span>
+                        </button>
+                        <ul class="dropdown-menu shadow">
+                            <li><h6 class="dropdown-header text-uppercase small fw-bold">Download Excel Berdasarkan Shift</h6></li>
+                            <li><a class="dropdown-item {{ $currentShift === 'All Shift' ? 'active' : '' }}" href="{{ url('pendataan/export-excel') }}?{{ http_build_query(array_merge($baseExportQuery, ['shift' => 'All Shift'])) }}"><i class="ti ti-layers-subtract me-2"></i>All Shift (Semua)</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item {{ $currentShift === 'Shift 1' ? 'active' : '' }}" href="{{ url('pendataan/export-excel') }}?{{ http_build_query(array_merge($baseExportQuery, ['shift' => 'Shift 1'])) }}"><i class="ti ti-sun me-2 text-warning"></i>Khusus Shift 1</a></li>
+                            <li><a class="dropdown-item {{ $currentShift === 'Shift 2' ? 'active' : '' }}" href="{{ url('pendataan/export-excel') }}?{{ http_build_query(array_merge($baseExportQuery, ['shift' => 'Shift 2'])) }}"><i class="ti ti-sunset me-2 text-primary"></i>Khusus Shift 2</a></li>
+                            <li><a class="dropdown-item {{ $currentShift === 'Shift 3' ? 'active' : '' }}" href="{{ url('pendataan/export-excel') }}?{{ http_build_query(array_merge($baseExportQuery, ['shift' => 'Shift 3'])) }}"><i class="ti ti-moon-stars me-2 text-info"></i>Khusus Shift 3</a></li>
+                        </ul>
+                    </div>
+
+                    <!-- PDF Download Button with Shift Selector Dropdown -->
+                    <div class="btn-group">
+                        <a href="{{ url('pendataan/export-pdf') }}?{{ http_build_query(request()->query()) }}" class="btn btn-sm btn-danger px-3 shadow-sm" title="Download data dalam format PDF" target="_blank">
+                            <i class="ti ti-file-type-pdf me-1"></i> PDF
+                            <span class="badge bg-white text-danger ms-1 fw-bold">{{ $currentShift }}</span>
+                        </a>
+                        <button type="button" class="btn btn-sm btn-danger dropdown-toggle dropdown-toggle-split shadow-sm" data-bs-toggle="dropdown" aria-expanded="false" title="Pilih Shift Download PDF">
+                            <span class="visually-hidden">Pilihan Shift</span>
+                        </button>
+                        <ul class="dropdown-menu shadow">
+                            <li><h6 class="dropdown-header text-uppercase small fw-bold">Download PDF Berdasarkan Shift</h6></li>
+                            <li><a class="dropdown-item {{ $currentShift === 'All Shift' ? 'active' : '' }}" href="{{ url('pendataan/export-pdf') }}?{{ http_build_query(array_merge($baseExportQuery, ['shift' => 'All Shift'])) }}" target="_blank"><i class="ti ti-layers-subtract me-2"></i>All Shift (Semua)</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item {{ $currentShift === 'Shift 1' ? 'active' : '' }}" href="{{ url('pendataan/export-pdf') }}?{{ http_build_query(array_merge($baseExportQuery, ['shift' => 'Shift 1'])) }}" target="_blank"><i class="ti ti-sun me-2 text-warning"></i>Khusus Shift 1</a></li>
+                            <li><a class="dropdown-item {{ $currentShift === 'Shift 2' ? 'active' : '' }}" href="{{ url('pendataan/export-pdf') }}?{{ http_build_query(array_merge($baseExportQuery, ['shift' => 'Shift 2'])) }}" target="_blank"><i class="ti ti-sunset me-2 text-primary"></i>Khusus Shift 2</a></li>
+                            <li><a class="dropdown-item {{ $currentShift === 'Shift 3' ? 'active' : '' }}" href="{{ url('pendataan/export-pdf') }}?{{ http_build_query(array_merge($baseExportQuery, ['shift' => 'Shift 3'])) }}" target="_blank"><i class="ti ti-moon-stars me-2 text-info"></i>Khusus Shift 3</a></li>
+                        </ul>
+                    </div>
                 </div>
 
                 <!-- Filter Action Buttons -->
                 <div class="d-flex align-items-center gap-2">
-                    @if(!empty($filters['start_date']) || !empty($filters['end_date']) || !empty($filters['nama']) || !empty($filters['nama_produk']))
+                    @if(!empty($filters['start_date']) || !empty($filters['end_date']) || !empty($filters['nama']) || !empty($filters['nama_produk']) || (!empty($filters['shift']) && $filters['shift'] !== 'All Shift'))
                         <a href="{{ route('pendataan.index') }}" class="btn btn-sm btn-outline-secondary">
                             <i class="ti ti-refresh me-1"></i> Reset Filter
                         </a>
@@ -150,10 +189,40 @@
 
 <!-- Main Table Card -->
 <div class="card border-0 shadow-sm rounded-3">
-    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
-        <h5 class="mb-0 fw-bold text-dark d-flex align-items-center">
-            <i class="ti ti-table me-2 text-primary"></i>Data Pendataan
-        </h5>
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+            <h5 class="mb-0 fw-bold text-dark d-flex align-items-center">
+                <i class="ti ti-table me-2 text-primary"></i>Data Pendataan
+            </h5>
+
+            <!-- Quick Shift Pill Navigation -->
+            @php
+                $activeShift = $filters['shift'] ?? 'All Shift';
+                $pillQuery = request()->except(['page', 'shift']);
+            @endphp
+            <div class="btn-group btn-group-sm p-1 bg-light rounded-pill border" role="group" aria-label="Filter Shift Cepat">
+                <a href="{{ route('pendataan.index', array_merge($pillQuery, ['shift' => 'All Shift'])) }}" 
+                   class="btn btn-sm rounded-pill px-3 {{ $activeShift === 'All Shift' || empty($activeShift) ? 'btn-primary text-white fw-bold shadow-sm' : 'btn-light text-muted' }}"
+                   title="Lihat semua data shift">
+                    <i class="ti ti-layers-subtract me-1"></i>All Shift
+                </a>
+                <a href="{{ route('pendataan.index', array_merge($pillQuery, ['shift' => 'Shift 1'])) }}" 
+                   class="btn btn-sm rounded-pill px-3 {{ $activeShift === 'Shift 1' ? 'btn-primary text-white fw-bold shadow-sm' : 'btn-light text-muted' }}"
+                   title="Hanya tampilkan Shift 1">
+                    <i class="ti ti-sun me-1"></i>Shift 1
+                </a>
+                <a href="{{ route('pendataan.index', array_merge($pillQuery, ['shift' => 'Shift 2'])) }}" 
+                   class="btn btn-sm rounded-pill px-3 {{ $activeShift === 'Shift 2' ? 'btn-primary text-white fw-bold shadow-sm' : 'btn-light text-muted' }}"
+                   title="Hanya tampilkan Shift 2">
+                    <i class="ti ti-sunset me-1"></i>Shift 2
+                </a>
+                <a href="{{ route('pendataan.index', array_merge($pillQuery, ['shift' => 'Shift 3'])) }}" 
+                   class="btn btn-sm rounded-pill px-3 {{ $activeShift === 'Shift 3' ? 'btn-primary text-white fw-bold shadow-sm' : 'btn-light text-muted' }}"
+                   title="Hanya tampilkan Shift 3">
+                    <i class="ti ti-moon-stars me-1"></i>Shift 3
+                </a>
+            </div>
+        </div>
         <span class="badge bg-light text-secondary border px-3 py-2">
             Menampilkan {{ $pendataans->count() }} dari {{ $pendataans->total() }} data
         </span>
