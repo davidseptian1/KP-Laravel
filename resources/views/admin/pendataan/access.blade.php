@@ -68,20 +68,28 @@
     </div>
 </div>
 
-<!-- Card: 13 Akun Staf Pendataan & Password (5 Huruf) -->
+<!-- Card: Akun Staf Pendataan & Password (5 Huruf) -->
 <div class="card border-0 shadow-sm rounded-3 mb-4">
     <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <h5 class="mb-0 fw-bold text-dark d-flex align-items-center">
-            <i class="ti ti-key text-warning me-2"></i>Daftar Akun & Password Staf Pendataan (5 Huruf)
-        </h5>
-        <span class="badge bg-primary-subtle text-primary border px-3 py-2 fw-semibold">
-            <i class="ti ti-users me-1"></i>13 Akun Staf Otomatis
-        </span>
+        <div>
+            <h5 class="mb-0 fw-bold text-dark d-flex align-items-center">
+                <i class="ti ti-key text-warning me-2"></i>Daftar Akun & Password Staf Pendataan
+            </h5>
+            <small class="text-muted">Kredensial username dan password untuk staf membuka kunci sesi shift fitur Pendataan</small>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-primary-subtle text-primary border px-3 py-2 fw-semibold">
+                <i class="ti ti-users me-1"></i>{{ $staffAccounts->count() }} Akun Staf
+            </span>
+            <button type="button" class="btn btn-sm btn-primary shadow-sm px-3" data-bs-toggle="modal" data-bs-target="#modalTambahStaff">
+                <i class="ti ti-user-plus me-1"></i> Tambah User Pendataan
+            </button>
+        </div>
     </div>
     <div class="card-body p-0">
         <div class="p-3 bg-light border-bottom small text-muted">
             <i class="ti ti-info-circle me-1 text-primary"></i>
-            Berikan Username dan Password 5 huruf berikut ke masing-masing staf. Saat staf membuka fitur Pendataan, nama transaksi akan otomatis terkunci sesuai akun yang login.
+            Berikan Username dan Password 5 huruf berikut ke masing-masing staf. Saat staf membuka fitur Pendataan, nama transaksi akan otomatis terkunci sesuai akun staf yang sedang membuka.
         </div>
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
@@ -92,18 +100,18 @@
                         <th>Username</th>
                         <th>Password (5 Huruf)</th>
                         <th class="text-center" style="width: 120px;">Status</th>
-                        <th class="text-center pe-4" style="width: 140px;">Aksi</th>
+                        <th class="text-center pe-4" style="width: 160px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($staffAccounts as $idx => $st)
+                    @forelse($staffAccounts as $idx => $st)
                     <tr>
                         <td class="ps-4 text-muted fw-semibold">{{ $idx + 1 }}</td>
                         <td>
                             <strong class="text-dark">{{ $st->nama }}</strong>
                         </td>
                         <td>
-                            <code class="bg-light px-2 py-1 rounded text-primary">{{ $st->username }}</code>
+                            <code class="bg-light px-2 py-1 rounded text-primary fw-bold">{{ $st->username }}</code>
                         </td>
                         <td>
                             <div class="d-inline-flex align-items-center gap-2">
@@ -116,52 +124,180 @@
                             </div>
                         </td>
                         <td class="text-center">
-                            @if($st->is_active)
-                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">Aktif</span>
-                            @else
-                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">Nonaktif</span>
-                            @endif
+                            <div class="form-check form-switch d-inline-block">
+                                <input class="form-check-input"
+                                       type="checkbox"
+                                       role="switch"
+                                       id="staff-switch-{{ $st->id }}"
+                                       {{ $st->is_active ? 'checked' : '' }}
+                                       onchange="toggleStaffActive({{ $st->id }}, this)"
+                                       style="width: 2.5em; height: 1.3em; cursor: pointer;"
+                                       title="Klik untuk aktifkan / nonaktifkan">
+                            </div>
                         </td>
-                        <td class="text-center pe-4">
-                            <button type="button" class="btn btn-sm btn-outline-warning" onclick="openEditStaffPassModal({{ $st->id }}, '{{ $st->nama }}', '{{ $st->password }}')">
-                                <i class="ti ti-edit me-1"></i>Ubah
+                        <td class="text-center pe-4 text-nowrap">
+                            <button type="button" class="btn btn-sm btn-outline-warning" title="Edit Akun Staf" onclick="openEditStaffModal({{ $st->id }}, '{{ addslashes($st->nama) }}', '{{ addslashes($st->username) }}', '{{ addslashes($st->password) }}', {{ $st->is_active ? 1 : 0 }})">
+                                <i class="ti ti-edit me-1"></i>Edit
                             </button>
+                            <form method="POST" action="{{ route('admin.pendataan.staff.destroy', $st->id) }}" class="d-inline" onsubmit="return confirm('Hapus akun staf {{ addslashes($st->nama) }} dari login fitur Pendataan?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-sm btn-outline-danger ms-1" title="Hapus Akun Staf">
+                                    <i class="ti ti-trash"></i>
+                                </button>
+                            </form>
                         </td>
                     </tr>
-                    @endforeach
+                    @empty
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">
+                            Belum ada akun staf pendataan yang ditambahkan. Silakan klik tombol <strong>Tambah User Pendataan</strong>.
+                        </td>
+                    </tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>
     </div>
 </div>
 
-<!-- Modal Ubah Password Staf -->
-<div class="modal fade" id="modalEditStaffPass" tabindex="-1" aria-hidden="true">
+<!-- ================= MODAL TAMBAH USER PENDATAAN ================= -->
+<div class="modal fade" id="modalTambahStaff" tabindex="-1" aria-labelledby="modalTambahStaffLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow">
-            <form method="POST" id="formEditStaffPass" action="">
+            <form method="POST" action="{{ route('admin.pendataan.staff.store') }}" id="formTambahStaff">
+                @csrf
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title fw-bold text-dark" id="modalTambahStaffLabel">
+                        <i class="ti ti-user-plus text-primary me-2"></i>Tambah User Login Fitur Pendataan
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <!-- Quick Select from Users who have access -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark">
+                            Pilih dari Akun Pengguna Yang Diberikan Akses <span class="text-muted small fw-normal">(Opsional)</span>
+                        </label>
+                        <select class="form-select" id="selectUserForStaff" onchange="onSelectUserForStaff(this)">
+                            <option value="">-- Ketik Nama Baru Secara Manual --</option>
+                            @if(isset($usersWithAccess) && $usersWithAccess->count() > 0)
+                                <optgroup label="Akun Yang Sudah Memiliki Akses Pendataan">
+                                    @foreach($usersWithAccess->where('has_pendataan_access', true) as $uw)
+                                        <option value="{{ $uw->id }}" data-nama="{{ $uw->nama }}" data-email="{{ $uw->email }}">
+                                            {{ $uw->nama }} ({{ $uw->email }}) - Diberi Akses
+                                        </option>
+                                    @endforeach
+                                </optgroup>
+                                <optgroup label="Akun Staf Lainnya">
+                                    @foreach($usersWithAccess->where('has_pendataan_access', false) as $uo)
+                                        <option value="{{ $uo->id }}" data-nama="{{ $uo->nama }}" data-email="{{ $uo->email }}">
+                                            {{ $uo->nama }} ({{ $uo->email }})
+                                        </option>
+                                    @endforeach
+                                </optgroup>
+                            @endif
+                        </select>
+                        <input type="hidden" name="user_id" id="tambah_staff_user_id" value="">
+                        <div class="form-text text-muted small">
+                            Pilih akun staf yang sudah ada untuk mengisi nama & username secara otomatis, atau pilih ketik manual.
+                        </div>
+                    </div>
+
+                    <!-- Nama Staf -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark">Nama Staf (Penanggung Jawab) <span class="text-danger">*</span></label>
+                        <input type="text" name="nama" id="tambah_staff_nama" class="form-control" required placeholder="Contoh: Rudi" oninput="autoSuggestUsername(this.value)">
+                        <div class="form-text text-muted small">Nama ini yang akan tercatat pada transaksi staf (misal: Rudi ( Shift 1 )).</div>
+                    </div>
+
+                    <!-- Username -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark">Username Login <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="ti ti-at"></i></span>
+                            <input type="text" name="username" id="tambah_staff_username" class="form-control font-monospace" required placeholder="Contoh: rudi">
+                        </div>
+                        <div class="form-text text-muted small">Digunakan staf saat memasukkan username pada layar unlock (huruf kecil & angka).</div>
+                    </div>
+
+                    <!-- Password 5 Huruf -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark">Password Login (5 Huruf) <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="text" name="password" id="tambah_staff_password" class="form-control font-monospace form-control-lg" maxlength="20" required placeholder="Contoh: abcde">
+                            <button type="button" class="btn btn-outline-secondary" onclick="generateRandomPass('tambah_staff_password')" title="Buat password 5 huruf acak">
+                                <i class="ti ti-dice me-1"></i>Acak 5 Huruf
+                            </button>
+                        </div>
+                        <div class="form-text text-muted small">Kombinasi 5 huruf untuk verifikasi staf saat buka fitur.</div>
+                    </div>
+
+                    <!-- Status Aktif -->
+                    <div class="form-check form-switch mt-3">
+                        <input class="form-check-input" type="checkbox" name="is_active" id="tambah_staff_is_active" value="1" checked>
+                        <label class="form-check-label fw-semibold text-dark" for="tambah_staff_is_active">
+                            Aktifkan akun segera
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="ti ti-device-floppy me-1"></i> Simpan Akun Staf
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ================= MODAL EDIT USER PENDATAAN ================= -->
+<div class="modal fade" id="modalEditStaff" tabindex="-1" aria-labelledby="modalEditStaffLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form method="POST" id="formEditStaff" action="">
                 @csrf
                 @method('PUT')
                 <div class="modal-header bg-light">
-                    <h5 class="modal-title fw-bold text-dark">
-                        <i class="ti ti-key text-warning me-2"></i>Ubah Password Staf
+                    <h5 class="modal-title fw-bold text-dark" id="modalEditStaffLabel">
+                        <i class="ti ti-edit text-warning me-2"></i>Edit Akun Staf Pendataan
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4">
                     <div class="mb-3">
-                        <label class="form-label text-muted small fw-semibold">Nama Staf</label>
-                        <input type="text" id="modalStaffNama" class="form-control bg-light" readonly disabled>
+                        <label class="form-label fw-semibold text-dark">Nama Staf <span class="text-danger">*</span></label>
+                        <input type="text" name="nama" id="edit_staff_nama" class="form-control" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold text-dark">Password Baru (5 Huruf)</label>
-                        <input type="text" name="password" id="modalStaffPassword" class="form-control form-control-lg font-monospace" maxlength="10" required placeholder="Contoh: abcde">
-                        <div class="form-text">Gunakan 5 huruf acak untuk akun staf ini.</div>
+                        <label class="form-label fw-semibold text-dark">Username <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="ti ti-at"></i></span>
+                            <input type="text" name="username" id="edit_staff_username" class="form-control font-monospace" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark">Password (5 Huruf) <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="text" name="password" id="edit_staff_password" class="form-control form-control-lg font-monospace" maxlength="20" required>
+                            <button type="button" class="btn btn-outline-secondary" onclick="generateRandomPass('edit_staff_password')" title="Acak 5 huruf">
+                                <i class="ti ti-dice me-1"></i>Acak
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-check form-switch mt-3">
+                        <input class="form-check-input" type="checkbox" name="is_active" id="edit_staff_is_active" value="1">
+                        <label class="form-check-label fw-semibold text-dark" for="edit_staff_is_active">
+                            Status Akun Aktif
+                        </label>
                     </div>
                 </div>
                 <div class="modal-footer bg-light">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary px-4">Simpan Password</button>
+                    <button type="submit" class="btn btn-warning text-dark px-4 fw-semibold">
+                        <i class="ti ti-device-floppy me-1"></i> Perbarui Akun
+                    </button>
                 </div>
             </form>
         </div>
@@ -208,6 +344,11 @@
                     </thead>
                     <tbody>
                         @forelse($users as $u)
+                        @php
+                            $matchedStaff = $staffAccounts->first(function($st) use ($u) {
+                                return strcasecmp(trim($st->nama), trim($u->nama)) === 0 || strcasecmp(trim($st->username), strtolower(explode(' ', trim($u->nama))[0])) === 0;
+                            });
+                        @endphp
                         <tr id="row-user-{{ $u->id }}">
                             <td class="ps-4 text-muted fw-semibold">{{ $loop->iteration }}</td>
                             <td>
@@ -218,6 +359,19 @@
                                     <div>
                                         <div class="fw-bold text-dark">{{ $u->nama }}</div>
                                         <small class="text-muted">{{ $u->no_hp ?: '-' }}</small>
+                                        @if($matchedStaff)
+                                            <div class="mt-1 d-flex align-items-center gap-1">
+                                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle font-monospace" style="font-size: 0.75rem;" title="Akun login staf pendataan">
+                                                    <i class="ti ti-key me-1"></i>Login: <strong>{{ $matchedStaff->username }}</strong> ({{ $matchedStaff->password }})
+                                                </span>
+                                            </div>
+                                        @elseif($u->has_pendataan_access)
+                                            <div class="mt-1">
+                                                <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2" style="font-size: 0.73rem;" onclick="quickCreateStaffFromUser('{{ $u->id }}', '{{ addslashes($u->nama) }}', '{{ addslashes($u->email) }}')">
+                                                    <i class="ti ti-user-plus me-1"></i>+ Buat Akun Login Pendataan
+                                                </button>
+                                            </div>
+                                        @endif
                                     </div>
                                 </div>
                             </td>
@@ -399,13 +553,105 @@ function showCopySuccess(pass, nama) {
     }
 }
 
-function openEditStaffPassModal(id, nama, currentPass) {
-    const form = document.getElementById('formEditStaffPass');
-    form.action = "{{ url('superadmin/pendataan-access/staff') }}/" + id + "/password";
-    document.getElementById('modalStaffNama').value = nama;
-    document.getElementById('modalStaffPassword').value = currentPass;
-    const modal = new bootstrap.Modal(document.getElementById('modalEditStaffPass'));
+function generateRandomPass(targetInputId) {
+    const letters = 'abcdefghijklmnopqrstuvwxyz';
+    let res = '';
+    for (let i = 0; i < 5; i++) {
+        res += letters.charAt(Math.floor(Math.random() * letters.length));
+    }
+    const el = document.getElementById(targetInputId);
+    if (el) {
+        el.value = res;
+    }
+}
+
+function autoSuggestUsername(nama) {
+    if (!nama) return;
+    const clean = nama.trim().split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+    const userField = document.getElementById('tambah_staff_username');
+    if (userField && (!userField.value || userField.dataset.autofilled === "true" || userField.value === clean)) {
+        userField.value = clean;
+        userField.dataset.autofilled = "true";
+    }
+}
+
+function onSelectUserForStaff(selectElem) {
+    const selectedOption = selectElem.options[selectElem.selectedIndex];
+    if (!selectedOption || !selectElem.value) {
+        document.getElementById('tambah_staff_user_id').value = '';
+        return;
+    }
+    const nama = selectedOption.getAttribute('data-nama') || '';
+    document.getElementById('tambah_staff_user_id').value = selectElem.value;
+    document.getElementById('tambah_staff_nama').value = nama;
+    autoSuggestUsername(nama);
+    if (!document.getElementById('tambah_staff_password').value) {
+        generateRandomPass('tambah_staff_password');
+    }
+}
+
+function quickCreateStaffFromUser(id, nama, email) {
+    const select = document.getElementById('selectUserForStaff');
+    if (select) {
+        select.value = id;
+    }
+    document.getElementById('tambah_staff_user_id').value = id;
+    document.getElementById('tambah_staff_nama').value = nama;
+    const clean = nama.trim().split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+    document.getElementById('tambah_staff_username').value = clean;
+    generateRandomPass('tambah_staff_password');
+    const modal = new bootstrap.Modal(document.getElementById('modalTambahStaff'));
     modal.show();
+}
+
+function openEditStaffModal(id, nama, username, pass, isActive) {
+    const form = document.getElementById('formEditStaff');
+    form.action = "{{ url('superadmin/pendataan-access/staff') }}/" + id;
+    document.getElementById('edit_staff_nama').value = nama;
+    document.getElementById('edit_staff_username').value = username;
+    document.getElementById('edit_staff_password').value = pass;
+    document.getElementById('edit_staff_is_active').checked = (isActive == 1);
+    const modal = new bootstrap.Modal(document.getElementById('modalEditStaff'));
+    modal.show();
+}
+
+function toggleStaffActive(id, toggleElem) {
+    const isChecked = toggleElem.checked;
+    toggleElem.disabled = true;
+    fetch("{{ url('superadmin/pendataan-access/staff') }}/" + id + "/toggle-status", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({ is_active: isChecked ? 1 : 0 })
+    })
+    .then(res => res.json())
+    .then(data => {
+        toggleElem.disabled = false;
+        if (data.success) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: data.message || 'Status akun staf berhasil diperbarui!',
+                    showConfirmButton: false,
+                    timer: 2000
+                });
+            }
+        } else {
+            toggleElem.checked = !isChecked;
+            alert(data.message || 'Gagal mengubah status staf.');
+        }
+    })
+    .catch(err => {
+        toggleElem.disabled = false;
+        toggleElem.checked = !isChecked;
+        console.error(err);
+        alert('Terjadi kesalahan jaringan.');
+    });
 }
 </script>
 @endpush

@@ -448,6 +448,10 @@ Route::middleware(['checkLogin', 'admin.activity.log'])->group(function () {
         Route::get('superadmin/pendataan-access', [AdminPendataanAccessController::class, 'index'])->name('admin.pendataan.access');
         Route::post('superadmin/pendataan-access/{id}/toggle', [AdminPendataanAccessController::class, 'toggle'])->name('admin.pendataan.access.toggle');
         Route::post('superadmin/pendataan-access/batch', [AdminPendataanAccessController::class, 'batchUpdate'])->name('admin.pendataan.access.batch');
+        Route::post('superadmin/pendataan-access/staff', [AdminPendataanAccessController::class, 'storeStaff'])->name('admin.pendataan.staff.store');
+        Route::put('superadmin/pendataan-access/staff/{id}', [AdminPendataanAccessController::class, 'updateStaff'])->name('admin.pendataan.staff.update');
+        Route::delete('superadmin/pendataan-access/staff/{id}', [AdminPendataanAccessController::class, 'destroyStaff'])->name('admin.pendataan.staff.destroy');
+        Route::post('superadmin/pendataan-access/staff/{id}/toggle-status', [AdminPendataanAccessController::class, 'toggleStaffStatus'])->name('admin.pendataan.staff.toggle-status');
         Route::put('superadmin/pendataan-access/staff/{id}/password', [AdminPendataanAccessController::class, 'updateStaffPassword'])->name('admin.pendataan.staff.password');
     });
 
