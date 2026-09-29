@@ -32,13 +32,14 @@ class PendataanExport implements FromArray, WithColumnWidths, WithEvents
             'A' => 8,   // NO
             'B' => 20,  // TANGGAL & JAM
             'C' => 24,  // NAMA (e.g. Nuni ( Shift 1 ))
-            'D' => 40,  // NAMA PRODUK
-            'E' => 18,  // POSTCAL
-            'F' => 12,  // QTY
-            'G' => 22,  // TOTAL HARGA
-            'H' => 15,  // ADA GAMBAR
-            'I' => 18,  // DICATAT OLEH
-            'J' => 35,  // ALASAN EDIT
+            'D' => 38,  // NAMA PRODUK
+            'E' => 14,  // JENIS CHIP (KTTS / KBTG)
+            'F' => 18,  // POSTCAL
+            'G' => 12,  // QTY
+            'H' => 22,  // TOTAL HARGA
+            'I' => 15,  // ADA GAMBAR
+            'J' => 18,  // DICATAT OLEH
+            'K' => 35,  // ALASAN EDIT
         ];
     }
 
@@ -55,6 +56,7 @@ class PendataanExport implements FromArray, WithColumnWidths, WithEvents
             'TANGGAL & JAM',
             'NAMA',
             'NAMA PRODUK',
+            'JENIS CHIP',
             'POSTCAL',
             'QTY',
             'TOTAL HARGA',
@@ -81,6 +83,7 @@ class PendataanExport implements FromArray, WithColumnWidths, WithEvents
                     optional($item->created_at)->format('d/m/Y H:i'),
                     $this->sanitizeForExcel($item->nama ?? '-'),
                     $this->sanitizeForExcel($item->nama_produk ?? '-'),
+                    $this->sanitizeForExcel($item->jenis_chip ?? 'KTTS'),
                     'Rp. ' . number_format($hargaQty, 0, ',', '.'),
                     $qty,
                     'Rp. ' . number_format($totalHarga, 0, ',', '.'),
@@ -90,12 +93,13 @@ class PendataanExport implements FromArray, WithColumnWidths, WithEvents
                 ];
             }
         } else {
-            $rows[] = ['Tidak ada data transaksi yang ditemukan.', '', '', '', '', '', '', '', '', ''];
+            $rows[] = ['Tidak ada data transaksi yang ditemukan.', '', '', '', '', '', '', '', '', '', ''];
         }
 
         // Total Row (Directly below data)
         $rows[] = [
             'TOTAL KESELURUHAN',
+            '',
             '',
             '',
             '',
@@ -108,21 +112,22 @@ class PendataanExport implements FromArray, WithColumnWidths, WithEvents
         ];
 
         // Metadata footer section
-        $rows[] = array_fill(0, 10, '');
-        $rows[] = ['Total Transaksi', ': ' . $this->items->count() . ' Data', '', '', '', '', '', '', '', ''];
-        $rows[] = ['Waktu Download', ': ' . now()->format('d/m/Y H:i:s'), '', '', '', '', '', '', '', ''];
+        $rows[] = array_fill(0, 11, '');
+        $rows[] = ['Total Transaksi', ': ' . $this->items->count() . ' Data', '', '', '', '', '', '', '', '', ''];
+        $rows[] = ['Waktu Download', ': ' . now()->format('d/m/Y H:i:s'), '', '', '', '', '', '', '', '', ''];
 
-        $rows[] = ['Filter Shift', ': ' . (!empty($this->filters['shift']) ? $this->filters['shift'] : 'All Shift (Semua Shift)'), '', '', '', '', '', '', '', ''];
+        $rows[] = ['Filter Shift', ': ' . (!empty($this->filters['shift']) ? $this->filters['shift'] : 'All Shift (Semua Shift)'), '', '', '', '', '', '', '', '', ''];
+        $rows[] = ['Filter Jenis Chip', ': ' . (!empty($this->filters['jenis_chip']) ? $this->filters['jenis_chip'] : 'All Chip (Semua Chip)'), '', '', '', '', '', '', '', '', ''];
         if (!empty($this->filters['start_date']) || !empty($this->filters['end_date'])) {
             $sd = !empty($this->filters['start_date']) ? Carbon::parse($this->filters['start_date'])->format('d/m/Y') : 'Awal';
             $ed = !empty($this->filters['end_date']) ? Carbon::parse($this->filters['end_date'])->format('d/m/Y') : 'Sekarang';
-            $rows[] = ['Filter Periode', ": {$sd} s/d {$ed}", '', '', '', '', '', '', '', ''];
+            $rows[] = ['Filter Periode', ": {$sd} s/d {$ed}", '', '', '', '', '', '', '', '', ''];
         }
         if (!empty($this->filters['nama'])) {
-            $rows[] = ['Filter Nama', ': ' . $this->filters['nama'], '', '', '', '', '', '', '', ''];
+            $rows[] = ['Filter Nama', ': ' . $this->filters['nama'], '', '', '', '', '', '', '', '', ''];
         }
         if (!empty($this->filters['nama_produk'])) {
-            $rows[] = ['Filter Produk', ': ' . $this->filters['nama_produk'], '', '', '', '', '', '', '', ''];
+            $rows[] = ['Filter Produk', ': ' . $this->filters['nama_produk'], '', '', '', '', '', '', '', '', ''];
         }
 
         return $rows;
@@ -146,7 +151,7 @@ class PendataanExport implements FromArray, WithColumnWidths, WithEvents
 
                 // 1. Header Row Styling (Row 1)
                 $sheet->getRowDimension($headerRow)->setRowHeight(32);
-                $sheet->getStyle("A{$headerRow}:J{$headerRow}")->applyFromArray([
+                $sheet->getStyle("A{$headerRow}:K{$headerRow}")->applyFromArray([
                     'font' => [
                         'name' => 'Calibri',
                         'bold' => true,
@@ -177,7 +182,7 @@ class PendataanExport implements FromArray, WithColumnWidths, WithEvents
 
                         // Subtle Zebra striping
                         if ($r % 2 === 1) {
-                            $sheet->getStyle("A{$r}:J{$r}")->applyFromArray([
+                            $sheet->getStyle("A{$r}:K{$r}")->applyFromArray([
                                 'fill' => [
                                     'fillType' => Fill::FILL_SOLID,
                                     'startColor' => ['rgb' => 'F8FAFC'],
@@ -187,7 +192,7 @@ class PendataanExport implements FromArray, WithColumnWidths, WithEvents
                     }
 
                     // Table Data Borders & Default Font
-                    $sheet->getStyle("A{$dataStartRow}:J{$dataEndRow}")->applyFromArray([
+                    $sheet->getStyle("A{$dataStartRow}:K{$dataEndRow}")->applyFromArray([
                         'font' => ['name' => 'Calibri', 'size' => 10],
                         'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
                         'borders' => [
@@ -203,17 +208,18 @@ class PendataanExport implements FromArray, WithColumnWidths, WithEvents
                     $sheet->getStyle("B{$dataStartRow}:B{$dataEndRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                     $sheet->getStyle("C{$dataStartRow}:C{$dataEndRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                     $sheet->getStyle("D{$dataStartRow}:D{$dataEndRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
-                    $sheet->getStyle("E{$dataStartRow}:E{$dataEndRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-                    $sheet->getStyle("F{$dataStartRow}:F{$dataEndRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                    $sheet->getStyle("G{$dataStartRow}:G{$dataEndRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-                    $sheet->getStyle("H{$dataStartRow}:H{$dataEndRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle("E{$dataStartRow}:E{$dataEndRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle("F{$dataStartRow}:F{$dataEndRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                    $sheet->getStyle("G{$dataStartRow}:G{$dataEndRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle("H{$dataStartRow}:H{$dataEndRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
                     $sheet->getStyle("I{$dataStartRow}:I{$dataEndRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                    $sheet->getStyle("J{$dataStartRow}:J{$dataEndRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+                    $sheet->getStyle("J{$dataStartRow}:J{$dataEndRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle("K{$dataStartRow}:K{$dataEndRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
 
                     // Bold for Total Harga column
-                    $sheet->getStyle("G{$dataStartRow}:G{$dataEndRow}")->getFont()->setBold(true);
+                    $sheet->getStyle("H{$dataStartRow}:H{$dataEndRow}")->getFont()->setBold(true);
                 } else {
-                    $sheet->mergeCells("A{$dataStartRow}:J{$dataStartRow}");
+                    $sheet->mergeCells("A{$dataStartRow}:K{$dataStartRow}");
                     $sheet->getRowDimension($dataStartRow)->setRowHeight(24);
                     $sheet->getStyle("A{$dataStartRow}")->applyFromArray([
                         'font' => ['italic' => true, 'color' => ['rgb' => '64748B']],
@@ -228,9 +234,9 @@ class PendataanExport implements FromArray, WithColumnWidths, WithEvents
                 }
 
                 // 3. Total Row Styling
-                $sheet->mergeCells("A{$totalRow}:E{$totalRow}");
+                $sheet->mergeCells("A{$totalRow}:F{$totalRow}");
                 $sheet->getRowDimension($totalRow)->setRowHeight(26);
-                $sheet->getStyle("A{$totalRow}:J{$totalRow}")->applyFromArray([
+                $sheet->getStyle("A{$totalRow}:K{$totalRow}")->applyFromArray([
                     'font' => [
                         'name' => 'Calibri',
                         'bold' => true,
@@ -263,12 +269,12 @@ class PendataanExport implements FromArray, WithColumnWidths, WithEvents
                 ]);
 
                 $sheet->getStyle("A{$totalRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-                $sheet->getStyle("F{$totalRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                $sheet->getStyle("G{$totalRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-                $sheet->getStyle("G{$totalRow}")->getFont()->getColor()->setRGB('15803D'); // Dark Green accent for total price
-                $sheet->getStyle("H{$totalRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle("G{$totalRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle("H{$totalRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                $sheet->getStyle("H{$totalRow}")->getFont()->getColor()->setRGB('15803D'); // Dark Green accent for total price
                 $sheet->getStyle("I{$totalRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 $sheet->getStyle("J{$totalRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle("K{$totalRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
                 // 4. Metadata footer styling
                 for ($m = $metaStartRow; $m <= $highestRow; $m++) {

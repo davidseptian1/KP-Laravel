@@ -36,6 +36,7 @@ class Pendataan extends Model
         'nama',
         'deskripsi',
         'nama_produk',
+        'jenis_chip',
         'harga_qty',
         'total_harga',
         'qty',

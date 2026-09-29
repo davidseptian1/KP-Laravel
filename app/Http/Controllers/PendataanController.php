@@ -250,15 +250,22 @@ class PendataanController extends Controller
     {
         $query = Pendataan::with('user');
 
+        $hasDateParam = $request->has('start_date') || $request->has('end_date');
+
         // Filter: Tanggal (Start Date & End Date)
+        // Default to today if no date filter parameter is present in request
         if ($request->filled('start_date')) {
             $startDate = Carbon::parse($request->start_date)->startOfDay();
             $query->where('created_at', '>=', $startDate);
+        } elseif (!$hasDateParam) {
+            $query->where('created_at', '>=', now()->startOfDay());
         }
 
         if ($request->filled('end_date')) {
             $endDate = Carbon::parse($request->end_date)->endOfDay();
             $query->where('created_at', '<=', $endDate);
+        } elseif (!$hasDateParam) {
+            $query->where('created_at', '<=', now()->endOfDay());
         }
 
         // Filter: Shift (All Shift, Shift 1, Shift 2, Shift 3)
@@ -272,6 +279,14 @@ class PendataanController extends Controller
                 } elseif (in_array($shift, ['3', 'Shift 3', 'shift 3', 'SHIFT 3'])) {
                     $query->where('nama', 'like', '%Shift 3%');
                 }
+            }
+        }
+
+        // Filter: Jenis Chip (All Chip, KTTS, KBTG)
+        if ($request->filled('jenis_chip')) {
+            $chip = strtoupper(trim((string) $request->jenis_chip));
+            if (in_array($chip, ['KTTS', 'KBTG'])) {
+                $query->where('jenis_chip', $chip);
             }
         }
 
@@ -330,6 +345,15 @@ class PendataanController extends Controller
             return Pendataan::select('nama_produk')->distinct()->whereNotNull('nama_produk')->pluck('nama_produk');
         });
 
+        $hasDateParam = $request->has('start_date') || $request->has('end_date');
+        $defaultStartDate = $hasDateParam ? $request->start_date : now()->toDateString();
+        $defaultEndDate = $hasDateParam ? $request->end_date : now()->toDateString();
+
+        $activeChip = $request->filled('jenis_chip') ? strtoupper(trim((string) $request->jenis_chip)) : 'All Chip';
+        if (!in_array($activeChip, ['KTTS', 'KBTG'])) {
+            $activeChip = 'All Chip';
+        }
+
         return view('pendataan.index', [
             'title' => 'Pendataan',
             'menuPendataan' => 'active',
@@ -343,9 +367,10 @@ class PendataanController extends Controller
             'shiftLoginAt' => session('pendataan_staff_login_at'),
             'shiftExpiresAt' => session('pendataan_staff_expires_at'),
             'filters' => [
-                'start_date' => $request->start_date,
-                'end_date' => $request->end_date,
+                'start_date' => $defaultStartDate,
+                'end_date' => $defaultEndDate,
                 'shift' => $request->shift ?: 'All Shift',
+                'jenis_chip' => $activeChip,
                 'nama' => $request->nama,
                 'nama_produk' => $request->nama_produk,
             ],
@@ -361,18 +386,28 @@ class PendataanController extends Controller
 
         $items = $this->buildQuery($request)->latest('created_at')->get();
 
+        $hasDateParam = $request->has('start_date') || $request->has('end_date');
+        $startDate = $hasDateParam ? $request->start_date : now()->toDateString();
+        $endDate = $hasDateParam ? $request->end_date : now()->toDateString();
+
         $activeShift = $request->input('shift', 'All Shift');
         $shiftSuffix = (!empty($activeShift) && !in_array($activeShift, ['all', 'All', 'All Shift']))
             ? '-' . str_replace(' ', '', $activeShift)
             : '';
 
-        $filename = 'Laporan-Pendataan' . $shiftSuffix . '-' . now()->format('Ymd_His') . '.xlsx';
+        $activeChip = $request->input('jenis_chip', 'All Chip');
+        $chipSuffix = (!empty($activeChip) && in_array(strtoupper($activeChip), ['KTTS', 'KBTG']))
+            ? '-' . strtoupper($activeChip)
+            : '';
+
+        $filename = 'Laporan-Pendataan' . $shiftSuffix . $chipSuffix . '-' . now()->format('Ymd_His') . '.xlsx';
 
         return Excel::download(
             new PendataanExport($items, [
-                'start_date' => $request->start_date,
-                'end_date' => $request->end_date,
+                'start_date' => $startDate,
+                'end_date' => $endDate,
                 'shift' => $activeShift,
+                'jenis_chip' => $activeChip,
                 'nama' => $request->nama,
                 'nama_produk' => $request->nama_produk,
             ]),
@@ -392,11 +427,18 @@ class PendataanController extends Controller
         $totalQty = (int) $items->sum('qty');
         $totalNominal = (float) $items->sum('total_harga');
 
+        $hasDateParam = $request->has('start_date') || $request->has('end_date');
+        $startDate = $hasDateParam ? $request->start_date : now()->toDateString();
+        $endDate = $hasDateParam ? $request->end_date : now()->toDateString();
+
         $activeShift = $request->input('shift', 'All Shift');
+        $activeChip = $request->input('jenis_chip', 'All Chip');
+
         $filters = [
-            'start_date' => $request->start_date,
-            'end_date' => $request->end_date,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
             'shift' => $activeShift,
+            'jenis_chip' => $activeChip,
             'nama' => $request->nama,
             'nama_produk' => $request->nama_produk,
         ];
@@ -405,12 +447,14 @@ class PendataanController extends Controller
             ? '-' . str_replace(' ', '', $activeShift)
             : '';
 
+        $chipSuffix = (!empty($activeChip) && in_array(strtoupper($activeChip), ['KTTS', 'KBTG']))
+            ? '-' . strtoupper($activeChip)
+            : '';
+
         $pdf = Pdf::loadView('pendataan.pdf', compact('items', 'filters', 'totalTransaksi', 'totalQty', 'totalNominal'))
             ->setPaper('a4', 'landscape');
 
-        $filename = 'Laporan-Pendataan' . $shiftSuffix . '-' . now()->format('Ymd_His') . '.pdf';
-
-        return $pdf->download($filename);
+        $filename = 'Laporan-Pendataan' . $shiftSuffix . $chipSuffix . '-' . now()->format('Ymd_His') . '.pdf';
     }
 
     /**
@@ -454,12 +498,15 @@ class PendataanController extends Controller
         $request->validate([
             'deskripsi' => 'nullable|string',
             'nama_produk' => 'nullable|string|max:255',
+            'jenis_chip' => 'required|in:KTTS,KBTG,ktts,kbtg',
             'harga_qty' => 'nullable',
             'total_harga' => 'nullable',
             'qty' => 'nullable|integer|min:1',
             'gambar' => 'nullable|file|mimes:jpeg,png,jpg,webp,gif|max:10240',
             'gambar_base64' => 'nullable|string',
         ], [
+            'jenis_chip.required' => 'Pilihan jenis chip (KTTS / KBTG) wajib dipilih.',
+            'jenis_chip.in' => 'Pilihan jenis chip harus KTTS atau KBTG.',
             'gambar.mimes' => 'Format gambar harus jpeg, png, jpg, webp, atau gif.',
             'gambar.max' => 'Ukuran gambar maksimal 10MB.',
         ]);
@@ -471,6 +518,12 @@ class PendataanController extends Controller
         $namaProduk = trim((string) $request->input('nama_produk'));
         if ($namaProduk === '') {
             $namaProduk = $parsed['nama_produk'] ?: 'Produk Tanpa Nama';
+        }
+
+        // Resolve jenis chip (KTTS / KBTG)
+        $jenisChip = strtoupper(trim((string) $request->input('jenis_chip', 'KTTS')));
+        if (!in_array($jenisChip, ['KTTS', 'KBTG'])) {
+            $jenisChip = 'KTTS';
         }
 
         // Resolve unit price
@@ -513,6 +566,7 @@ class PendataanController extends Controller
             'nama' => $nama,
             'deskripsi' => $deskripsi,
             'nama_produk' => $namaProduk,
+            'jenis_chip' => $jenisChip,
             'harga_qty' => $hargaQty,
             'total_harga' => $totalHarga,
             'qty' => $qty,
@@ -522,7 +576,7 @@ class PendataanController extends Controller
         cache()->forget('pendataan_filter_staff_names');
         cache()->forget('pendataan_filter_products');
 
-        return redirect()->route('pendataan.index')->with('success', 'Data Pendataan berhasil disimpan atas nama ' . $nama . '!');
+        return redirect()->route('pendataan.index')->with('success', 'Data Pendataan (' . $jenisChip . ') berhasil disimpan atas nama ' . $nama . '!');
     }
 
     /**
@@ -541,6 +595,7 @@ class PendataanController extends Controller
                     'id' => $pendataan->id,
                     'nama' => $pendataan->nama,
                     'nama_produk' => $pendataan->nama_produk,
+                    'jenis_chip' => $pendataan->jenis_chip ?? 'KTTS',
                     'harga_qty' => $pendataan->harga_qty,
                     'formatted_harga_qty' => $pendataan->formatted_harga_qty,
                     'total_harga' => $pendataan->total_harga,
@@ -570,6 +625,7 @@ class PendataanController extends Controller
         $request->validate([
             'deskripsi' => 'nullable|string',
             'nama_produk' => 'required|string|max:255',
+            'jenis_chip' => 'required|in:KTTS,KBTG,ktts,kbtg',
             'harga_qty' => 'required',
             'total_harga' => 'required',
             'qty' => 'required|integer|min:1',
@@ -578,9 +634,16 @@ class PendataanController extends Controller
             'gambar_base64' => 'nullable|string',
             'hapus_gambar' => 'nullable|boolean',
         ], [
+            'jenis_chip.required' => 'Pilihan jenis chip (KTTS / KBTG) wajib dipilih.',
+            'jenis_chip.in' => 'Pilihan jenis chip harus KTTS atau KBTG.',
             'alasan_edit.required' => 'Alasan edit wajib diisi!',
             'alasan_edit.min' => 'Alasan edit minimal 3 karakter.',
         ]);
+
+        $jenisChip = strtoupper(trim((string) $request->input('jenis_chip', 'KTTS')));
+        if (!in_array($jenisChip, ['KTTS', 'KBTG'])) {
+            $jenisChip = 'KTTS';
+        }
 
         $hargaQty = PendataanParserService::cleanPrice((string) $request->input('harga_qty'));
         $qty = (int) $request->input('qty', 1);
@@ -627,6 +690,7 @@ class PendataanController extends Controller
             'nama' => $pendataan->nama,
             'deskripsi' => $request->input('deskripsi', ''),
             'nama_produk' => trim($request->input('nama_produk')),
+            'jenis_chip' => $jenisChip,
             'harga_qty' => $hargaQty,
             'total_harga' => $totalHarga,
             'qty' => $qty,

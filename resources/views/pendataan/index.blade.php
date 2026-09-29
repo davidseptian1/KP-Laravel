@@ -104,7 +104,15 @@
                     <option value="Shift 3" {{ ($filters['shift'] ?? '') === 'Shift 3' ? 'selected' : '' }}>Shift 3 (Malam)</option>
                 </select>
             </div>
-            <div class="col-md-3 col-sm-6">
+            <div class="col-md-2 col-sm-6">
+                <label class="form-label small fw-semibold text-muted">Jenis Chip</label>
+                <select name="jenis_chip" class="form-select form-select-sm fw-semibold">
+                    <option value="All Chip" {{ ($filters['jenis_chip'] ?? 'All Chip') === 'All Chip' ? 'selected' : '' }}>Semua Chip</option>
+                    <option value="KTTS" {{ ($filters['jenis_chip'] ?? '') === 'KTTS' ? 'selected' : '' }}>KTTS</option>
+                    <option value="KBTG" {{ ($filters['jenis_chip'] ?? '') === 'KBTG' ? 'selected' : '' }}>KBTG</option>
+                </select>
+            </div>
+            <div class="col-md-2 col-sm-6">
                 <label class="form-label small fw-semibold text-muted">Nama Staf</label>
                 <select name="nama" class="form-select form-select-sm">
                     <option value="">-- Semua Staf --</option>
@@ -113,7 +121,7 @@
                     @endforeach
                 </select>
             </div>
-            <div class="col-md-3 col-sm-12">
+            <div class="col-md-2 col-sm-6">
                 <label class="form-label small fw-semibold text-muted">Nama Produk</label>
                 <input type="text" name="nama_produk" class="form-control form-control-sm" placeholder="Cari produk..." value="{{ $filters['nama_produk'] ?? '' }}" list="listProdukOptions">
                 <datalist id="listProdukOptions">
@@ -123,47 +131,62 @@
                 </datalist>
             </div>
             <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2 pt-3 border-top mt-2">
-                <!-- Export / Download Buttons with active filters & Shift Dropdown -->
+                <!-- Export / Download Buttons with active filters & Shift/Chip Dropdown -->
                 <div class="d-flex align-items-center gap-2 flex-wrap">
                     <span class="small fw-semibold text-muted"><i class="ti ti-download me-1"></i>Download Data:</span>
 
                     @php
                         $baseExportQuery = request()->except(['page']);
                         $currentShift = $filters['shift'] ?? 'All Shift';
+                        $currentChip = $filters['jenis_chip'] ?? 'All Chip';
                     @endphp
 
-                    <!-- Excel Download Button with Shift Selector Dropdown -->
+                    <!-- Excel Download Button with Shift and Chip Selector Dropdown -->
                     <div class="btn-group">
                         <a href="{{ url('pendataan/export-excel') }}?{{ http_build_query(request()->query()) }}" class="btn btn-sm btn-success px-3 shadow-sm" title="Download data dalam format Excel">
                             <i class="ti ti-file-spreadsheet me-1"></i> Excel (.xlsx)
                             <span class="badge bg-white text-success ms-1 fw-bold">{{ $currentShift }}</span>
+                            @if($currentChip !== 'All Chip')
+                                <span class="badge bg-white text-dark ms-1 fw-bold">{{ $currentChip }}</span>
+                            @endif
                         </a>
-                        <button type="button" class="btn btn-sm btn-success dropdown-toggle dropdown-toggle-split shadow-sm" data-bs-toggle="dropdown" aria-expanded="false" title="Pilih Shift Download Excel">
-                            <span class="visually-hidden">Pilihan Shift</span>
+                        <button type="button" class="btn btn-sm btn-success dropdown-toggle dropdown-toggle-split shadow-sm" data-bs-toggle="dropdown" aria-expanded="false" title="Pilihan Download Excel">
+                            <span class="visually-hidden">Pilihan Download</span>
                         </button>
                         <ul class="dropdown-menu shadow">
-                            <li><h6 class="dropdown-header text-uppercase small fw-bold">Download Excel Berdasarkan Shift</h6></li>
-                            <li><a class="dropdown-item {{ $currentShift === 'All Shift' ? 'active' : '' }}" href="{{ url('pendataan/export-excel') }}?{{ http_build_query(array_merge($baseExportQuery, ['shift' => 'All Shift'])) }}"><i class="ti ti-layers-subtract me-2"></i>All Shift (Semua)</a></li>
+                            <li><h6 class="dropdown-header text-uppercase small fw-bold">Download Berdasarkan Jenis Chip</h6></li>
+                            <li><a class="dropdown-item {{ $currentChip === 'All Chip' ? 'active' : '' }}" href="{{ url('pendataan/export-excel') }}?{{ http_build_query(array_merge($baseExportQuery, ['jenis_chip' => 'All Chip'])) }}"><i class="ti ti-cpu me-2"></i>Semua Chip (All Chip)</a></li>
+                            <li><a class="dropdown-item {{ $currentChip === 'KTTS' ? 'active' : '' }}" href="{{ url('pendataan/export-excel') }}?{{ http_build_query(array_merge($baseExportQuery, ['jenis_chip' => 'KTTS'])) }}"><i class="ti ti-cpu me-2 text-primary"></i>Khusus Chip KTTS</a></li>
+                            <li><a class="dropdown-item {{ $currentChip === 'KBTG' ? 'active' : '' }}" href="{{ url('pendataan/export-excel') }}?{{ http_build_query(array_merge($baseExportQuery, ['jenis_chip' => 'KBTG'])) }}"><i class="ti ti-cpu-2 me-2" style="color: #6f42c1;"></i>Khusus Chip KBTG</a></li>
                             <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header text-uppercase small fw-bold">Download Berdasarkan Shift</h6></li>
+                            <li><a class="dropdown-item {{ $currentShift === 'All Shift' ? 'active' : '' }}" href="{{ url('pendataan/export-excel') }}?{{ http_build_query(array_merge($baseExportQuery, ['shift' => 'All Shift'])) }}"><i class="ti ti-layers-subtract me-2"></i>All Shift (Semua)</a></li>
                             <li><a class="dropdown-item {{ $currentShift === 'Shift 1' ? 'active' : '' }}" href="{{ url('pendataan/export-excel') }}?{{ http_build_query(array_merge($baseExportQuery, ['shift' => 'Shift 1'])) }}"><i class="ti ti-sun me-2 text-warning"></i>Khusus Shift 1</a></li>
                             <li><a class="dropdown-item {{ $currentShift === 'Shift 2' ? 'active' : '' }}" href="{{ url('pendataan/export-excel') }}?{{ http_build_query(array_merge($baseExportQuery, ['shift' => 'Shift 2'])) }}"><i class="ti ti-sunset me-2 text-primary"></i>Khusus Shift 2</a></li>
                             <li><a class="dropdown-item {{ $currentShift === 'Shift 3' ? 'active' : '' }}" href="{{ url('pendataan/export-excel') }}?{{ http_build_query(array_merge($baseExportQuery, ['shift' => 'Shift 3'])) }}"><i class="ti ti-moon-stars me-2 text-info"></i>Khusus Shift 3</a></li>
                         </ul>
                     </div>
 
-                    <!-- PDF Download Button with Shift Selector Dropdown -->
+                    <!-- PDF Download Button with Shift and Chip Selector Dropdown -->
                     <div class="btn-group">
                         <a href="{{ url('pendataan/export-pdf') }}?{{ http_build_query(request()->query()) }}" class="btn btn-sm btn-danger px-3 shadow-sm" title="Download data dalam format PDF" target="_blank">
                             <i class="ti ti-file-type-pdf me-1"></i> PDF
                             <span class="badge bg-white text-danger ms-1 fw-bold">{{ $currentShift }}</span>
+                            @if($currentChip !== 'All Chip')
+                                <span class="badge bg-white text-dark ms-1 fw-bold">{{ $currentChip }}</span>
+                            @endif
                         </a>
-                        <button type="button" class="btn btn-sm btn-danger dropdown-toggle dropdown-toggle-split shadow-sm" data-bs-toggle="dropdown" aria-expanded="false" title="Pilih Shift Download PDF">
-                            <span class="visually-hidden">Pilihan Shift</span>
+                        <button type="button" class="btn btn-sm btn-danger dropdown-toggle dropdown-toggle-split shadow-sm" data-bs-toggle="dropdown" aria-expanded="false" title="Pilihan Download PDF">
+                            <span class="visually-hidden">Pilihan Download</span>
                         </button>
                         <ul class="dropdown-menu shadow">
-                            <li><h6 class="dropdown-header text-uppercase small fw-bold">Download PDF Berdasarkan Shift</h6></li>
-                            <li><a class="dropdown-item {{ $currentShift === 'All Shift' ? 'active' : '' }}" href="{{ url('pendataan/export-pdf') }}?{{ http_build_query(array_merge($baseExportQuery, ['shift' => 'All Shift'])) }}" target="_blank"><i class="ti ti-layers-subtract me-2"></i>All Shift (Semua)</a></li>
+                            <li><h6 class="dropdown-header text-uppercase small fw-bold">Download Berdasarkan Jenis Chip</h6></li>
+                            <li><a class="dropdown-item {{ $currentChip === 'All Chip' ? 'active' : '' }}" href="{{ url('pendataan/export-pdf') }}?{{ http_build_query(array_merge($baseExportQuery, ['jenis_chip' => 'All Chip'])) }}" target="_blank"><i class="ti ti-cpu me-2"></i>Semua Chip (All Chip)</a></li>
+                            <li><a class="dropdown-item {{ $currentChip === 'KTTS' ? 'active' : '' }}" href="{{ url('pendataan/export-pdf') }}?{{ http_build_query(array_merge($baseExportQuery, ['jenis_chip' => 'KTTS'])) }}" target="_blank"><i class="ti ti-cpu me-2 text-primary"></i>Khusus Chip KTTS</a></li>
+                            <li><a class="dropdown-item {{ $currentChip === 'KBTG' ? 'active' : '' }}" href="{{ url('pendataan/export-pdf') }}?{{ http_build_query(array_merge($baseExportQuery, ['jenis_chip' => 'KBTG'])) }}" target="_blank"><i class="ti ti-cpu-2 me-2" style="color: #6f42c1;"></i>Khusus Chip KBTG</a></li>
                             <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header text-uppercase small fw-bold">Download Berdasarkan Shift</h6></li>
+                            <li><a class="dropdown-item {{ $currentShift === 'All Shift' ? 'active' : '' }}" href="{{ url('pendataan/export-pdf') }}?{{ http_build_query(array_merge($baseExportQuery, ['shift' => 'All Shift'])) }}" target="_blank"><i class="ti ti-layers-subtract me-2"></i>All Shift (Semua)</a></li>
                             <li><a class="dropdown-item {{ $currentShift === 'Shift 1' ? 'active' : '' }}" href="{{ url('pendataan/export-pdf') }}?{{ http_build_query(array_merge($baseExportQuery, ['shift' => 'Shift 1'])) }}" target="_blank"><i class="ti ti-sun me-2 text-warning"></i>Khusus Shift 1</a></li>
                             <li><a class="dropdown-item {{ $currentShift === 'Shift 2' ? 'active' : '' }}" href="{{ url('pendataan/export-pdf') }}?{{ http_build_query(array_merge($baseExportQuery, ['shift' => 'Shift 2'])) }}" target="_blank"><i class="ti ti-sunset me-2 text-primary"></i>Khusus Shift 2</a></li>
                             <li><a class="dropdown-item {{ $currentShift === 'Shift 3' ? 'active' : '' }}" href="{{ url('pendataan/export-pdf') }}?{{ http_build_query(array_merge($baseExportQuery, ['shift' => 'Shift 3'])) }}" target="_blank"><i class="ti ti-moon-stars me-2 text-info"></i>Khusus Shift 3</a></li>
@@ -173,7 +196,7 @@
 
                 <!-- Filter Action Buttons -->
                 <div class="d-flex align-items-center gap-2">
-                    @if(!empty($filters['start_date']) || !empty($filters['end_date']) || !empty($filters['nama']) || !empty($filters['nama_produk']) || (!empty($filters['shift']) && $filters['shift'] !== 'All Shift'))
+                    @if(!empty($filters['start_date']) || !empty($filters['end_date']) || !empty($filters['nama']) || !empty($filters['nama_produk']) || (!empty($filters['shift']) && $filters['shift'] !== 'All Shift') || (!empty($filters['jenis_chip']) && $filters['jenis_chip'] !== 'All Chip'))
                         <a href="{{ route('pendataan.index') }}" class="btn btn-sm btn-outline-secondary">
                             <i class="ti ti-refresh me-1"></i> Reset Filter
                         </a>
@@ -195,32 +218,57 @@
                 <i class="ti ti-table me-2 text-primary"></i>Data Pendataan
             </h5>
 
-            <!-- Quick Shift Pill Navigation -->
+            <!-- Quick Shift & Chip Pill Navigations -->
             @php
                 $activeShift = $filters['shift'] ?? 'All Shift';
+                $activeChip = $filters['jenis_chip'] ?? 'All Chip';
                 $pillQuery = request()->except(['page', 'shift']);
+                $chipPillQuery = request()->except(['page', 'jenis_chip']);
             @endphp
-            <div class="btn-group btn-group-sm p-1 bg-light rounded-pill border" role="group" aria-label="Filter Shift Cepat">
-                <a href="{{ route('pendataan.index', array_merge($pillQuery, ['shift' => 'All Shift'])) }}" 
-                   class="btn btn-sm rounded-pill px-3 {{ $activeShift === 'All Shift' || empty($activeShift) ? 'btn-primary text-white fw-bold shadow-sm' : 'btn-light text-muted' }}"
-                   title="Lihat semua data shift">
-                    <i class="ti ti-layers-subtract me-1"></i>All Shift
-                </a>
-                <a href="{{ route('pendataan.index', array_merge($pillQuery, ['shift' => 'Shift 1'])) }}" 
-                   class="btn btn-sm rounded-pill px-3 {{ $activeShift === 'Shift 1' ? 'btn-primary text-white fw-bold shadow-sm' : 'btn-light text-muted' }}"
-                   title="Hanya tampilkan Shift 1">
-                    <i class="ti ti-sun me-1"></i>Shift 1
-                </a>
-                <a href="{{ route('pendataan.index', array_merge($pillQuery, ['shift' => 'Shift 2'])) }}" 
-                   class="btn btn-sm rounded-pill px-3 {{ $activeShift === 'Shift 2' ? 'btn-primary text-white fw-bold shadow-sm' : 'btn-light text-muted' }}"
-                   title="Hanya tampilkan Shift 2">
-                    <i class="ti ti-sunset me-1"></i>Shift 2
-                </a>
-                <a href="{{ route('pendataan.index', array_merge($pillQuery, ['shift' => 'Shift 3'])) }}" 
-                   class="btn btn-sm rounded-pill px-3 {{ $activeShift === 'Shift 3' ? 'btn-primary text-white fw-bold shadow-sm' : 'btn-light text-muted' }}"
-                   title="Hanya tampilkan Shift 3">
-                    <i class="ti ti-moon-stars me-1"></i>Shift 3
-                </a>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <!-- Shift Pills -->
+                <div class="btn-group btn-group-sm p-1 bg-light rounded-pill border" role="group" aria-label="Filter Shift Cepat">
+                    <a href="{{ route('pendataan.index', array_merge($pillQuery, ['shift' => 'All Shift'])) }}" 
+                       class="btn btn-sm rounded-pill px-3 {{ $activeShift === 'All Shift' || empty($activeShift) ? 'btn-primary text-white fw-bold shadow-sm' : 'btn-light text-muted' }}"
+                       title="Lihat semua data shift">
+                        <i class="ti ti-layers-subtract me-1"></i>All Shift
+                    </a>
+                    <a href="{{ route('pendataan.index', array_merge($pillQuery, ['shift' => 'Shift 1'])) }}" 
+                       class="btn btn-sm rounded-pill px-3 {{ $activeShift === 'Shift 1' ? 'btn-primary text-white fw-bold shadow-sm' : 'btn-light text-muted' }}"
+                       title="Hanya tampilkan Shift 1">
+                        <i class="ti ti-sun me-1"></i>Shift 1
+                    </a>
+                    <a href="{{ route('pendataan.index', array_merge($pillQuery, ['shift' => 'Shift 2'])) }}" 
+                       class="btn btn-sm rounded-pill px-3 {{ $activeShift === 'Shift 2' ? 'btn-primary text-white fw-bold shadow-sm' : 'btn-light text-muted' }}"
+                       title="Hanya tampilkan Shift 2">
+                        <i class="ti ti-sunset me-1"></i>Shift 2
+                    </a>
+                    <a href="{{ route('pendataan.index', array_merge($pillQuery, ['shift' => 'Shift 3'])) }}" 
+                       class="btn btn-sm rounded-pill px-3 {{ $activeShift === 'Shift 3' ? 'btn-primary text-white fw-bold shadow-sm' : 'btn-light text-muted' }}"
+                       title="Hanya tampilkan Shift 3">
+                        <i class="ti ti-moon-stars me-1"></i>Shift 3
+                    </a>
+                </div>
+
+                <!-- Chip Pills -->
+                <div class="btn-group btn-group-sm p-1 bg-light rounded-pill border" role="group" aria-label="Filter Chip Cepat">
+                    <a href="{{ route('pendataan.index', array_merge($chipPillQuery, ['jenis_chip' => 'All Chip'])) }}" 
+                       class="btn btn-sm rounded-pill px-3 {{ $activeChip === 'All Chip' || empty($activeChip) ? 'btn-dark text-white fw-bold shadow-sm' : 'btn-light text-muted' }}"
+                       title="Lihat semua chip">
+                        <i class="ti ti-cpu me-1"></i>All Chip
+                    </a>
+                    <a href="{{ route('pendataan.index', array_merge($chipPillQuery, ['jenis_chip' => 'KTTS'])) }}" 
+                       class="btn btn-sm rounded-pill px-3 {{ $activeChip === 'KTTS' ? 'btn-primary text-white fw-bold shadow-sm' : 'btn-light text-muted' }}"
+                       title="Hanya tampilkan KTTS">
+                        <i class="ti ti-cpu me-1"></i>KTTS
+                    </a>
+                    <a href="{{ route('pendataan.index', array_merge($chipPillQuery, ['jenis_chip' => 'KBTG'])) }}" 
+                       class="btn btn-sm rounded-pill px-3 {{ $activeChip === 'KBTG' ? 'text-white fw-bold shadow-sm' : 'btn-light text-muted' }}"
+                       style="{{ $activeChip === 'KBTG' ? 'background-color: #6f42c1; border-color: #6f42c1;' : '' }}"
+                       title="Hanya tampilkan KBTG">
+                        <i class="ti ti-cpu-2 me-1"></i>KBTG
+                    </a>
+                </div>
             </div>
         </div>
         <span class="badge bg-light text-secondary border px-3 py-2">
@@ -234,6 +282,7 @@
                     <tr>
                         <th class="ps-4" style="width: 50px;">No</th>
                         <th>Nama Produk</th>
+                        <th class="text-center" style="width: 85px;">Chip</th>
                         <th class="text-end">Harga Qty</th>
                         <th class="text-end">Total Harga</th>
                         <th class="text-center" style="width: 80px;">Qty</th>
@@ -259,6 +308,17 @@
                             @if($item->alasan_edit)
                                 <span class="badge bg-warning bg-opacity-10 text-warning border border-warning-subtle mt-1" title="Alasan Edit: {{ $item->alasan_edit }}">
                                     <i class="ti ti-history me-1"></i>Pernah Diedit
+                                </span>
+                            @endif
+                        </td>
+                        <td class="text-center">
+                            @if(($item->jenis_chip ?? 'KTTS') === 'KBTG')
+                                <span class="badge border px-2 py-1 fw-bold text-white shadow-sm" style="background-color: #6f42c1; font-size: 0.75rem;">
+                                    <i class="ti ti-cpu-2 me-1"></i>KBTG
+                                </span>
+                            @else
+                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle px-2 py-1 fw-bold" style="font-size: 0.75rem;">
+                                    <i class="ti ti-cpu me-1"></i>KTTS
                                 </span>
                             @endif
                         </td>
@@ -301,13 +361,11 @@
                             <button type="button" class="btn btn-sm btn-icon btn-outline-warning ms-1" title="Edit Data" onclick="openEditModal({{ json_encode($item) }})">
                                 <i class="ti ti-edit"></i>
                             </button>
-
-
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="9" class="text-center py-5 text-muted">
+                        <td colspan="10" class="text-center py-5 text-muted">
                             <i class="ti ti-inbox fs-1 d-block mb-2 text-secondary"></i>
                             Belum ada data pendataan yang tersimpan. Silakan klik tombol <strong>Tambah Pendataan</strong> untuk mulai mencatat.
                         </td>
@@ -353,6 +411,33 @@
                         </div>
                         <div class="form-text text-muted small">
                             <i class="ti ti-lock me-1 text-primary"></i>Tercatat otomatis atas nama <strong>{{ $activeStaffNama }}</strong> (sesuai akun staf yang sedang membuka fitur ini).
+                        </div>
+                    </div>
+
+                    <!-- Field: Pilihan Jenis Chip (KTTS / KBTG) -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark mb-1">
+                            Jenis Chip <span class="text-danger">*</span>
+                        </label>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label class="border rounded-3 p-2 d-flex align-items-center bg-white shadow-sm h-100" for="tambah_chip_ktts" style="cursor: pointer;">
+                                    <input class="form-check-input me-2 mt-0" type="radio" name="jenis_chip" id="tambah_chip_ktts" value="KTTS" checked required>
+                                    <div>
+                                        <div class="fw-bold text-primary"><i class="ti ti-cpu me-1"></i>KTTS</div>
+                                        <small class="text-muted" style="font-size: 0.72rem;">Kartu / Chip KTTS</small>
+                                    </div>
+                                </label>
+                            </div>
+                            <div class="col-6">
+                                <label class="border rounded-3 p-2 d-flex align-items-center bg-white shadow-sm h-100" for="tambah_chip_kbtg" style="cursor: pointer;">
+                                    <input class="form-check-input me-2 mt-0" type="radio" name="jenis_chip" id="tambah_chip_kbtg" value="KBTG" required>
+                                    <div>
+                                        <div class="fw-bold" style="color: #6f42c1;"><i class="ti ti-cpu-2 me-1"></i>KBTG</div>
+                                        <small class="text-muted" style="font-size: 0.72rem;">Kartu / Chip KBTG</small>
+                                    </div>
+                                </label>
+                            </div>
                         </div>
                     </div>
 
@@ -468,6 +553,33 @@
                         </div>
                         <div class="form-text text-muted small">
                             <i class="ti ti-lock me-1"></i>Nama penanggung jawab transaksi terkunci dan tidak dapat diubah.
+                        </div>
+                    </div>
+
+                    <!-- Field: Pilihan Jenis Chip (KTTS / KBTG) -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark mb-1">
+                            Jenis Chip <span class="text-danger">*</span>
+                        </label>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label class="border rounded-3 p-2 d-flex align-items-center bg-white shadow-sm h-100" for="edit_chip_ktts" style="cursor: pointer;">
+                                    <input class="form-check-input me-2 mt-0" type="radio" name="jenis_chip" id="edit_chip_ktts" value="KTTS" required>
+                                    <div>
+                                        <div class="fw-bold text-primary"><i class="ti ti-cpu me-1"></i>KTTS</div>
+                                        <small class="text-muted" style="font-size: 0.72rem;">Kartu / Chip KTTS</small>
+                                    </div>
+                                </label>
+                            </div>
+                            <div class="col-6">
+                                <label class="border rounded-3 p-2 d-flex align-items-center bg-white shadow-sm h-100" for="edit_chip_kbtg" style="cursor: pointer;">
+                                    <input class="form-check-input me-2 mt-0" type="radio" name="jenis_chip" id="edit_chip_kbtg" value="KBTG" required>
+                                    <div>
+                                        <div class="fw-bold" style="color: #6f42c1;"><i class="ti ti-cpu-2 me-1"></i>KBTG</div>
+                                        <small class="text-muted" style="font-size: 0.72rem;">Kartu / Chip KBTG</small>
+                                    </div>
+                                </label>
+                            </div>
                         </div>
                     </div>
 
@@ -590,13 +702,17 @@
                 </div>
 
                 <div class="row g-2 mb-3">
-                    <div class="col-6">
-                        <small class="text-muted d-block">Harga Qty (Satuan):</small>
+                    <div class="col-4">
+                        <small class="text-muted d-block">Harga Qty:</small>
                         <span class="fw-semibold text-dark" id="detail_harga_qty">Rp 0</span>
                     </div>
-                    <div class="col-6">
+                    <div class="col-4">
                         <small class="text-muted d-block">Total Qty:</small>
                         <span class="fw-semibold text-dark" id="detail_qty">0</span>
+                    </div>
+                    <div class="col-4">
+                        <small class="text-muted d-block">Jenis Chip:</small>
+                        <span class="badge bg-primary px-2 py-1 fw-bold" id="detail_chip">KTTS</span>
                     </div>
                     <div class="col-6">
                         <small class="text-muted d-block">Nama:</small>
@@ -1101,6 +1217,15 @@ function openEditModal(item) {
     document.getElementById('edit_gambar_base64').value = '';
     document.getElementById('edit_gambar_input').value = '';
 
+    // Set Jenis Chip (KTTS / KBTG)
+    if ((item.jenis_chip || 'KTTS').toUpperCase() === 'KBTG') {
+        const kbtgRadio = document.getElementById('edit_chip_kbtg');
+        if (kbtgRadio) kbtgRadio.checked = true;
+    } else {
+        const kttsRadio = document.getElementById('edit_chip_ktts');
+        if (kttsRadio) kttsRadio.checked = true;
+    }
+
     // Reset and prepare Alasan Edit
     document.getElementById('edit_alasan').value = '';
     const riwayatSec = document.getElementById('riwayatAlasanSection');
@@ -1157,6 +1282,20 @@ function openDetailModal(id) {
             document.getElementById('detail_qty').textContent = data.qty;
             document.getElementById('detail_nama').textContent = data.nama;
             document.getElementById('detail_tanggal').textContent = data.created_at;
+
+            // Jenis Chip badge in Detail Modal
+            const chipElem = document.getElementById('detail_chip');
+            if (chipElem) {
+                const chipVal = (data.jenis_chip || 'KTTS').toUpperCase();
+                chipElem.textContent = chipVal;
+                if (chipVal === 'KBTG') {
+                    chipElem.className = 'badge text-white px-2 py-1 fw-bold';
+                    chipElem.style.backgroundColor = '#6f42c1';
+                } else {
+                    chipElem.className = 'badge bg-primary text-white px-2 py-1 fw-bold';
+                    chipElem.style.backgroundColor = '';
+                }
+            }
 
             const deskripsiSec = document.getElementById('detail_deskripsi_section');
             if (data.deskripsi && data.deskripsi.trim()) {
