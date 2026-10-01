@@ -69,7 +69,7 @@
 </div>
 
 <!-- Card: Konfigurasi Bot Telegram Pendataan -->
-<div class="card border-0 shadow-sm rounded-3 mb-4">
+<div class="card border-0 shadow-sm rounded-3 mb-4" id="cardBotTelegram">
     <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
         <div>
             <h5 class="mb-0 fw-bold text-dark d-flex align-items-center">
@@ -773,8 +773,21 @@ function toggleStaffActive(id, toggleElem) {
         toggleElem.disabled = false;
         toggleElem.checked = !isChecked;
         console.error(err);
-        alert('Terjadi kesalahan jaringan.');
     });
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('tab') === 'bot' || window.location.hash === '#cardBotTelegram') {
+        const card = document.getElementById('cardBotTelegram');
+        if (card) {
+            card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            card.classList.add('border-primary', 'shadow');
+            setTimeout(() => {
+                card.classList.remove('border-primary');
+            }, 3000);
+        }
+    }
+});
 </script>
 @endpush

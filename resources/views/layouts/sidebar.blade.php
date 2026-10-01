@@ -357,10 +357,18 @@
                 </li>
 
                 <!-- Pengaturan Akses Fitur Pendataan -->
-                <li class="pc-item {{ request()->is('superadmin/pendataan-access*') ? 'active' : '' }}">
+                <li class="pc-item {{ request()->is('superadmin/pendataan-access*') && !request()->has('tab') ? 'active' : '' }}">
                     <a href="{{ url('superadmin/pendataan-access') }}" class="pc-link">
                         <span class="pc-micon"><i class="ti ti-shield-lock"></i></span>
                         <span class="pc-mtext">Akses Fitur Pendataan</span>
+                    </a>
+                </li>
+
+                <!-- Setting Bot Telegram Pendataan -->
+                <li class="pc-item {{ request()->is('superadmin/pendataan-access*') && request()->get('tab') === 'bot' ? 'active' : '' }}">
+                    <a href="{{ url('superadmin/pendataan-access?tab=bot#cardBotTelegram') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-brand-telegram text-primary"></i></span>
+                        <span class="pc-mtext">Setting Bot Telegram</span>
                     </a>
                 </li>
 
