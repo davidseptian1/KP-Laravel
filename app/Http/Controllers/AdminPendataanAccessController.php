@@ -53,6 +53,10 @@ class AdminPendataanAccessController extends Controller
         $checkLimit = TelegramPendataanController::getCheckLimit();
         $webhookUrl = url('/api/telegram/pendataan-webhook');
 
+        $latestBotLogs = class_exists(\App\Models\TelegramPendataanLog::class)
+            ? \App\Models\TelegramPendataanLog::with('pendataan')->latest('id')->take(6)->get()
+            : collect();
+
         return view('admin.pendataan.access', [
             'title' => 'Pengaturan Akses Fitur Pendataan',
             'menuPendataanAccess' => 'active',
@@ -68,6 +72,7 @@ class AdminPendataanAccessController extends Controller
             'botUsername' => $botUsername,
             'checkLimit' => $checkLimit,
             'webhookUrl' => $webhookUrl,
+            'latestBotLogs' => $latestBotLogs,
         ]);
     }
 
@@ -262,5 +267,119 @@ class AdminPendataanAccessController extends Controller
 
         return redirect()->route('admin.pendataan.access')
             ->with('success', 'Pengaturan Bot Telegram Pendataan (Scraping limit & Bot Token) berhasil disimpan!');
+    }
+
+    /**
+     * Display the Telegram Bot activity logs page.
+     */
+    public function botLogs(Request $request)
+    {
+        if (!auth()->user() || !auth()->user()->canAccessPendataan()) {
+            abort(403, 'Anda tidak memiliki hak akses ke fitur Pendataan.');
+        }
+
+        $statusFilter = strtolower(trim((string) $request->input('status', 'all')));
+        $search = trim((string) $request->input('search', ''));
+
+        $query = \App\Models\TelegramPendataanLog::with('pendataan');
+
+        if ($statusFilter !== 'all' && in_array($statusFilter, [
+            \App\Models\TelegramPendataanLog::STATUS_MATCHED,
+            \App\Models\TelegramPendataanLog::STATUS_UNMATCHED,
+            \App\Models\TelegramPendataanLog::STATUS_INVALID_FORMAT,
+            \App\Models\TelegramPendataanLog::STATUS_ERROR,
+        ])) {
+            $query->where('status', $statusFilter);
+        }
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('raw_message', 'like', "%{$search}%")
+                  ->orWhere('parsed_product', 'like', "%{$search}%")
+                  ->orWhere('chat_title', 'like', "%{$search}%")
+                  ->orWhere('sender_name', 'like', "%{$search}%")
+                  ->orWhere('action_note', 'like', "%{$search}%");
+            });
+        }
+
+        $logs = $query->latest('id')->paginate(20)->withQueryString();
+
+        // Summary Statistics
+        $totalLogs = \App\Models\TelegramPendataanLog::count();
+        $matchedLogs = \App\Models\TelegramPendataanLog::where('status', \App\Models\TelegramPendataanLog::STATUS_MATCHED)->count();
+        $unmatchedLogs = \App\Models\TelegramPendataanLog::where('status', \App\Models\TelegramPendataanLog::STATUS_UNMATCHED)->count();
+        $invalidFormatLogs = \App\Models\TelegramPendataanLog::where('status', \App\Models\TelegramPendataanLog::STATUS_INVALID_FORMAT)->count();
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return view('admin.pendataan.partials.bot_logs_table', compact('logs'))->render();
+        }
+
+        return view('admin.pendataan.bot_logs', [
+            'title' => 'Riwayat Logs Aktivitas Bot Telegram',
+            'menuSuperadminLogs' => 'active',
+            'logs' => $logs,
+            'totalLogs' => $totalLogs,
+            'matchedLogs' => $matchedLogs,
+            'unmatchedLogs' => $unmatchedLogs,
+            'invalidFormatLogs' => $invalidFormatLogs,
+            'currentStatus' => $statusFilter,
+            'currentSearch' => $search,
+            'botUsername' => config('services.telegram_pendataan.bot_username', 'intel_awgbot'),
+            'checkLimit' => TelegramPendataanController::getCheckLimit(),
+        ]);
+    }
+
+    /**
+     * Clear all bot activity logs.
+     */
+    public function clearBotLogs(Request $request)
+    {
+        if (strtolower(trim(auth()->user()->jabatan ?? '')) !== 'superadmin') {
+            abort(403, 'Hanya Superadmin yang memiliki izin untuk membersihkan riwayat log.');
+        }
+
+        \App\Models\TelegramPendataanLog::truncate();
+
+        return redirect()->route('admin.pendataan.bot-logs')
+            ->with('success', 'Semua riwayat log aktivitas bot Telegram berhasil dibersihkan!');
+    }
+
+    /**
+     * Show single log detail as JSON for modal.
+     */
+    public function showBotLog($id)
+    {
+        if (!auth()->user() || !auth()->user()->canAccessPendataan()) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        $log = \App\Models\TelegramPendataanLog::with('pendataan')->findOrFail($id);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id' => $log->id,
+                'chat_id' => $log->chat_id,
+                'chat_title' => $log->chat_title ?: '-',
+                'message_id' => $log->message_id,
+                'sender_name' => $log->sender_name ?: '-',
+                'sender_username' => $log->sender_username ? '@' . $log->sender_username : '-',
+                'raw_message' => $log->raw_message,
+                'parsed_product' => $log->parsed_product ?: '-',
+                'parsed_nominal' => $log->formatted_nominal,
+                'raw_nominal' => $log->raw_nominal ?: '-',
+                'status' => $log->status,
+                'status_label' => $log->status_label,
+                'status_badge_html' => $log->status_badge_html,
+                'pendataan_id' => $log->pendataan_id,
+                'pendataan_product' => $log->pendataan?->nama_produk,
+                'pendataan_nominal' => $log->pendataan ? 'Rp ' . number_format($log->pendataan->total_harga, 0, ',', '.') : null,
+                'pendataan_nama' => $log->pendataan?->nama,
+                'action_note' => $log->action_note,
+                'bot_replied' => (bool) $log->bot_replied,
+                'bot_reply_text' => $log->bot_reply_text,
+                'created_at' => $log->formatted_created_at,
+            ],
+        ]);
     }
 }

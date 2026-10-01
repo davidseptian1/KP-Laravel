@@ -58,25 +58,55 @@ class TelegramPendataanController extends Controller
 
         $message = $update['message'];
         $chatId = $message['chat']['id'] ?? null;
+        $chatTitle = $message['chat']['title'] ?? ($message['chat']['username'] ?? ($message['chat']['first_name'] ?? 'Grup / Chat'));
         $messageId = $message['message_id'] ?? null;
+        $senderName = trim(($message['from']['first_name'] ?? '') . ' ' . ($message['from']['last_name'] ?? ''));
+        $senderUsername = $message['from']['username'] ?? null;
         $text = $message['text'] ?? ($message['caption'] ?? '');
 
         if (empty($text) || !$chatId) {
             return response()->json(['status' => 'empty_text_ignored']);
         }
 
+        $meta = [
+            'chat_id' => (string) $chatId,
+            'chat_title' => $chatTitle,
+            'message_id' => $messageId,
+            'sender_name' => $senderName,
+            'sender_username' => $senderUsername,
+            'raw_message' => $text,
+        ];
+
         // Parse SMS message format
         $parsed = PendataanParserService::parseTelegramSms($text);
 
         if (!$parsed['is_valid']) {
             Log::info('Telegram text did not match pendataan SMS pattern:', ['text' => $text]);
+
+            // Save log for admin tracking
+            try {
+                \App\Models\TelegramPendataanLog::create([
+                    'chat_id' => $meta['chat_id'],
+                    'chat_title' => $meta['chat_title'],
+                    'message_id' => $meta['message_id'],
+                    'sender_username' => $meta['sender_username'],
+                    'sender_name' => $meta['sender_name'],
+                    'raw_message' => $meta['raw_message'],
+                    'status' => \App\Models\TelegramPendataanLog::STATUS_INVALID_FORMAT,
+                    'action_note' => 'Pesan diterima di grup/chat, namun bukan format SMS transaksi voucher (kata "senilai Rp..."). Pesan diabaikan oleh bot.',
+                    'bot_replied' => false,
+                ]);
+            } catch (\Throwable $e) {
+                Log::error('Failed to save invalid_format telegram log: ' . $e->getMessage());
+            }
+
             return response()->json(['status' => 'pattern_unmatched']);
         }
 
         Log::info('Telegram pendataan SMS parsed successfully:', $parsed);
 
         // Process matching with latest pending data
-        $matchedRecord = $this->matchWithPendingData($parsed, $chatId, $messageId);
+        $matchedRecord = $this->matchWithPendingData($parsed, $chatId, $messageId, $meta);
 
         return response()->json([
             'status' => 'processed',
@@ -88,7 +118,7 @@ class TelegramPendataanController extends Controller
     /**
      * Match parsed Telegram SMS with latest pending records in database.
      */
-    private function matchWithPendingData(array $parsed, int|string $chatId, ?int $messageId): ?Pendataan
+    private function matchWithPendingData(array $parsed, int|string $chatId, ?int $messageId, array $meta = []): ?Pendataan
     {
         $limit = self::getCheckLimit();
 
@@ -100,6 +130,27 @@ class TelegramPendataanController extends Controller
 
         if ($pendingRecords->isEmpty()) {
             Log::info("No pending pendataan records found to match (checked last {$limit} items).");
+
+            // Save log: Unmatched because no pending records in DB
+            try {
+                \App\Models\TelegramPendataanLog::create([
+                    'chat_id' => $meta['chat_id'] ?? (string) $chatId,
+                    'chat_title' => $meta['chat_title'] ?? null,
+                    'message_id' => $messageId,
+                    'sender_username' => $meta['sender_username'] ?? null,
+                    'sender_name' => $meta['sender_name'] ?? null,
+                    'raw_message' => $meta['raw_message'] ?? null,
+                    'parsed_product' => $parsed['nama_produk'] ?? null,
+                    'parsed_nominal' => $parsed['nominal_total'] ?? null,
+                    'raw_nominal' => $parsed['raw_nominal'] ?? null,
+                    'status' => \App\Models\TelegramPendataanLog::STATUS_UNMATCHED,
+                    'action_note' => "SMS berhasil dipilah (Produk: '{$parsed['nama_produk']}' | Nominal: {$parsed['raw_nominal']}). Bot memeriksa {$limit} data pending terbaru, tetapi saat ini TIDAK ADA data berstatus 'Pending' di sistem.",
+                    'bot_replied' => false,
+                ]);
+            } catch (\Throwable $e) {
+                Log::error('Failed to save unmatched telegram log: ' . $e->getMessage());
+            }
+
             return null;
         }
 
@@ -142,10 +193,56 @@ class TelegramPendataanController extends Controller
 
             self::sendMessage($chatId, $responseText, $messageId);
 
+            // Save log: Matched successfully
+            try {
+                $formattedNominal = 'Rp ' . number_format($matchedItem->total_harga, 0, ',', '.');
+                $note = "BERHASIL COCOK! SMS cocok dengan Pendataan ID #{$matchedItem->id} ({$matchedItem->nama_produk} - {$formattedNominal} | Petugas: {$matchedItem->nama}). Status otomatis diperbarui ke 'Sukses' dan bot membalas ke grup Telegram.";
+
+                \App\Models\TelegramPendataanLog::create([
+                    'chat_id' => $meta['chat_id'] ?? (string) $chatId,
+                    'chat_title' => $meta['chat_title'] ?? null,
+                    'message_id' => $messageId,
+                    'sender_username' => $meta['sender_username'] ?? null,
+                    'sender_name' => $meta['sender_name'] ?? null,
+                    'raw_message' => $meta['raw_message'] ?? null,
+                    'parsed_product' => $parsed['nama_produk'] ?? null,
+                    'parsed_nominal' => $parsed['nominal_total'] ?? null,
+                    'raw_nominal' => $parsed['raw_nominal'] ?? null,
+                    'status' => \App\Models\TelegramPendataanLog::STATUS_MATCHED,
+                    'pendataan_id' => $matchedItem->id,
+                    'action_note' => $note,
+                    'bot_replied' => true,
+                    'bot_reply_text' => $responseText,
+                ]);
+            } catch (\Throwable $e) {
+                Log::error('Failed to save matched telegram log: ' . $e->getMessage());
+            }
+
             return $matchedItem;
         }
 
         Log::info("No matching pendataan record among the {$pendingRecords->count()} pending items checked.");
+
+        // Save log: Unmatched after checking pending records
+        try {
+            \App\Models\TelegramPendataanLog::create([
+                'chat_id' => $meta['chat_id'] ?? (string) $chatId,
+                'chat_title' => $meta['chat_title'] ?? null,
+                'message_id' => $messageId,
+                'sender_username' => $meta['sender_username'] ?? null,
+                'sender_name' => $meta['sender_name'] ?? null,
+                'raw_message' => $meta['raw_message'] ?? null,
+                'parsed_product' => $parsed['nama_produk'] ?? null,
+                'parsed_nominal' => $parsed['nominal_total'] ?? null,
+                'raw_nominal' => $parsed['raw_nominal'] ?? null,
+                'status' => \App\Models\TelegramPendataanLog::STATUS_UNMATCHED,
+                'action_note' => "SMS berhasil dipilah (Produk: '{$parsed['nama_produk']}' | Nominal: {$parsed['raw_nominal']}). Bot telah memeriksa {$pendingRecords->count()} data pending terbaru, namun BELUM ADA data yang cocok dengan nominal atau produk tersebut.",
+                'bot_replied' => false,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Failed to save unmatched telegram log: ' . $e->getMessage());
+        }
+
         return null;
     }
 

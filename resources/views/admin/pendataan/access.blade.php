@@ -150,6 +150,80 @@
     </div>
 </div>
 
+<!-- Card: Riwayat Aktivitas Bot Telegram (Preview Terbaru) -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <h5 class="mb-0 fw-bold text-dark d-flex align-items-center">
+                <i class="ti ti-activity-heartbeat text-info fs-3 me-2"></i>Log Aktivitas Bot Terbaru
+            </h5>
+            <small class="text-muted">Pantau apakah bot sedang membaca SMS dan apakah sudah menemukan kecocokan dengan data pendataan</small>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a href="{{ route('admin.pendataan.bot-logs') }}" class="btn btn-sm btn-primary">
+                <i class="ti ti-list-details me-1"></i>Buka Semua Log Riwayat Lengkap
+            </a>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light text-uppercase fs-7 text-muted">
+                    <tr>
+                        <th style="width: 140px;">Waktu</th>
+                        <th style="width: 160px;">Grup / Pengirim</th>
+                        <th style="width: 140px;">Status Bot</th>
+                        <th>Aktivitas & Ekstraksi Produk</th>
+                        <th style="width: 130px;" class="text-center">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($latestBotLogs as $bLog)
+                        <tr>
+                            <td>
+                                <span class="fw-semibold text-dark d-block">{{ $bLog->created_at ? $bLog->created_at->format('d/m/Y') : '-' }}</span>
+                                <small class="text-muted"><i class="ti ti-clock me-1"></i>{{ $bLog->created_at ? $bLog->created_at->format('H:i:s') : '-' }}</small>
+                            </td>
+                            <td>
+                                <div class="text-truncate fw-bold text-dark" style="max-width: 150px;" title="{{ $bLog->chat_title }}">
+                                    <i class="ti ti-messages text-primary me-1"></i>{{ $bLog->chat_title ?: 'Grup / Chat' }}
+                                </div>
+                                @if($bLog->sender_name)
+                                    <small class="text-muted text-truncate d-block" style="max-width: 150px;">{{ $bLog->sender_name }}</small>
+                                @endif
+                            </td>
+                            <td>
+                                {!! $bLog->status_badge_html !!}
+                            </td>
+                            <td>
+                                @if($bLog->parsed_product || $bLog->parsed_nominal)
+                                    <div class="mb-1">
+                                        <span class="fw-bold text-dark me-2">{{ $bLog->parsed_product ?: '-' }}</span>
+                                        <span class="badge bg-success bg-opacity-10 text-success">{{ $bLog->formatted_nominal }}</span>
+                                    </div>
+                                @endif
+                                <small class="text-secondary d-block">{{ Str::limit($bLog->action_note, 120) }}</small>
+                            </td>
+                            <td class="text-center">
+                                <a href="{{ route('admin.pendataan.bot-logs', ['search' => $bLog->parsed_product ?: $bLog->chat_title]) }}" class="btn btn-xs btn-outline-primary py-1 px-2">
+                                    <i class="ti ti-eye me-1"></i>Rincian
+                                </a>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-muted">
+                                <i class="ti ti-history-off fs-2 d-block mb-1"></i>
+                                Belum ada aktivitas bot Telegram yang tercatat.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
 <script>
 function setWebhookTelegram() {
     Swal.fire({

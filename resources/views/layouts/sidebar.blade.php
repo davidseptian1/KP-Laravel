@@ -356,22 +356,6 @@
                     </a>
                 </li>
 
-                <!-- Pengaturan Akses Fitur Pendataan -->
-                <li class="pc-item {{ request()->is('superadmin/pendataan-access*') && !request()->has('tab') ? 'active' : '' }}">
-                    <a href="{{ url('superadmin/pendataan-access') }}" class="pc-link">
-                        <span class="pc-micon"><i class="ti ti-shield-lock"></i></span>
-                        <span class="pc-mtext">Akses Fitur Pendataan</span>
-                    </a>
-                </li>
-
-                <!-- Setting Bot Telegram Pendataan -->
-                <li class="pc-item {{ request()->is('superadmin/pendataan-access*') && request()->get('tab') === 'bot' ? 'active' : '' }}">
-                    <a href="{{ url('superadmin/pendataan-access?tab=bot#cardBotTelegram') }}" class="pc-link">
-                        <span class="pc-micon"><i class="ti ti-brand-telegram text-primary"></i></span>
-                        <span class="pc-mtext">Setting Bot Telegram</span>
-                    </a>
-                </li>
-
                 <!-- Supplier Management -->
                 <li class="pc-item {{ $menuAdminSupplier ?? '' }}">
                     <a href="{{ route('admin.supplier.index') }}" class="pc-link">
@@ -499,12 +483,38 @@
                     <label>Fitur Pendataan</label>
                 </li>
 
-                <li class="pc-item {{ request()->is('pendataan*') ? 'active' : '' }}">
+                <li class="pc-item {{ (request()->is('pendataan') || (request()->is('pendataan/*') && !request()->is('pendataan-bot-logs*') && !request()->is('pendataan/unlock*'))) ? 'active' : '' }}">
                     <a href="{{ url('pendataan') }}" class="pc-link">
                         <span class="pc-micon"><i class="ti ti-notes"></i></span>
                         <span class="pc-mtext">Pendataan</span>
                     </a>
                 </li>
+
+                <!-- Log Riwayat Bot Telegram -->
+                <li class="pc-item {{ request()->routeIs('admin.pendataan.bot-logs*') || request()->is('*pendataan-bot-logs*') ? 'active' : '' }}">
+                    <a href="{{ route('admin.pendataan.bot-logs') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-activity-heartbeat text-info"></i></span>
+                        <span class="pc-mtext">Logs Bot Telegram</span>
+                    </a>
+                </li>
+
+                @if (in_array(strtolower(trim(auth()->user()->jabatan ?? '')), ['superadmin', 'admin']))
+                <!-- Setting Bot Telegram -->
+                <li class="pc-item {{ request()->is('superadmin/pendataan-access*') && request()->get('tab') === 'bot' ? 'active' : '' }}">
+                    <a href="{{ url('superadmin/pendataan-access?tab=bot#cardBotTelegram') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-brand-telegram text-primary"></i></span>
+                        <span class="pc-mtext">Setting Bot Telegram</span>
+                    </a>
+                </li>
+
+                <!-- Pengaturan Akses Fitur Pendataan -->
+                <li class="pc-item {{ request()->is('superadmin/pendataan-access*') && !request()->has('tab') ? 'active' : '' }}">
+                    <a href="{{ url('superadmin/pendataan-access') }}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-shield-lock text-warning"></i></span>
+                        <span class="pc-mtext">Akses Fitur Pendataan</span>
+                    </a>
+                </li>
+                @endif
 
                 @endif
 

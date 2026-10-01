@@ -263,6 +263,14 @@ Route::middleware(['checkLogin', 'admin.activity.log'])->group(function () {
     Route::get('pendataan/{id}', [PendataanController::class, 'show'])->name('pendataan.show');
     Route::put('pendataan/{id}', [PendataanController::class, 'update'])->name('pendataan.update');
     Route::delete('pendataan/{id}', [PendataanController::class, 'destroy'])->name('pendataan.destroy');
+    
+    // Log Riwayat Bot Telegram Pendataan
+    Route::get('pendataan-bot-logs', [AdminPendataanAccessController::class, 'botLogs'])->name('admin.pendataan.bot-logs');
+    Route::get('superadmin/pendataan-bot-logs', [AdminPendataanAccessController::class, 'botLogs']);
+    Route::get('pendataan-bot-logs/{id}', [AdminPendataanAccessController::class, 'showBotLog'])->name('admin.pendataan.bot-logs.show');
+    Route::get('superadmin/pendataan-bot-logs/{id}', [AdminPendataanAccessController::class, 'showBotLog']);
+    Route::delete('pendataan-bot-logs/clear', [AdminPendataanAccessController::class, 'clearBotLogs'])->name('admin.pendataan.bot-logs.clear');
+    Route::delete('superadmin/pendataan-bot-logs/clear', [AdminPendataanAccessController::class, 'clearBotLogs']);
 
     // Middleware isAdmin
     Route::middleware('isAdmin')->group(function () {
