@@ -115,6 +115,19 @@ class TelegramPendataanController extends Controller
         if ($matchedItem) {
             // Update status to 'sukses'
             $matchedItem->status = Pendataan::STATUS_SUKSES;
+
+            // Auto-heal product name if it was erroneously saved as "Keranjang Belanja" or generic
+            $isGeneric = in_array(strtolower(trim($matchedItem->nama_produk ?? '')), [
+                'keranjang belanja', 'keranjang', 'paket', '(1) paket', 'produk', 'produk tanpa nama', ''
+            ]);
+
+            if ($isGeneric) {
+                $smsProductNoQty = trim(preg_replace('/^\d+\s+/', '', $parsed['nama_produk'] ?? ''));
+                if (!empty($smsProductNoQty)) {
+                    $matchedItem->nama_produk = $smsProductNoQty;
+                }
+            }
+
             $matchedItem->save();
 
             Log::info("Pendataan #{$matchedItem->id} marked as SUKSES via Telegram match.");
@@ -151,25 +164,53 @@ class TelegramPendataanController extends Controller
         }
 
         // 2. Product name check
+        $smsProduct = $parsed['nama_produk'] ?? '';
+        $smsProductNoQty = trim(preg_replace('/^\d+\s+/', '', $smsProduct));
+
+        $cleanSmsProduct = strtolower(preg_replace('/[^a-z0-9]/i', '', $smsProduct));
+        $cleanSmsProductNoQty = strtolower(preg_replace('/[^a-z0-9]/i', '', $smsProductNoQty));
+
         $cleanItemProduct = strtolower(preg_replace('/[^a-z0-9]/i', '', $item->nama_produk ?? ''));
-        $cleanSmsProduct = strtolower(preg_replace('/[^a-z0-9]/i', '', $parsed['nama_produk'] ?? ''));
 
-        // Exact match of alphanumeric characters
-        if ($cleanItemProduct === $cleanSmsProduct) {
-            return true;
-        }
+        $isGeneric = in_array(strtolower(trim($item->nama_produk ?? '')), [
+            'keranjang belanja', 'keranjang', 'paket', '(1) paket', 'produk', 'produk tanpa nama', ''
+        ]);
 
-        // If one string contains the other
-        if (!empty($cleanItemProduct) && !empty($cleanSmsProduct)) {
-            if (str_contains($cleanSmsProduct, $cleanItemProduct) || str_contains($cleanItemProduct, $cleanSmsProduct)) {
+        // Direct item product match (if not generic)
+        if (!$isGeneric && !empty($cleanItemProduct)) {
+            if ($cleanItemProduct === $cleanSmsProduct || $cleanItemProduct === $cleanSmsProductNoQty) {
+                return true;
+            }
+
+            if (str_contains($cleanSmsProduct, $cleanItemProduct) || str_contains($cleanItemProduct, $cleanSmsProductNoQty)) {
+                return true;
+            }
+
+            similar_text($cleanItemProduct, $cleanSmsProductNoQty, $percent);
+            if ($percent >= 70) {
                 return true;
             }
         }
 
-        // Fallback: If nominal matched and similarity is high
-        similar_text($cleanItemProduct, $cleanSmsProduct, $percent);
-        if ($percent >= 70) {
-            return true;
+        // 3. Fallback: Check deskripsi
+        if (!empty($item->deskripsi)) {
+            $parsedDeskripsi = PendataanParserService::parse($item->deskripsi);
+            if (!empty($parsedDeskripsi['nama_produk'])) {
+                $cleanDeskripsiProduct = strtolower(preg_replace('/[^a-z0-9]/i', '', $parsedDeskripsi['nama_produk']));
+                if ($cleanDeskripsiProduct === $cleanSmsProductNoQty || str_contains($cleanSmsProduct, $cleanDeskripsiProduct)) {
+                    return true;
+                }
+                similar_text($cleanDeskripsiProduct, $cleanSmsProductNoQty, $pct);
+                if ($pct >= 70) {
+                    return true;
+                }
+            }
+
+            // Keyword check inside full deskripsi
+            $cleanDeskripsiAll = strtolower(preg_replace('/[^a-z0-9]/i', '', $item->deskripsi));
+            if (!empty($cleanSmsProductNoQty) && str_contains($cleanDeskripsiAll, $cleanSmsProductNoQty)) {
+                return true;
+            }
         }
 
         return false;

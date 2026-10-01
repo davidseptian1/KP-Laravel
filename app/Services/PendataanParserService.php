@@ -76,30 +76,60 @@ class PendataanParserService
         $productIndex = 0;
         if (empty($result['nama_produk'])) {
             $ignoreKeywords = [
+                'keranjang belanja', 'keranjang', 'paket', 'jumlah', 'item', 'produk',
                 'konfirmasi', 'detail transaksi', 'rincian transaksi', 'metode pembayaran',
                 'saldo dompul', 'pin dompul', 'pin keuangan', 'masukkan pin',
-                'total tagihan', 'total qty', 'total bayar', 'pembayaran', 'ringkasan',
-                'kurangi jumlah', 'tambah jumlah', 'kurangi', 'hapus item',
+                'total tagihan', 'total qty', 'total bayar', 'total harga', 'pembayaran', 'ringkasan',
+                'kurangi jumlah', 'tambah jumlah', 'kurangi', 'tambah', 'hapus item',
+                'pesanan', 'rincian pesanan', 'daftar pesanan', 'detail pesanan', 'informasi pesanan',
+                'checkout', 'beli', 'pembelian',
             ];
 
-            foreach ($nonEmptyLines as $idx => $line) {
-                $lower = strtolower($line);
-                if (in_array($line, ['-', '+', '–', '—', '＋'])) continue;
-                if (is_numeric($line)) continue;
-                if (preg_match('/^(?:rp\.?|idr)\s*[\d.,]+/i', $line)) continue;
+            $isIgnoredLine = function (string $rawLine) use ($ignoreKeywords) {
+                $trimmed = trim($rawLine);
+                $lower = strtolower($trimmed);
 
-                $isIgnored = false;
+                if (in_array($trimmed, ['-', '+', '–', '—', '＋'])) return true;
+                if (is_numeric($trimmed)) return true;
+                if (preg_match('/^(?:rp\.?|idr)\s*[\d.,]+/i', $trimmed)) return true;
+                if (preg_match('/^[\d.,]+$/', $trimmed) && preg_match('/\d/', $trimmed)) return true;
+                if (preg_match('/^[•\*\.\-\_\s]+$/', $trimmed)) return true;
+
+                // Specific pattern matches like "(1) Paket" or "Paket" or "Jumlah"
+                if (preg_match('/^\(?\d+\)?\s*paket$/i', $trimmed)) return true;
+                if (preg_match('/^(?:paket|jumlah|item|keranjang)$/i', $trimmed)) return true;
+
                 foreach ($ignoreKeywords as $keyword) {
-                    if (str_contains($lower, $keyword)) {
-                        $isIgnored = true;
-                        break;
+                    if ($lower === $keyword || str_starts_with($lower, $keyword . ' ') || str_starts_with($lower, $keyword . ':') || str_starts_with($lower, $keyword . ' -')) {
+                        return true;
+                    }
+                    if ($keyword === 'keranjang belanja' && str_contains($lower, 'keranjang belanja')) {
+                        return true;
                     }
                 }
 
-                if (!$isIgnored) {
-                    $result['nama_produk'] = $line;
-                    $productIndex = $idx;
-                    break;
+                return false;
+            };
+
+            // Priority 1: If stepper exists, look backwards right before the stepper or unit price
+            if ($stepperStartIndex !== null) {
+                for ($k = $stepperStartIndex - 1; $k >= 0; $k--) {
+                    if (!$isIgnoredLine($nonEmptyLines[$k])) {
+                        $result['nama_produk'] = $nonEmptyLines[$k];
+                        $productIndex = $k;
+                        break;
+                    }
+                }
+            }
+
+            // Priority 2: Normal forward scan if not found via backward stepper search
+            if (empty($result['nama_produk'])) {
+                foreach ($nonEmptyLines as $idx => $line) {
+                    if (!$isIgnoredLine($line)) {
+                        $result['nama_produk'] = $line;
+                        $productIndex = $idx;
+                        break;
+                    }
                 }
             }
         }
@@ -323,13 +353,25 @@ class PendataanParserService
 
         $cleanText = str_replace(["\r\n", "\r"], "\n", trim($text));
 
-        // 1. If wrapped in forwarded format (e.g. "Message: ..."), extract that portion
-        $body = $cleanText;
-        if (preg_match('/(?:Message|Pesan|Isi\s*Pesan)\s*:\s*(.+)$/is', $cleanText, $msgMatch)) {
-            $body = trim($msgMatch[1]);
+        // Filter out header lines such as App:, Title:, SMS dari..., Dari:, From:, Sender:, etc.
+        $lines = explode("\n", $cleanText);
+        $contentLines = [];
+        foreach ($lines as $line) {
+            $trimmedLine = trim($line);
+            if ($trimmedLine === '') continue;
+            if (preg_match('/^(?:app\s*:|title\s*:|dari\s*:|from\s*:|sms\s+dari|sender\s*:|time\s*:|waktu\s*:)/i', $trimmedLine)) {
+                continue;
+            }
+            // Strip leading "Message:" or "Pesan:" from the line
+            $trimmedLine = preg_replace('/^(?:message|pesan|isi\s*pesan)\s*:\s*/i', '', $trimmedLine);
+            if ($trimmedLine !== '') {
+                $contentLines[] = $trimmedLine;
+            }
         }
 
-        // 2. Pattern: [nama_produk] senilai [Rp1725000]
+        $body = implode(" ", $contentLines);
+
+        // Pattern: [nama_produk] senilai [Rp1725000]
         if (preg_match('/^(.*?)\s+senilai\s+(?:Rp\.?\s*)?([\d.,]+)/is', $body, $matches)) {
             $namaProduk = trim($matches[1]);
             // Strip any remaining leading labels if present

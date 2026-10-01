@@ -525,9 +525,15 @@ class PendataanController extends Controller
         $deskripsi = $request->input('deskripsi', '');
         $parsed = PendataanParserService::parse($deskripsi);
 
-        // Resolve product name (use input if provided, otherwise fallback to parsed)
+        // Resolve product name (use input if provided and not generic, otherwise fallback to parsed)
         $namaProduk = trim((string) $request->input('nama_produk'));
-        if ($namaProduk === '') {
+        $isGeneric = in_array(strtolower($namaProduk), [
+            'keranjang belanja', 'keranjang', 'paket', '(1) paket', 'produk', 'produk tanpa nama', ''
+        ]);
+
+        if ($isGeneric && !empty($parsed['nama_produk'])) {
+            $namaProduk = $parsed['nama_produk'];
+        } elseif ($namaProduk === '') {
             $namaProduk = $parsed['nama_produk'] ?: 'Produk Tanpa Nama';
         }
 
@@ -700,11 +706,23 @@ class PendataanController extends Controller
             ? $pendataan->alasan_edit . "\n" . $entryAlasan
             : $entryAlasan;
 
+        $deskripsi = $request->input('deskripsi', '');
+        $namaProduk = trim((string) $request->input('nama_produk'));
+        $isGeneric = in_array(strtolower($namaProduk), [
+            'keranjang belanja', 'keranjang', 'paket', '(1) paket', 'produk', 'produk tanpa nama', ''
+        ]);
+        if ($isGeneric && !empty($deskripsi)) {
+            $parsed = PendataanParserService::parse($deskripsi);
+            if (!empty($parsed['nama_produk'])) {
+                $namaProduk = $parsed['nama_produk'];
+            }
+        }
+
         // Preserve original nama - cannot be altered
         $pendataan->update([
             'nama' => $pendataan->nama,
-            'deskripsi' => $request->input('deskripsi', ''),
-            'nama_produk' => trim($request->input('nama_produk')),
+            'deskripsi' => $deskripsi,
+            'nama_produk' => $namaProduk,
             'jenis_chip' => $jenisChip,
             'harga_qty' => $hargaQty,
             'total_harga' => $totalHarga,

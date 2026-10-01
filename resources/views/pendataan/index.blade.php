@@ -867,31 +867,58 @@ function parseTransactionText(text) {
     let productIndex = 0;
     if (!res.nama_produk) {
         const ignoreKeywords = [
+            'keranjang belanja', 'keranjang', 'paket', 'jumlah', 'item', 'produk',
             'konfirmasi', 'detail transaksi', 'rincian transaksi', 'metode pembayaran',
             'saldo dompul', 'pin dompul', 'pin keuangan', 'masukkan pin',
-            'total tagihan', 'total qty', 'total bayar', 'pembayaran', 'ringkasan',
-            'kurangi jumlah', 'tambah jumlah', 'kurangi', 'hapus item',
+            'total tagihan', 'total qty', 'total bayar', 'total harga', 'pembayaran', 'ringkasan',
+            'kurangi jumlah', 'tambah jumlah', 'kurangi', 'tambah', 'hapus item',
+            'pesanan', 'rincian pesanan', 'daftar pesanan', 'detail pesanan', 'informasi pesanan',
+            'checkout', 'beli', 'pembelian'
         ];
 
-        for (let idx = 0; idx < lines.length; idx++) {
-            const line = lines[idx];
-            const lower = line.toLowerCase();
-            if (['-', '+', '–', '—', '＋'].includes(line)) continue;
-            if (/^\d+$/.test(line)) continue;
-            if (/^(?:rp\.?|idr)\s*[\d.,]+/i.test(line)) continue;
+        const isIgnoredLine = function(rawLine) {
+            const trimmed = rawLine.trim();
+            const lower = trimmed.toLowerCase();
 
-            let ignored = false;
+            if (['-', '+', '–', '—', '＋'].includes(trimmed)) return true;
+            if (/^\d+$/.test(trimmed)) return true;
+            if (/^(?:rp\.?|idr)\s*[\d.,]+/i.test(trimmed)) return true;
+            if (/^[\d.,]+$/.test(trimmed) && /\d/.test(trimmed)) return true;
+            if (/^[•\*\.\-\_\s]+$/.test(trimmed)) return true;
+
+            if (/^\(?\d+\)?\s*paket$/i.test(trimmed)) return true;
+            if (/^(?:paket|jumlah|item|keranjang)$/i.test(trimmed)) return true;
+
             for (let kw of ignoreKeywords) {
-                if (lower.includes(kw)) {
-                    ignored = true;
+                if (lower === kw || lower.startsWith(kw + ' ') || lower.startsWith(kw + ':') || lower.startsWith(kw + ' -')) {
+                    return true;
+                }
+                if (kw === 'keranjang belanja' && lower.includes('keranjang belanja')) {
+                    return true;
+                }
+            }
+            return false;
+        };
+
+        // Priority 1: If stepper exists, look backwards right before the stepper or unit price
+        if (stepperStartIndex !== null) {
+            for (let k = stepperStartIndex - 1; k >= 0; k--) {
+                if (!isIgnoredLine(lines[k])) {
+                    res.nama_produk = lines[k];
+                    productIndex = k;
                     break;
                 }
             }
+        }
 
-            if (!ignored) {
-                res.nama_produk = line;
-                productIndex = idx;
-                break;
+        // Priority 2: Normal forward scan if not found via backward stepper search
+        if (!res.nama_produk) {
+            for (let idx = 0; idx < lines.length; idx++) {
+                if (!isIgnoredLine(lines[idx])) {
+                    res.nama_produk = lines[idx];
+                    productIndex = idx;
+                    break;
+                }
             }
         }
     }
