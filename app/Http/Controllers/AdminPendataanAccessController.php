@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\PendataanStaff;
+use App\Models\SosmedSetting;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -47,6 +48,11 @@ class AdminPendataanAccessController extends Controller
             ->orderBy('nama', 'asc')
             ->get();
 
+        $botToken = TelegramPendataanController::getBotToken();
+        $botUsername = config('services.telegram_pendataan.bot_username', 'intel_awgbot');
+        $checkLimit = TelegramPendataanController::getCheckLimit();
+        $webhookUrl = url('/api/telegram/pendataan-webhook');
+
         return view('admin.pendataan.access', [
             'title' => 'Pengaturan Akses Fitur Pendataan',
             'menuPendataanAccess' => 'active',
@@ -58,6 +64,10 @@ class AdminPendataanAccessController extends Controller
             'usersWithAccess' => $usersWithAccess,
             'currentSearch' => $search,
             'currentRole' => $roleFilter,
+            'botToken' => $botToken,
+            'botUsername' => $botUsername,
+            'checkLimit' => $checkLimit,
+            'webhookUrl' => $webhookUrl,
         ]);
     }
 
@@ -228,5 +238,29 @@ class AdminPendataanAccessController extends Controller
         $staff->save();
 
         return redirect()->back()->with('success', "Password untuk staf {$staff->nama} berhasil diperbarui menjadi '{$staff->password}'!");
+    }
+
+    /**
+     * Update Telegram Bot configuration for Pendataan.
+     */
+    public function updateBotSettings(Request $request)
+    {
+        $request->validate([
+            'bot_token' => 'nullable|string',
+            'check_limit' => 'required|integer|min:1|max:50',
+        ], [
+            'check_limit.required' => 'Jumlah pesan yang dicek wajib diisi.',
+            'check_limit.min' => 'Jumlah pesan yang dicek minimal 1.',
+            'check_limit.max' => 'Jumlah pesan yang dicek maksimal 50.',
+        ]);
+
+        if ($request->filled('bot_token')) {
+            SosmedSetting::setByKey('pendataan_telegram_bot_token', trim($request->bot_token));
+        }
+
+        SosmedSetting::setByKey('pendataan_telegram_check_limit', (int) $request->check_limit);
+
+        return redirect()->route('admin.pendataan.access')
+            ->with('success', 'Pengaturan Bot Telegram Pendataan (Scraping limit & Bot Token) berhasil disimpan!');
     }
 }

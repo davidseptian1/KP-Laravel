@@ -29,6 +29,10 @@ class Pendataan extends Model
         'Nuni',
     ];
 
+    public const STATUS_PENDING = 'pending';
+    public const STATUS_SUKSES = 'sukses';
+    public const STATUS_GAGAL = 'gagal';
+
     protected $table = 'pendataans';
 
     protected $fillable = [
@@ -42,6 +46,7 @@ class Pendataan extends Model
         'qty',
         'gambar',
         'alasan_edit',
+        'status',
     ];
 
     protected $casts = [
@@ -87,5 +92,29 @@ class Pendataan extends Model
         }
 
         return asset('storage/' . $this->gambar);
+    }
+
+    /**
+     * Get readable label for status.
+     */
+    public function getStatusLabelAttribute(): string
+    {
+        return match ($this->status) {
+            self::STATUS_SUKSES => 'Sukses',
+            self::STATUS_GAGAL => 'Gagal',
+            default => 'Pending',
+        };
+    }
+
+    /**
+     * Get badge HTML for status.
+     */
+    public function getStatusBadgeHtmlAttribute(): string
+    {
+        return match ($this->status) {
+            self::STATUS_SUKSES => '<span class="badge bg-success bg-opacity-10 text-success border border-success-subtle px-2 py-1 fw-bold"><i class="ti ti-check me-1"></i>Sukses ✅</span>',
+            self::STATUS_GAGAL => '<span class="badge bg-danger bg-opacity-10 text-danger border border-danger-subtle px-2 py-1 fw-bold"><i class="ti ti-x me-1"></i>Gagal ❌</span>',
+            default => '<span class="badge bg-warning bg-opacity-10 text-warning border border-warning-subtle px-2 py-1 fw-bold"><i class="ti ti-clock me-1"></i>Pending ⏳</span>',
+        };
     }
 }

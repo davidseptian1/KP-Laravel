@@ -296,4 +296,57 @@ class PendataanParserService
 
         return (float) $raw;
     }
+
+    /**
+     * Parse incoming Telegram SMS message to extract product name and total nominal.
+     *
+     * Example input:
+     * App: com.android.mms
+     * Title: SMS dari AXIS
+     * Message: 50 FlexMax 7GB, 28hr - 37.000 (Voucher) senilai Rp1725000 expired sd 29-03-2027 stok sdh bertambah.Cek di web grosir
+     *
+     * @param string|null $text
+     * @return array{is_valid: bool, nama_produk: string|null, nominal_total: float|null, raw_nominal: string|null}
+     */
+    public static function parseTelegramSms(?string $text): array
+    {
+        $result = [
+            'is_valid' => false,
+            'nama_produk' => null,
+            'nominal_total' => null,
+            'raw_nominal' => null,
+        ];
+
+        if (empty($text)) {
+            return $result;
+        }
+
+        $cleanText = str_replace(["\r\n", "\r"], "\n", trim($text));
+
+        // 1. If wrapped in forwarded format (e.g. "Message: ..."), extract that portion
+        $body = $cleanText;
+        if (preg_match('/(?:Message|Pesan|Isi\s*Pesan)\s*:\s*(.+)$/is', $cleanText, $msgMatch)) {
+            $body = trim($msgMatch[1]);
+        }
+
+        // 2. Pattern: [nama_produk] senilai [Rp1725000]
+        if (preg_match('/^(.*?)\s+senilai\s+(?:Rp\.?\s*)?([\d.,]+)/is', $body, $matches)) {
+            $namaProduk = trim($matches[1]);
+            // Strip any remaining leading labels if present
+            $namaProduk = preg_replace('/^(?:Message|Pesan|SMS)\s*:\s*/i', '', $namaProduk);
+            $namaProduk = trim($namaProduk);
+
+            $rawDigits = preg_replace('/[^\d]/', '', $matches[2]);
+            $nominalNumeric = self::cleanPrice($matches[2]);
+
+            if (!empty($namaProduk) && $nominalNumeric > 0) {
+                $result['is_valid'] = true;
+                $result['nama_produk'] = $namaProduk;
+                $result['nominal_total'] = $nominalNumeric;
+                $result['raw_nominal'] = 'Rp' . $rawDigits;
+            }
+        }
+
+        return $result;
+    }
 }

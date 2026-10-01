@@ -302,6 +302,14 @@ class PendataanController extends Controller
             $query->where('nama_produk', 'like', "%{$produkFilter}%");
         }
 
+        // Filter: Status (All Status, Pending, Sukses, Gagal)
+        if ($request->filled('status')) {
+            $statusFilter = strtolower(trim((string) $request->status));
+            if (in_array($statusFilter, ['pending', 'sukses', 'gagal'])) {
+                $query->where('status', $statusFilter);
+            }
+        }
+
         return $query;
     }
 
@@ -373,6 +381,7 @@ class PendataanController extends Controller
                 'jenis_chip' => $activeChip,
                 'nama' => $request->nama,
                 'nama_produk' => $request->nama_produk,
+                'status' => $request->status ?: 'All Status',
             ],
         ]);
     }
@@ -410,6 +419,7 @@ class PendataanController extends Controller
                 'jenis_chip' => $activeChip,
                 'nama' => $request->nama,
                 'nama_produk' => $request->nama_produk,
+                'status' => $request->status ?: 'All Status',
             ]),
             $filename
         );
@@ -441,6 +451,7 @@ class PendataanController extends Controller
             'jenis_chip' => $activeChip,
             'nama' => $request->nama,
             'nama_produk' => $request->nama_produk,
+            'status' => $request->status ?: 'All Status',
         ];
 
         $shiftSuffix = (!empty($activeShift) && !in_array($activeShift, ['all', 'All', 'All Shift']))
@@ -571,6 +582,7 @@ class PendataanController extends Controller
             'total_harga' => $totalHarga,
             'qty' => $qty,
             'gambar' => $gambarPath,
+            'status' => Pendataan::STATUS_PENDING,
         ]);
 
         cache()->forget('pendataan_filter_staff_names');
@@ -604,6 +616,9 @@ class PendataanController extends Controller
                     'deskripsi' => $pendataan->deskripsi,
                     'alasan_edit' => $pendataan->alasan_edit,
                     'gambar_url' => $pendataan->gambar_url,
+                    'status' => $pendataan->status ?? Pendataan::STATUS_PENDING,
+                    'status_label' => $pendataan->status_label,
+                    'status_badge_html' => $pendataan->status_badge_html,
                     'created_at' => $pendataan->created_at->format('d/m/Y H:i'),
                     'user_nama' => $pendataan->user?->nama ?? '-',
                 ],

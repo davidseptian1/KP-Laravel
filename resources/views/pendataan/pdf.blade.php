@@ -285,13 +285,14 @@
         <thead>
             <tr>
                 <th class="text-center" style="width: 25px;">No</th>
-                <th style="width: 95px;">Tanggal & Jam</th>
-                <th style="width: 80px;">Nama</th>
-                <th style="width: 155px;">Nama Produk</th>
-                <th class="text-center" style="width: 50px;">Chip</th>
-                <th class="text-right" style="width: 85px;">Postcal</th>
-                <th class="text-center" style="width: 40px;">Qty</th>
-                <th class="text-right" style="width: 90px;">Total Harga</th>
+                <th style="width: 90px;">Tanggal & Jam</th>
+                <th style="width: 75px;">Nama</th>
+                <th style="width: 140px;">Nama Produk</th>
+                <th class="text-center" style="width: 45px;">Chip</th>
+                <th class="text-center" style="width: 55px;">Status</th>
+                <th class="text-right" style="width: 80px;">Postcal</th>
+                <th class="text-center" style="width: 35px;">Qty</th>
+                <th class="text-right" style="width: 85px;">Total Harga</th>
                 <th>Rincian Deskripsi</th>
             </tr>
         </thead>
@@ -309,6 +310,15 @@
                             {{ $item->jenis_chip ?? 'KTTS' }}
                         </span>
                     </td>
+                    <td class="text-center">
+                        @if(($item->status ?? 'pending') === 'sukses')
+                            <span style="color: #15803d; font-weight: bold;">Sukses</span>
+                        @elseif(($item->status ?? '') === 'gagal')
+                            <span style="color: #dc2626; font-weight: bold;">Gagal</span>
+                        @else
+                            <span style="color: #d97706; font-weight: bold;">Pending</span>
+                        @endif
+                    </td>
                     <td class="text-right">{{ $item->formatted_harga_qty }}</td>
                     <td class="text-center fw-bold">{{ $item->qty }}</td>
                     <td class="text-right fw-bold" style="color: #15803d;">{{ $item->formatted_total_harga }}</td>
@@ -316,7 +326,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="9" class="text-center" style="padding: 15px; color: #94a3b8;">
+                    <td colspan="10" class="text-center" style="padding: 15px; color: #94a3b8;">
                         Tidak ada data pendataan yang sesuai dengan filter.
                     </td>
                 </tr>
@@ -325,7 +335,7 @@
         @if($items->count() > 0)
         <tfoot>
             <tr class="total-row">
-                <td colspan="5" class="text-right" style="letter-spacing: 0.5px;">TOTAL KESELURUHAN:</td>
+                <td colspan="6" class="text-right" style="letter-spacing: 0.5px;">TOTAL KESELURUHAN:</td>
                 <td class="text-right">-</td>
                 <td class="text-center">{{ number_format($totalQty, 0, ',', '.') }}</td>
                 <td class="text-right" style="color: #15803d;">Rp {{ number_format($totalNominal, 0, ',', '.') }}</td>

@@ -26,6 +26,11 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 // Telegram Webhook
 Route::post('/telegram/webhook', [\App\Http\Controllers\TelegramWebhookController::class, 'handle']);
 
+// Telegram Pendataan Bot Webhook & Setup
+Route::post('/telegram/pendataan-webhook', [\App\Http\Controllers\TelegramPendataanController::class, 'handleWebhook']);
+Route::match(['get', 'post'], '/telegram/pendataan/setup-webhook', [\App\Http\Controllers\TelegramPendataanController::class, 'setupWebhook']);
+Route::get('/telegram/pendataan/webhook-info', [\App\Http\Controllers\TelegramPendataanController::class, 'getWebhookInfo']);
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/reimburse', [ReimburseController::class, 'index']);
     Route::post('/reimburse', [ReimburseController::class, 'store']);

@@ -68,6 +68,129 @@
     </div>
 </div>
 
+<!-- Card: Konfigurasi Bot Telegram Pendataan -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <h5 class="mb-0 fw-bold text-dark d-flex align-items-center">
+                <i class="ti ti-brand-telegram text-primary fs-3 me-2"></i>Konfigurasi Bot Telegram Pendataan
+                <span class="badge bg-primary bg-opacity-10 text-primary ms-2 fs-6">@intel_awgbot</span>
+            </h5>
+            <small class="text-muted">Atur parameter scraping bot, URL webhook, dan jumlah pesan riwayat yang dicocokkan otomatis</small>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a href="https://t.me/{{ $botUsername }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                <i class="ti ti-external-link me-1"></i>Buka Bot di Telegram
+            </a>
+        </div>
+    </div>
+    <div class="card-body p-4">
+        <form action="{{ route('admin.pendataan.bot-settings') }}" method="POST">
+            @csrf
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold text-dark">
+                        <i class="ti ti-key text-warning me-1"></i>Telegram Bot Token
+                    </label>
+                    <div class="input-group">
+                        <input type="text" name="bot_token" class="form-control font-monospace" value="{{ $botToken }}" placeholder="Token HTTP API dari BotFather" required>
+                        <button type="button" class="btn btn-outline-secondary" onclick="navigator.clipboard.writeText('{{ $botToken }}'); Swal.fire({icon:'success', title:'Tersalin!', timer:1500, showConfirmButton:false});" title="Salin Token">
+                            <i class="ti ti-copy"></i>
+                        </button>
+                    </div>
+                    <div class="form-text text-muted small">Token resmi bot <code>@intel_awgbot</code> untuk integrasi webhook.</div>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold text-dark">
+                        <i class="ti ti-list-check text-success me-1"></i>Jumlah Pesan Riwayat yang Dicek (Scraping Limit)
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light text-muted"><i class="ti ti-history"></i></span>
+                        <input type="number" name="check_limit" class="form-control fw-bold" value="{{ $checkLimit }}" min="1" max="50" required>
+                        <span class="input-group-text bg-light">Pesan Terbaru</span>
+                    </div>
+                    <div class="form-text text-muted small">Berapa banyak data riwayat berstatus <code>pending</code> terbaru yang akan dicari kecocokannya saat SMS masuk (Default: 5).</div>
+                </div>
+
+                <div class="col-12">
+                    <div class="p-3 bg-light rounded-3 border">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                            <label class="form-label fw-semibold text-dark mb-0">
+                                <i class="ti ti-link text-info me-1"></i>Endpoint URL Webhook Telegram
+                            </label>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-xs btn-primary py-1 px-2" onclick="setWebhookTelegram()">
+                                    <i class="ti ti-plug-connected me-1"></i>Daftarkan Webhook
+                                </button>
+                                <button type="button" class="btn btn-xs btn-outline-info py-1 px-2" onclick="checkWebhookTelegram()">
+                                    <i class="ti ti-info-circle me-1"></i>Cek Status Webhook
+                                </button>
+                            </div>
+                        </div>
+                        <div class="input-group input-group-sm">
+                            <input type="text" id="webhookUrlInput" class="form-control font-monospace bg-white" value="{{ $webhookUrl }}" readonly>
+                            <button type="button" class="btn btn-outline-secondary" onclick="navigator.clipboard.writeText(document.getElementById('webhookUrlInput').value); Swal.fire({icon:'success', title:'URL Webhook Tersalin!', timer:1500, showConfirmButton:false});">
+                                <i class="ti ti-copy me-1"></i>Salin URL
+                            </button>
+                        </div>
+                        <div class="mt-2 small text-muted">
+                            <i class="ti ti-alert-triangle text-warning me-1"></i><strong>Penting untuk Bot Grup:</strong> Buka <strong>@BotFather</strong> &rarr; ketik <code>/mybots</code> &rarr; pilih <code>@intel_awgbot</code> &rarr; <strong>Bot Settings</strong> &rarr; <strong>Group Privacy</strong> &rarr; <strong>Turn OFF</strong> (agar bot bisa membaca SMS di dalam grup).
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 text-end">
+                    <button type="submit" class="btn btn-primary px-4 shadow-sm">
+                        <i class="ti ti-device-floppy me-1"></i> Simpan Pengaturan Bot
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function setWebhookTelegram() {
+    Swal.fire({
+        title: 'Mendaftarkan Webhook...',
+        text: 'Mengirim perintah setWebhook ke server Telegram',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+    });
+
+    fetch("{{ url('/api/telegram/pendataan/setup-webhook') }}", {
+        method: 'POST',
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: document.getElementById('webhookUrlInput').value })
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.status === 'success') {
+            Swal.fire('Berhasil!', 'Webhook Telegram berhasil dihubungkan ke aplikasi Laravel!', 'success');
+        } else {
+            Swal.fire('Info Webhook', JSON.stringify(res.telegram_response || res), 'info');
+        }
+    })
+    .catch(err => {
+        Swal.fire('Gagal', 'Terjadi kesalahan saat menghubungi API: ' + err.message, 'error');
+    });
+}
+
+function checkWebhookTelegram() {
+    fetch("{{ url('/api/telegram/pendataan/webhook-info') }}")
+    .then(r => r.json())
+    .then(res => {
+        Swal.fire({
+            title: 'Status Webhook Telegram',
+            html: '<pre class="text-start bg-light p-3 rounded" style="max-height: 250px; overflow-y:auto; font-size:12px;">' + JSON.stringify(res, null, 2) + '</pre>',
+            confirmButtonText: 'Tutup'
+        });
+    })
+    .catch(err => Swal.fire('Error', err.message, 'error'));
+}
+</script>
+
 <!-- Card: Akun Staf Pendataan & Password (5 Huruf) -->
 <div class="card border-0 shadow-sm rounded-3 mb-4">
     <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">

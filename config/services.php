@@ -42,4 +42,10 @@ return [
         'chat_id' => env('TELEGRAM_CHAT_ID'),
     ],
 
+    'telegram_pendataan' => [
+        'bot_token' => env('TELEGRAM_PENDATAAN_BOT_TOKEN', '8826086655:AAHRHD8c7i0IUV9Yrd-sOEe81boc7ls9TwM'),
+        'bot_username' => env('TELEGRAM_PENDATAAN_BOT_USERNAME', 'intel_awgbot'),
+        'check_limit' => (int) env('TELEGRAM_PENDATAAN_CHECK_LIMIT', 5),
+    ],
+
 ];

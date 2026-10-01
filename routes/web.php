@@ -453,6 +453,7 @@ Route::middleware(['checkLogin', 'admin.activity.log'])->group(function () {
         Route::delete('superadmin/pendataan-access/staff/{id}', [AdminPendataanAccessController::class, 'destroyStaff'])->name('admin.pendataan.staff.destroy');
         Route::post('superadmin/pendataan-access/staff/{id}/toggle-status', [AdminPendataanAccessController::class, 'toggleStaffStatus'])->name('admin.pendataan.staff.toggle-status');
         Route::put('superadmin/pendataan-access/staff/{id}/password', [AdminPendataanAccessController::class, 'updateStaffPassword'])->name('admin.pendataan.staff.password');
+        Route::post('superadmin/pendataan-access/bot-settings', [AdminPendataanAccessController::class, 'updateBotSettings'])->name('admin.pendataan.bot-settings');
     });
 
     Route::get('admin/deposit/analysis', [AdminDepositController::class, 'analysis'])->name('admin.deposit.analysis');

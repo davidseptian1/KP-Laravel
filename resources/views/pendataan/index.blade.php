@@ -130,6 +130,15 @@
                     @endforeach
                 </datalist>
             </div>
+            <div class="col-md-2 col-sm-6">
+                <label class="form-label small fw-semibold text-muted">Status Data</label>
+                <select name="status" class="form-select form-select-sm fw-semibold">
+                    <option value="All Status" {{ ($filters['status'] ?? 'All Status') === 'All Status' ? 'selected' : '' }}>Semua Status</option>
+                    <option value="pending" {{ ($filters['status'] ?? '') === 'pending' ? 'selected' : '' }}>Pending ⏳ (Menunggu)</option>
+                    <option value="sukses" {{ ($filters['status'] ?? '') === 'sukses' ? 'selected' : '' }}>Sukses ✅ (Sesuai)</option>
+                    <option value="gagal" {{ ($filters['status'] ?? '') === 'gagal' ? 'selected' : '' }}>Gagal ❌ (> 24 Jam)</option>
+                </select>
+            </div>
             <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2 pt-3 border-top mt-2">
                 <!-- Export / Download Buttons with active filters & Shift/Chip Dropdown -->
                 <div class="d-flex align-items-center gap-2 flex-wrap">
@@ -283,6 +292,7 @@
                         <th class="ps-4" style="width: 50px;">No</th>
                         <th>Nama Produk</th>
                         <th class="text-center" style="width: 85px;">Chip</th>
+                        <th class="text-center" style="width: 130px;">Status</th>
                         <th class="text-end">Harga Qty</th>
                         <th class="text-end">Total Harga</th>
                         <th class="text-center" style="width: 80px;">Qty</th>
@@ -321,6 +331,9 @@
                                     <i class="ti ti-cpu me-1"></i>KTTS
                                 </span>
                             @endif
+                        </td>
+                        <td class="text-center">
+                            {!! $item->status_badge_html !!}
                         </td>
                         <td class="text-end fw-semibold text-secondary">
                             {{ $item->formatted_harga_qty }}
@@ -699,6 +712,7 @@
                 <div class="mb-3 text-center pb-3 border-bottom">
                     <h5 class="fw-bold text-dark mb-1" id="detail_nama_produk">-</h5>
                     <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-1 fw-bold fs-6" id="detail_total_harga">Rp 0</span>
+                    <div id="detail_status_badge" class="mt-2"></div>
                 </div>
 
                 <div class="row g-2 mb-3">
@@ -1282,6 +1296,11 @@ function openDetailModal(id) {
             document.getElementById('detail_qty').textContent = data.qty;
             document.getElementById('detail_nama').textContent = data.nama;
             document.getElementById('detail_tanggal').textContent = data.created_at;
+
+            const statusBadgeElem = document.getElementById('detail_status_badge');
+            if (statusBadgeElem) {
+                statusBadgeElem.innerHTML = data.status_badge_html || '';
+            }
 
             // Jenis Chip badge in Detail Modal
             const chipElem = document.getElementById('detail_chip');

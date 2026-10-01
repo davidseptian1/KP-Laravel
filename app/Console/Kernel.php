@@ -14,6 +14,7 @@ class Kernel extends ConsoleKernel
     {
         $cron = env('REKAP_REIMBURSE_CRON', '0 8 24 * *');
         $schedule->command('reports:send-wa')->cron($cron);
+        $schedule->command('pendataan:expire-pending')->everyThirtyMinutes();
     }
 
     /**
