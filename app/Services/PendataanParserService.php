@@ -359,11 +359,11 @@ class PendataanParserService
         foreach ($lines as $line) {
             $trimmedLine = trim($line);
             if ($trimmedLine === '') continue;
-            if (preg_match('/^(?:app\s*:|title\s*:|dari\s*:|from\s*:|sms\s+dari|sender\s*:|time\s*:|waktu\s*:)/i', $trimmedLine)) {
+            if (preg_match('/^(?:app\s*:|title\s*:|dari\s*:|from\s*:|sms\s+dari|sender\s*:|time\s*:|waktu\s*:|notifikasi\s*:)/i', $trimmedLine)) {
                 continue;
             }
             // Strip leading "Message:" or "Pesan:" from the line
-            $trimmedLine = preg_replace('/^(?:message|pesan|isi\s*pesan)\s*:\s*/i', '', $trimmedLine);
+            $trimmedLine = preg_replace('/^(?:message|pesan|isi\s*pesan|isi\s*sms)\s*[:=]?\s*/i', '', $trimmedLine);
             if ($trimmedLine !== '') {
                 $contentLines[] = $trimmedLine;
             }
@@ -371,22 +371,34 @@ class PendataanParserService
 
         $body = implode(" ", $contentLines);
 
-        // Pattern: [nama_produk] senilai [Rp1725000]
-        if (preg_match('/^(.*?)\s+senilai\s+(?:Rp\.?\s*)?([\d.,]+)/is', $body, $matches)) {
-            $namaProduk = trim($matches[1]);
+        // Primary pattern: [nama_produk] (senilai|sebesar|seharga|nominal|total) [:] [Rp] [nominal]
+        $matched = false;
+        $namaProduk = '';
+        $rawDigits = '';
+        $nominalNumeric = 0.0;
+
+        if (preg_match('/^(.*?)\s+(?:senilai|sebesar|seharga|nominal|total)\s*[:=]?\s*(?:Rp\.?\s*)?([\d.,]+)/is', $body, $m)) {
+            $namaProduk = trim($m[1]);
+            $rawDigits = preg_replace('/[^\d]/', '', $m[2]);
+            $nominalNumeric = self::cleanPrice($m[2]);
+            $matched = true;
+        } elseif (preg_match('/^(.*?)\s+(?:Rp\.?\s*)([\d.,]{4,})/is', $body, $m)) {
+            // Fallback pattern: [nama_produk] Rp [nominal]
+            $namaProduk = trim($m[1]);
+            $rawDigits = preg_replace('/[^\d]/', '', $m[2]);
+            $nominalNumeric = self::cleanPrice($m[2]);
+            $matched = true;
+        }
+
+        if ($matched && !empty($namaProduk) && $nominalNumeric > 0) {
             // Strip any remaining leading labels if present
-            $namaProduk = preg_replace('/^(?:Message|Pesan|SMS)\s*:\s*/i', '', $namaProduk);
+            $namaProduk = preg_replace('/^(?:Message|Pesan|SMS|Isi\s*Pesan)\s*[:=]?\s*/i', '', $namaProduk);
             $namaProduk = trim($namaProduk);
 
-            $rawDigits = preg_replace('/[^\d]/', '', $matches[2]);
-            $nominalNumeric = self::cleanPrice($matches[2]);
-
-            if (!empty($namaProduk) && $nominalNumeric > 0) {
-                $result['is_valid'] = true;
-                $result['nama_produk'] = $namaProduk;
-                $result['nominal_total'] = $nominalNumeric;
-                $result['raw_nominal'] = 'Rp' . $rawDigits;
-            }
+            $result['is_valid'] = true;
+            $result['nama_produk'] = $namaProduk;
+            $result['nominal_total'] = $nominalNumeric;
+            $result['raw_nominal'] = 'Rp' . $rawDigits;
         }
 
         return $result;
