@@ -12,6 +12,7 @@ class TelegramPendataanLog extends Model
 
     public const STATUS_MATCHED = 'matched';
     public const STATUS_UNMATCHED = 'unmatched';
+    public const STATUS_GENERAL_CHAT = 'general_chat';
     public const STATUS_INVALID_FORMAT = 'invalid_format';
     public const STATUS_ERROR = 'error';
 
@@ -59,7 +60,7 @@ class TelegramPendataanLog extends Model
         return match ($this->status) {
             self::STATUS_MATCHED => '<span class="badge bg-success bg-opacity-10 text-success border border-success-subtle px-2 py-1"><i class="ti ti-circle-check me-1"></i>Cocok ✅</span>',
             self::STATUS_UNMATCHED => '<span class="badge bg-warning bg-opacity-10 text-warning border border-warning-subtle px-2 py-1"><i class="ti ti-hourglass-empty me-1"></i>Belum Cocok ⏳</span>',
-            self::STATUS_INVALID_FORMAT => '<span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary-subtle px-2 py-1"><i class="ti ti-info-circle me-1"></i>Bukan SMS ⚠️</span>',
+            self::STATUS_GENERAL_CHAT, self::STATUS_INVALID_FORMAT => '<span class="badge bg-info bg-opacity-10 text-info border border-info-subtle px-2 py-1"><i class="ti ti-message-2 me-1"></i>Pesan Umum 💬</span>',
             self::STATUS_ERROR => '<span class="badge bg-danger bg-opacity-10 text-danger border border-danger-subtle px-2 py-1"><i class="ti ti-alert-triangle me-1"></i>Error ❌</span>',
             default => '<span class="badge bg-light text-dark px-2 py-1">' . e($this->status) . '</span>',
         };
@@ -73,7 +74,7 @@ class TelegramPendataanLog extends Model
         return match ($this->status) {
             self::STATUS_MATCHED => 'Cocok (Sukses)',
             self::STATUS_UNMATCHED => 'Belum Menemukan Kecocokan',
-            self::STATUS_INVALID_FORMAT => 'Bukan SMS Transaksi',
+            self::STATUS_GENERAL_CHAT, self::STATUS_INVALID_FORMAT => 'Pesan Umum / Chat (Tidak Dicocokkan)',
             self::STATUS_ERROR => 'Terjadi Kesalahan',
             default => ucfirst((string) $this->status),
         };

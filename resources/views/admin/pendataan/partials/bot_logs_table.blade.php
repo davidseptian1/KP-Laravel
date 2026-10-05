@@ -63,6 +63,10 @@
                                     </span>
                                 </div>
                             </div>
+                        @else
+                            <div class="p-2 mb-1 bg-light rounded-2 border border-light-subtle small font-monospace text-truncate text-dark" style="max-width: 320px;" title="{{ $log->raw_message }}">
+                                <i class="ti ti-message-2 me-1 text-info"></i>{{ $log->raw_message }}
+                            </div>
                         @endif
                         <div class="small text-secondary" style="line-height: 1.4;">
                             <i class="ti ti-info-circle me-1 text-muted"></i>{{ $log->action_note ?: '-' }}
@@ -72,7 +76,7 @@
                         @if($log->bot_replied)
                             <div class="p-1 px-2 bg-success bg-opacity-10 border border-success-subtle rounded small text-success">
                                 <i class="ti ti-check me-1"></i><strong>Dibalas:</strong><br>
-                                <span style="font-size: 0.75rem;">Sudah sesuai ✅</span>
+                                <span style="font-size: 0.75rem;">{{ $log->bot_reply_text ? \Illuminate\Support\Str::limit($log->bot_reply_text, 35) : 'Sudah sesuai ✅' }}</span>
                             </div>
                         @else
                             <span class="text-muted small">

@@ -286,10 +286,15 @@ class AdminPendataanAccessController extends Controller
         if ($statusFilter !== 'all' && in_array($statusFilter, [
             \App\Models\TelegramPendataanLog::STATUS_MATCHED,
             \App\Models\TelegramPendataanLog::STATUS_UNMATCHED,
+            \App\Models\TelegramPendataanLog::STATUS_GENERAL_CHAT,
             \App\Models\TelegramPendataanLog::STATUS_INVALID_FORMAT,
             \App\Models\TelegramPendataanLog::STATUS_ERROR,
         ])) {
-            $query->where('status', $statusFilter);
+            if ($statusFilter === 'general_chat' || $statusFilter === 'invalid_format') {
+                $query->whereIn('status', [\App\Models\TelegramPendataanLog::STATUS_GENERAL_CHAT, \App\Models\TelegramPendataanLog::STATUS_INVALID_FORMAT]);
+            } else {
+                $query->where('status', $statusFilter);
+            }
         }
 
         if ($search !== '') {
@@ -308,7 +313,10 @@ class AdminPendataanAccessController extends Controller
         $totalLogs = \App\Models\TelegramPendataanLog::count();
         $matchedLogs = \App\Models\TelegramPendataanLog::where('status', \App\Models\TelegramPendataanLog::STATUS_MATCHED)->count();
         $unmatchedLogs = \App\Models\TelegramPendataanLog::where('status', \App\Models\TelegramPendataanLog::STATUS_UNMATCHED)->count();
-        $invalidFormatLogs = \App\Models\TelegramPendataanLog::where('status', \App\Models\TelegramPendataanLog::STATUS_INVALID_FORMAT)->count();
+        $generalChatLogs = \App\Models\TelegramPendataanLog::whereIn('status', [
+            \App\Models\TelegramPendataanLog::STATUS_GENERAL_CHAT,
+            \App\Models\TelegramPendataanLog::STATUS_INVALID_FORMAT,
+        ])->count();
 
         // Webhook Raw Logs
         $activeTab = $request->input('tab', 'transactions');
@@ -326,7 +334,8 @@ class AdminPendataanAccessController extends Controller
             'totalLogs' => $totalLogs,
             'matchedLogs' => $matchedLogs,
             'unmatchedLogs' => $unmatchedLogs,
-            'invalidFormatLogs' => $invalidFormatLogs,
+            'invalidFormatLogs' => $generalChatLogs,
+            'generalChatLogs' => $generalChatLogs,
             'currentStatus' => $statusFilter,
             'currentSearch' => $search,
             'botUsername' => config('services.telegram_pendataan.bot_username', 'intel_awgbot'),

@@ -163,12 +163,12 @@
         <div class="col-md-3">
             <div class="card border-0 shadow-sm rounded-3 h-100">
                 <div class="card-body d-flex align-items-center">
-                    <div class="rounded-circle bg-secondary bg-opacity-10 p-3 text-secondary me-3">
-                        <i class="ti ti-message-dots fs-2"></i>
+                    <div class="rounded-circle bg-info bg-opacity-10 p-3 text-info me-3">
+                        <i class="ti ti-message-2 fs-2"></i>
                     </div>
                     <div>
-                        <h6 class="text-muted mb-1 text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px;">Bukan SMS Valid ⚠️</h6>
-                        <h3 class="mb-0 fw-bold text-secondary">{{ $invalidFormatLogs }}</h3>
+                        <h6 class="text-muted mb-1 text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px;">Pesan Umum / Chat 💬</h6>
+                        <h3 class="mb-0 fw-bold text-info">{{ $generalChatLogs }}</h3>
                     </div>
                 </div>
             </div>
@@ -197,8 +197,8 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link py-1 px-3 {{ $currentStatus === 'invalid_format' ? 'active' : '' }}" href="{{ route('admin.pendataan.bot-logs', ['status' => 'invalid_format', 'search' => $currentSearch, 'tab' => 'transactions']) }}">
-                            <i class="ti ti-info-circle me-1"></i>Bukan SMS ({{ $invalidFormatLogs }})
+                        <a class="nav-link py-1 px-3 {{ ($currentStatus === 'general_chat' || $currentStatus === 'invalid_format') ? 'active' : '' }}" href="{{ route('admin.pendataan.bot-logs', ['status' => 'general_chat', 'search' => $currentSearch, 'tab' => 'transactions']) }}">
+                            <i class="ti ti-message-2 me-1"></i>Pesan Umum ({{ $generalChatLogs }})
                         </a>
                     </li>
                 </ul>

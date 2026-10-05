@@ -156,14 +156,34 @@ class TelegramPendataanController extends Controller
             
         $text = $message['text'] ?? ($message['caption'] ?? '');
 
-        if (empty($text) || !$chatId) {
+        if (empty($text)) {
+            if (isset($message['photo'])) {
+                $text = '[Foto / Gambar]';
+            } elseif (isset($message['sticker'])) {
+                $text = '[Stiker: ' . ($message['sticker']['emoji'] ?? '🎨') . ']';
+            } elseif (isset($message['document'])) {
+                $text = '[Dokumen / File: ' . ($message['document']['file_name'] ?? 'file') . ']';
+            } elseif (isset($message['voice'])) {
+                $text = '[Pesan Suara / Voice]';
+            } elseif (isset($message['video'])) {
+                $text = '[Video]';
+            } elseif (isset($message['new_chat_members'])) {
+                $text = '[Member Baru Bergabung ke Grup]';
+            } elseif (isset($message['left_chat_member'])) {
+                $text = '[Member Meninggalkan Grup]';
+            } else {
+                $text = '[Pesan Non-Teks / Media]';
+            }
+        }
+
+        if (!$chatId) {
             if ($rawLog) {
                 $rawLog->update([
                     'status' => 'ignored',
-                    'notes' => 'Teks pesan kosong atau chat_id tidak ditemukan.',
+                    'notes' => 'Chat ID tidak ditemukan pada update payload.',
                 ]);
             }
-            return response()->json(['status' => 'empty_text_ignored']);
+            return response()->json(['status' => 'empty_chat_ignored']);
         }
 
         $meta = [
@@ -178,13 +198,40 @@ class TelegramPendataanController extends Controller
         // Parse SMS message format
         $parsed = PendataanParserService::parseTelegramSms($text);
 
+        // Check if message is a simple test ping/command
+        $cleanLowerText = strtolower(trim($text));
+        $isTestCommand = in_array($cleanLowerText, ['/test', '/ping', '/cek', 'ping', 'test', 'tes', 'halo', 'p', 'cek']);
+
         if (!$parsed['is_valid']) {
-            Log::info('Telegram text did not match pendataan SMS pattern:', ['text' => $text]);
+            Log::info('Telegram message received (not an SMS voucher pattern):', ['text' => $text]);
+
+            $botReplied = false;
+            $replyText = null;
+
+            // If user specifically tests with /test, /ping, etc., bot replies with confirmation in group
+            if ($isTestCommand) {
+                $botToken = self::getBotToken();
+                if ($botToken && $chatId) {
+                    $replyText = "🤖 Bot intel_awg aktif dan terhubung!\nStatus: Siap menerima SMS voucher.";
+                    try {
+                        Http::timeout(5)->post("https://api.telegram.org/bot{$botToken}/sendMessage", [
+                            'chat_id' => $chatId,
+                            'reply_to_message_id' => $messageId,
+                            'text' => $replyText,
+                        ]);
+                        $botReplied = true;
+                    } catch (\Throwable $e) {
+                        Log::error('Failed to send test command reply: ' . $e->getMessage());
+                    }
+                }
+            }
 
             if ($rawLog) {
                 $rawLog->update([
-                    'status' => 'invalid_format',
-                    'notes' => 'Bukan format SMS transaksi voucher (kata "senilai Rp...").',
+                    'status' => 'general_chat',
+                    'notes' => $isTestCommand
+                        ? 'Perintah tes bot diterima. Bot merespon konfirmasi aktif.'
+                        : 'Pesan obrolan umum Telegram. Bukan format SMS voucher, sehingga tidak dicocokkan.',
                 ]);
             }
 
@@ -197,15 +244,18 @@ class TelegramPendataanController extends Controller
                     'sender_username' => $meta['sender_username'],
                     'sender_name' => $meta['sender_name'],
                     'raw_message' => $meta['raw_message'],
-                    'status' => \App\Models\TelegramPendataanLog::STATUS_INVALID_FORMAT,
-                    'action_note' => 'Pesan diterima di grup/chat, namun bukan format SMS transaksi voucher (kata "senilai Rp..."). Pesan diabaikan oleh bot.',
-                    'bot_replied' => false,
+                    'status' => \App\Models\TelegramPendataanLog::STATUS_GENERAL_CHAT,
+                    'action_note' => $isTestCommand 
+                        ? 'Perintah tes bot diterima dari Telegram. Bot merespon di grup.'
+                        : 'Pesan obrolan umum / teks biasa di Telegram. Bukan format SMS voucher ("senilai Rp..."), sehingga tidak dicocokkan dengan data transaksi.',
+                    'bot_replied' => $botReplied,
+                    'bot_reply_text' => $replyText,
                 ]);
             } catch (\Throwable $e) {
-                Log::error('Failed to save invalid_format telegram log: ' . $e->getMessage());
+                Log::error('Failed to save general chat telegram log: ' . $e->getMessage());
             }
 
-            return response()->json(['status' => 'pattern_unmatched']);
+            return response()->json(['status' => 'general_chat_logged']);
         }
 
         Log::info('Telegram pendataan SMS parsed successfully:', $parsed);
