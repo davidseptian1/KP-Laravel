@@ -48,20 +48,34 @@ class TelegramPendataanController extends Controller
 
         Log::info('--- TELEGRAM PENDATAAN WEBHOOK PAYLOAD ---', [
             'has_message' => isset($update['message']),
-            'chat' => $update['message']['chat'] ?? null,
-            'text' => $update['message']['text'] ?? null,
+            'has_channel_post' => isset($update['channel_post']),
+            'update' => $update,
         ]);
 
-        if (!isset($update['message'])) {
+        // Support standard messages, channel posts, and edited messages
+        $message = $update['message']
+            ?? ($update['channel_post']
+            ?? ($update['edited_message']
+            ?? ($update['edited_channel_post'] ?? null)));
+
+        if (!$message) {
             return response()->json(['status' => 'no_message_ignored']);
         }
 
-        $message = $update['message'];
         $chatId = $message['chat']['id'] ?? null;
-        $chatTitle = $message['chat']['title'] ?? ($message['chat']['username'] ?? ($message['chat']['first_name'] ?? 'Grup / Chat'));
+        $chatTitle = $message['chat']['title']
+            ?? ($message['chat']['username']
+            ?? ($message['chat']['first_name'] ?? 'Grup / Saluran'));
         $messageId = $message['message_id'] ?? null;
-        $senderName = trim(($message['from']['first_name'] ?? '') . ' ' . ($message['from']['last_name'] ?? ''));
-        $senderUsername = $message['from']['username'] ?? null;
+        
+        $senderFirstName = $message['from']['first_name'] ?? '';
+        $senderLastName = $message['from']['last_name'] ?? '';
+        $senderName = trim("{$senderFirstName} {$senderLastName}")
+            ?: ($message['author_signature'] ?? ($chatTitle ?? 'Sender'));
+            
+        $senderUsername = $message['from']['username']
+            ?? ($message['sender_chat']['username'] ?? null);
+            
         $text = $message['text'] ?? ($message['caption'] ?? '');
 
         if (empty($text) || !$chatId) {
@@ -112,6 +126,73 @@ class TelegramPendataanController extends Controller
             'status' => 'processed',
             'matched' => $matchedRecord !== null,
             'pendataan_id' => $matchedRecord?->id,
+        ]);
+    }
+
+    /**
+     * Handle direct SMS forwarded via HTTP Webhook (e.g. from Android SMS Forwarder apps, MacroDroid, Tasker).
+     * Endpoint: POST /api/sms/pendataan-webhook
+     */
+    public function handleDirectSms(Request $request): JsonResponse
+    {
+        $payload = $request->all();
+        Log::info('--- DIRECT SMS FORWARDER WEBHOOK PAYLOAD ---', ['payload' => $payload]);
+
+        // Extract text from common SMS forwarder parameter names
+        $text = $request->input('message')
+            ?? $request->input('text')
+            ?? $request->input('msg')
+            ?? $request->input('body')
+            ?? $request->input('content')
+            ?? $request->input('sms')
+            ?? $request->getContent();
+
+        if (empty($text) || !is_string($text)) {
+            return response()->json(['status' => 'error', 'message' => 'Teks SMS tidak ditemukan pada request.'], 400);
+        }
+
+        $sender = $request->input('from') ?? $request->input('sender') ?? $request->input('title') ?? 'Android SMS Forwarder';
+
+        $meta = [
+            'chat_id' => 'direct_http_forwarder',
+            'chat_title' => 'HTTP SMS Forwarder',
+            'message_id' => null,
+            'sender_name' => (string) $sender,
+            'sender_username' => 'android_forwarder',
+            'raw_message' => trim($text),
+        ];
+
+        $parsed = PendataanParserService::parseTelegramSms($text);
+
+        if (!$parsed['is_valid']) {
+            Log::info('Direct SMS did not match pendataan SMS pattern:', ['text' => $text]);
+
+            try {
+                \App\Models\TelegramPendataanLog::create([
+                    'chat_id' => $meta['chat_id'],
+                    'chat_title' => $meta['chat_title'],
+                    'message_id' => null,
+                    'sender_username' => $meta['sender_username'],
+                    'sender_name' => $meta['sender_name'],
+                    'raw_message' => $meta['raw_message'],
+                    'status' => \App\Models\TelegramPendataanLog::STATUS_INVALID_FORMAT,
+                    'action_note' => 'Pesan diterima via HTTP Webhook SMS Forwarder, namun format teks bukan SMS transaksi voucher ("senilai Rp...").',
+                    'bot_replied' => false,
+                ]);
+            } catch (\Throwable $e) {
+                Log::error('Failed to save invalid direct SMS log: ' . $e->getMessage());
+            }
+
+            return response()->json(['status' => 'pattern_unmatched'], 422);
+        }
+
+        $matchedRecord = $this->matchWithPendingData($parsed, $meta['chat_id'], null, $meta);
+
+        return response()->json([
+            'status' => 'processed',
+            'matched' => $matchedRecord !== null,
+            'pendataan_id' => $matchedRecord?->id,
+            'parsed' => $parsed,
         ]);
     }
 

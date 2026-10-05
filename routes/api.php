@@ -28,6 +28,7 @@ Route::post('/telegram/webhook', [\App\Http\Controllers\TelegramWebhookControlle
 
 // Telegram Pendataan Bot Webhook & Setup
 Route::post('/telegram/pendataan-webhook', [\App\Http\Controllers\TelegramPendataanController::class, 'handleWebhook']);
+Route::match(['get', 'post'], '/sms/pendataan-webhook', [\App\Http\Controllers\TelegramPendataanController::class, 'handleDirectSms']);
 Route::match(['get', 'post'], '/telegram/pendataan/setup-webhook', [\App\Http\Controllers\TelegramPendataanController::class, 'setupWebhook']);
 Route::get('/telegram/pendataan/webhook-info', [\App\Http\Controllers\TelegramPendataanController::class, 'getWebhookInfo']);
 
