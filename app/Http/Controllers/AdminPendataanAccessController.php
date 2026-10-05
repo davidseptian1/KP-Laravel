@@ -310,6 +310,11 @@ class AdminPendataanAccessController extends Controller
         $unmatchedLogs = \App\Models\TelegramPendataanLog::where('status', \App\Models\TelegramPendataanLog::STATUS_UNMATCHED)->count();
         $invalidFormatLogs = \App\Models\TelegramPendataanLog::where('status', \App\Models\TelegramPendataanLog::STATUS_INVALID_FORMAT)->count();
 
+        // Webhook Raw Logs
+        $activeTab = $request->input('tab', 'transactions');
+        $rawLogs = \App\Models\TelegramWebhookRawLog::latest('id')->paginate(20, ['*'], 'raw_page')->withQueryString();
+        $totalRawLogs = \App\Models\TelegramWebhookRawLog::count();
+
         if ($request->ajax() || $request->wantsJson()) {
             return view('admin.pendataan.partials.bot_logs_table', compact('logs'))->render();
         }
@@ -326,6 +331,9 @@ class AdminPendataanAccessController extends Controller
             'currentSearch' => $search,
             'botUsername' => config('services.telegram_pendataan.bot_username', 'intel_awgbot'),
             'checkLimit' => TelegramPendataanController::getCheckLimit(),
+            'activeTab' => $activeTab,
+            'rawLogs' => $rawLogs,
+            'totalRawLogs' => $totalRawLogs,
         ]);
     }
 
@@ -340,8 +348,97 @@ class AdminPendataanAccessController extends Controller
 
         \App\Models\TelegramPendataanLog::truncate();
 
-        return redirect()->route('admin.pendataan.bot-logs')
+        return redirect()->route('admin.pendataan.bot-logs', ['tab' => 'transactions'])
             ->with('success', 'Semua riwayat log aktivitas bot Telegram berhasil dibersihkan!');
+    }
+
+    /**
+     * Clear all raw webhook logs.
+     */
+    public function clearWebhookRawLogs(Request $request)
+    {
+        if (strtolower(trim(auth()->user()->jabatan ?? '')) !== 'superadmin') {
+            abort(403, 'Hanya Superadmin yang memiliki izin untuk membersihkan raw log.');
+        }
+
+        \App\Models\TelegramWebhookRawLog::truncate();
+
+        return redirect()->route('admin.pendataan.bot-logs', ['tab' => 'webhook'])
+            ->with('success', 'Semua riwayat Raw Webhook Logs berhasil dibersihkan!');
+    }
+
+    /**
+     * Test / simulate webhook ping to verify webhook logging is operational.
+     */
+    public function testWebhookPing(Request $request)
+    {
+        if (!auth()->user() || !auth()->user()->canAccessPendataan()) {
+            abort(403, 'Unauthorized');
+        }
+
+        \App\Models\TelegramWebhookRawLog::create([
+            'source' => 'simulated_test',
+            'ip_address' => $request->ip(),
+            'http_method' => 'POST',
+            'update_id' => rand(100000000, 999999999),
+            'update_type' => 'test_ping',
+            'chat_id' => '-100test',
+            'chat_title' => 'Simulasi Tes Webhook',
+            'sender_name' => auth()->user()->nama ?? 'Admin',
+            'summary' => 'Simulasi pengujian webhook logger dari tombol UI Admin.',
+            'raw_payload' => json_encode([
+                'test' => true,
+                'sender' => auth()->user()->nama ?? 'Admin',
+                'timestamp' => now()->toIso8601String(),
+                'message' => 'Tes simulasi payload webhook berhasil masuk ke database!',
+                'note' => 'Logger webhook berfungsi 100% normal dan siap menerima panggilan dari Telegram/SMS Forwarder.',
+            ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
+            'status' => 'received',
+            'notes' => 'Simulasi sukses! Webhook logger siap merekam semua payload masuk.',
+        ]);
+
+        return redirect()->route('admin.pendataan.bot-logs', ['tab' => 'webhook'])
+            ->with('success', 'Simulasi webhook berhasil dicatat! Webhook logger terbukti berfungsi.');
+    }
+
+    /**
+     * Show single raw webhook log JSON detail.
+     */
+    public function showWebhookRawLog($id)
+    {
+        if (!auth()->user() || !auth()->user()->canAccessPendataan()) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        $rawLog = \App\Models\TelegramWebhookRawLog::findOrFail($id);
+
+        // Format JSON payload nicely
+        $payloadStr = $rawLog->raw_payload;
+        $decoded = json_decode($rawLog->raw_payload, true);
+        if ($decoded !== null) {
+            $payloadStr = json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id' => $rawLog->id,
+                'source' => $rawLog->source,
+                'ip_address' => $rawLog->ip_address ?: '-',
+                'http_method' => $rawLog->http_method,
+                'update_id' => $rawLog->update_id ?: '-',
+                'update_type' => $rawLog->update_type ?: '-',
+                'chat_id' => $rawLog->chat_id ?: '-',
+                'chat_title' => $rawLog->chat_title ?: '-',
+                'sender_name' => $rawLog->sender_name ?: '-',
+                'summary' => $rawLog->summary ?: '-',
+                'status' => $rawLog->status,
+                'status_badge_html' => $rawLog->status_badge_html,
+                'notes' => $rawLog->notes ?: '-',
+                'raw_payload' => $payloadStr,
+                'created_at' => $rawLog->created_at?->format('d/m/Y H:i:s') ?: '-',
+            ],
+        ]);
     }
 
     /**

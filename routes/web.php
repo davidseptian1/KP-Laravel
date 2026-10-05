@@ -274,6 +274,11 @@ Route::middleware(['checkLogin', 'admin.activity.log'])->group(function () {
     Route::get('superadmin/pendataan-bot-logs/{id}', [AdminPendataanAccessController::class, 'showBotLog']);
     Route::delete('pendataan-bot-logs/clear', [AdminPendataanAccessController::class, 'clearBotLogs'])->name('admin.pendataan.bot-logs.clear');
     Route::delete('superadmin/pendataan-bot-logs/clear', [AdminPendataanAccessController::class, 'clearBotLogs']);
+    Route::get('pendataan-bot-logs/raw/{id}', [AdminPendataanAccessController::class, 'showWebhookRawLog'])->name('admin.pendataan.bot-logs.show-raw');
+    Route::get('superadmin/pendataan-bot-logs/raw/{id}', [AdminPendataanAccessController::class, 'showWebhookRawLog']);
+    Route::delete('pendataan-bot-logs/clear-raw', [AdminPendataanAccessController::class, 'clearWebhookRawLogs'])->name('admin.pendataan.bot-logs.clear-raw');
+    Route::delete('superadmin/pendataan-bot-logs/clear-raw', [AdminPendataanAccessController::class, 'clearWebhookRawLogs']);
+    Route::post('superadmin/pendataan-bot-logs/test-ping', [AdminPendataanAccessController::class, 'testWebhookPing'])->name('admin.pendataan.bot-logs.test-ping');
 
     // Middleware isAdmin
     Route::middleware('isAdmin')->group(function () {

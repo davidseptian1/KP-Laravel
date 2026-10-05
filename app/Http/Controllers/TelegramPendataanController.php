@@ -44,13 +44,85 @@ class TelegramPendataanController extends Controller
      */
     public function handleWebhook(Request $request): JsonResponse
     {
+        $rawContent = (string) $request->getContent();
         $update = $request->all();
+        $ip = (string) $request->ip();
 
         Log::info('--- TELEGRAM PENDATAAN WEBHOOK PAYLOAD ---', [
             'has_message' => isset($update['message']),
             'has_channel_post' => isset($update['channel_post']),
             'update' => $update,
         ]);
+
+        // Detect update type & extract payload object
+        $updateType = 'unknown';
+        $targetObject = null;
+        if (isset($update['message'])) {
+            $updateType = 'message';
+            $targetObject = $update['message'];
+        } elseif (isset($update['channel_post'])) {
+            $updateType = 'channel_post';
+            $targetObject = $update['channel_post'];
+        } elseif (isset($update['edited_message'])) {
+            $updateType = 'edited_message';
+            $targetObject = $update['edited_message'];
+        } elseif (isset($update['edited_channel_post'])) {
+            $updateType = 'edited_channel_post';
+            $targetObject = $update['edited_channel_post'];
+        } elseif (isset($update['my_chat_member'])) {
+            $updateType = 'my_chat_member';
+            $targetObject = $update['my_chat_member'];
+        } elseif (isset($update['chat_member'])) {
+            $updateType = 'chat_member';
+            $targetObject = $update['chat_member'];
+        }
+
+        $chatId = $targetObject['chat']['id'] ?? null;
+        $chatTitle = $targetObject['chat']['title']
+            ?? ($targetObject['chat']['username']
+            ?? ($targetObject['chat']['first_name'] ?? null));
+            
+        $senderFirstName = $targetObject['from']['first_name'] ?? '';
+        $senderLastName = $targetObject['from']['last_name'] ?? '';
+        $senderName = trim("{$senderFirstName} {$senderLastName}")
+            ?: ($targetObject['author_signature'] ?? null);
+            
+        $summary = $targetObject['text'] ?? ($targetObject['caption'] ?? ('Update Type: ' . $updateType));
+
+        // Create raw webhook log entry immediately
+        $rawLog = null;
+        try {
+            $rawLog = \App\Models\TelegramWebhookRawLog::create([
+                'source' => 'telegram',
+                'ip_address' => $ip,
+                'http_method' => $request->method(),
+                'update_id' => $update['update_id'] ?? null,
+                'update_type' => $updateType,
+                'chat_id' => $chatId ? (string) $chatId : null,
+                'chat_title' => $chatTitle,
+                'sender_name' => $senderName,
+                'summary' => is_string($summary) ? substr($summary, 0, 500) : json_encode($summary),
+                'raw_payload' => !empty($rawContent) ? $rawContent : json_encode($update, JSON_PRETTY_PRINT),
+                'status' => 'received',
+                'notes' => 'Panggilan webhook berhasil diterima dari server Telegram.',
+            ]);
+
+            // Append to storage/logs/telegram_webhook.log
+            $logFile = storage_path('logs/telegram_webhook.log');
+            $line = sprintf("[%s] IP: %s | Type: %s | Chat: %s (%s) | Sender: %s | Summary: %s\nPayload: %s\n\n",
+                now()->toDateTimeString(),
+                $ip,
+                $updateType,
+                $chatTitle ?? '-',
+                $chatId ?? '-',
+                $senderName ?? '-',
+                is_string($summary) ? str_replace("\n", " ", substr($summary, 0, 100)) : '-',
+                !empty($rawContent) ? $rawContent : json_encode($update)
+            );
+            @file_put_contents($logFile, $line, FILE_APPEND);
+        } catch (\Throwable $e) {
+            Log::error('Failed to write raw webhook log: ' . $e->getMessage());
+        }
 
         // Support standard messages, channel posts, and edited messages
         $message = $update['message']
@@ -59,6 +131,12 @@ class TelegramPendataanController extends Controller
             ?? ($update['edited_channel_post'] ?? null)));
 
         if (!$message) {
+            if ($rawLog) {
+                $rawLog->update([
+                    'status' => 'ignored',
+                    'notes' => "Update bertipe '{$updateType}' bukan merupakan pesan teks (diabaikan).",
+                ]);
+            }
             return response()->json(['status' => 'no_message_ignored']);
         }
 
@@ -79,6 +157,12 @@ class TelegramPendataanController extends Controller
         $text = $message['text'] ?? ($message['caption'] ?? '');
 
         if (empty($text) || !$chatId) {
+            if ($rawLog) {
+                $rawLog->update([
+                    'status' => 'ignored',
+                    'notes' => 'Teks pesan kosong atau chat_id tidak ditemukan.',
+                ]);
+            }
             return response()->json(['status' => 'empty_text_ignored']);
         }
 
@@ -96,6 +180,13 @@ class TelegramPendataanController extends Controller
 
         if (!$parsed['is_valid']) {
             Log::info('Telegram text did not match pendataan SMS pattern:', ['text' => $text]);
+
+            if ($rawLog) {
+                $rawLog->update([
+                    'status' => 'invalid_format',
+                    'notes' => 'Bukan format SMS transaksi voucher (kata "senilai Rp...").',
+                ]);
+            }
 
             // Save log for admin tracking
             try {
@@ -121,6 +212,15 @@ class TelegramPendataanController extends Controller
 
         // Process matching with latest pending data
         $matchedRecord = $this->matchWithPendingData($parsed, $chatId, $messageId, $meta);
+
+        if ($rawLog) {
+            $rawLog->update([
+                'status' => $matchedRecord ? 'matched' : 'unmatched',
+                'notes' => $matchedRecord 
+                    ? "Berhasil dicocokkan dengan transaksi Pendataan ID #{$matchedRecord->id} ({$matchedRecord->nama_produk} - Rp " . number_format($matchedRecord->total_harga, 0, ',', '.') . ")"
+                    : "Pola SMS cocok, namun saat ini belum ada transaksi 'Pending' dengan nominal tersebut di sistem web.",
+            ]);
+        }
 
         return response()->json([
             'status' => 'processed',
@@ -153,6 +253,25 @@ class TelegramPendataanController extends Controller
 
         $sender = $request->input('from') ?? $request->input('sender') ?? $request->input('title') ?? 'Android SMS Forwarder';
 
+        // Record raw log
+        $rawLog = null;
+        try {
+            $rawLog = \App\Models\TelegramWebhookRawLog::create([
+                'source' => 'direct_sms',
+                'ip_address' => (string) $request->ip(),
+                'http_method' => $request->method(),
+                'update_id' => null,
+                'update_type' => 'http_post',
+                'chat_id' => 'direct_http_forwarder',
+                'chat_title' => 'HTTP SMS Forwarder',
+                'sender_name' => (string) $sender,
+                'summary' => substr(trim($text), 0, 500),
+                'raw_payload' => !empty($request->getContent()) ? (string) $request->getContent() : json_encode($payload, JSON_PRETTY_PRINT),
+                'status' => 'received',
+                'notes' => 'Panggilan webhook diterima langsung via HTTP dari aplikasi forwarder HP.',
+            ]);
+        } catch (\Throwable $e) {}
+
         $meta = [
             'chat_id' => 'direct_http_forwarder',
             'chat_title' => 'HTTP SMS Forwarder',
@@ -166,6 +285,13 @@ class TelegramPendataanController extends Controller
 
         if (!$parsed['is_valid']) {
             Log::info('Direct SMS did not match pendataan SMS pattern:', ['text' => $text]);
+
+            if ($rawLog) {
+                $rawLog->update([
+                    'status' => 'invalid_format',
+                    'notes' => 'Bukan format SMS transaksi voucher ("senilai Rp...").',
+                ]);
+            }
 
             try {
                 \App\Models\TelegramPendataanLog::create([
@@ -187,6 +313,15 @@ class TelegramPendataanController extends Controller
         }
 
         $matchedRecord = $this->matchWithPendingData($parsed, $meta['chat_id'], null, $meta);
+
+        if ($rawLog) {
+            $rawLog->update([
+                'status' => $matchedRecord ? 'matched' : 'unmatched',
+                'notes' => $matchedRecord 
+                    ? "Berhasil dicocokkan dengan transaksi Pendataan ID #{$matchedRecord->id} ({$matchedRecord->nama_produk} - Rp " . number_format($matchedRecord->total_harga, 0, ',', '.') . ")"
+                    : "Pola SMS cocok, namun belum ada transaksi 'Pending' dengan nominal sesuai di sistem web.",
+            ]);
+        }
 
         return response()->json([
             'status' => 'processed',
