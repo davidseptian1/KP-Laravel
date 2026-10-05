@@ -629,7 +629,7 @@ class PendataanController extends Controller
         // Strictly lock nama to authenticated staff session
         $nama = session('pendataan_staff_nama') ?: (auth()->user()->nama ?: 'Staff');
 
-        Pendataan::create([
+        $pendataan = Pendataan::create([
             'user_id' => auth()->id(),
             'nama' => $nama,
             'deskripsi' => $deskripsi,
@@ -645,7 +645,15 @@ class PendataanController extends Controller
         cache()->forget('pendataan_filter_staff_names');
         cache()->forget('pendataan_filter_products');
 
-        return redirect()->route('pendataan.index')->with('success', 'Data Pendataan (' . $jenisChip . ') berhasil disimpan atas nama ' . $nama . '!');
+        // Check if an unmatched Telegram SMS already arrived earlier for this transaction
+        $autoMatched = TelegramPendataanController::checkNewlyCreatedPendataan($pendataan);
+
+        $msg = 'Data Pendataan (' . $jenisChip . ') berhasil disimpan atas nama ' . $nama . '!';
+        if ($autoMatched) {
+            $msg .= ' 🎉 Transaksi langsung otomatis cocok dengan SMS Telegram dan status telah berubah ke Sukses!';
+        }
+
+        return redirect()->route('pendataan.index')->with('success', $msg);
     }
 
     /**

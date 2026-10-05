@@ -417,4 +417,184 @@ class TelegramPendataanController extends Controller
 
         return response()->json($response->json());
     }
+
+    /**
+     * Re-sync unmatched Telegram logs against current pending Pendataan records.
+     */
+    public static function syncUnmatchedLogs(?int $hoursBack = 48): int
+    {
+        $cutoff = now()->subHours($hoursBack);
+
+        $unmatchedLogs = \App\Models\TelegramPendataanLog::where('status', \App\Models\TelegramPendataanLog::STATUS_UNMATCHED)
+            ->where('created_at', '>=', $cutoff)
+            ->whereNotNull('parsed_nominal')
+            ->orderBy('id', 'asc')
+            ->get();
+
+        $matchedCount = 0;
+        $controller = new self();
+
+        foreach ($unmatchedLogs as $log) {
+            $smsNominal = (float) $log->parsed_nominal;
+            if ($smsNominal <= 0) continue;
+
+            $parsed = [
+                'is_valid' => true,
+                'nama_produk' => $log->parsed_product ?? '',
+                'nominal_total' => $smsNominal,
+                'raw_nominal' => $log->raw_nominal ?? ('Rp' . number_format($smsNominal, 0, '', '')),
+            ];
+
+            // Search pending records
+            $pendingRecords = Pendataan::where('status', Pendataan::STATUS_PENDING)
+                ->where(function ($q) use ($smsNominal) {
+                    $q->where('total_harga', $smsNominal)
+                      ->orWhereBetween('total_harga', [$smsNominal - 1.0, $smsNominal + 1.0]);
+                })
+                ->orderBy('created_at', 'asc')
+                ->get();
+
+            $matchedItem = null;
+            foreach ($pendingRecords as $item) {
+                if ($controller->isRecordMatching($item, $parsed)) {
+                    $matchedItem = $item;
+                    break;
+                }
+            }
+
+            if ($matchedItem) {
+                $matchedItem->status = Pendataan::STATUS_SUKSES;
+
+                $isGeneric = in_array(strtolower(trim($matchedItem->nama_produk ?? '')), [
+                    'keranjang belanja', 'keranjang', 'paket', '(1) paket', 'produk', 'produk tanpa nama', ''
+                ]);
+
+                if ($isGeneric && !empty($parsed['nama_produk'])) {
+                    $smsProductNoQty = trim(preg_replace('/^\d+\s+/', '', $parsed['nama_produk']));
+                    if (!empty($smsProductNoQty)) {
+                        $matchedItem->nama_produk = $smsProductNoQty;
+                    }
+                }
+
+                $matchedItem->save();
+
+                $responseText = "nama_produk: {$parsed['nama_produk']}\n" .
+                                "nomimal : {$parsed['raw_nominal']}\n" .
+                                "Sudah sesuai ✅";
+
+                $replied = false;
+                if (!empty($log->chat_id)) {
+                    $replied = self::sendMessage($log->chat_id, $responseText, $log->message_id);
+                }
+
+                $formattedNominal = 'Rp ' . number_format($matchedItem->total_harga, 0, ',', '.');
+                $note = "BERHASIL DISINKRONKAN! Cocok dengan Pendataan ID #{$matchedItem->id} ({$matchedItem->nama_produk} - {$formattedNominal} | Petugas: {$matchedItem->nama}). Status otomatis diperbarui ke 'Sukses'.";
+
+                $log->update([
+                    'status' => \App\Models\TelegramPendataanLog::STATUS_MATCHED,
+                    'pendataan_id' => $matchedItem->id,
+                    'action_note' => $note,
+                    'bot_replied' => $replied,
+                    'bot_reply_text' => $responseText,
+                ]);
+
+                $matchedCount++;
+            }
+        }
+
+        return $matchedCount;
+    }
+
+    /**
+     * Check if a newly created Pendataan record matches an unmatched SMS log.
+     */
+    public static function checkNewlyCreatedPendataan(Pendataan $pendingItem): bool
+    {
+        $nominal = (float) $pendingItem->total_harga;
+        if ($nominal <= 0) return false;
+
+        $unmatchedLog = \App\Models\TelegramPendataanLog::where('status', \App\Models\TelegramPendataanLog::STATUS_UNMATCHED)
+            ->where('created_at', '>=', now()->subHours(24))
+            ->where(function ($q) use ($nominal) {
+                $q->where('parsed_nominal', $nominal)
+                  ->orWhereBetween('parsed_nominal', [$nominal - 1.0, $nominal + 1.0]);
+            })
+            ->orderBy('id', 'asc')
+            ->first();
+
+        if ($unmatchedLog) {
+            $parsed = [
+                'nama_produk' => $unmatchedLog->parsed_product ?? $pendingItem->nama_produk,
+                'raw_nominal' => $unmatchedLog->raw_nominal ?? ('Rp' . number_format($nominal, 0, '', '')),
+            ];
+
+            $pendingItem->status = Pendataan::STATUS_SUKSES;
+
+            $isGeneric = in_array(strtolower(trim($pendingItem->nama_produk ?? '')), [
+                'keranjang belanja', 'keranjang', 'paket', '(1) paket', 'produk', 'produk tanpa nama', ''
+            ]);
+
+            if ($isGeneric && !empty($parsed['nama_produk'])) {
+                $smsProductNoQty = trim(preg_replace('/^\d+\s+/', '', $parsed['nama_produk']));
+                if (!empty($smsProductNoQty)) {
+                    $pendingItem->nama_produk = $smsProductNoQty;
+                }
+            }
+
+            $pendingItem->save();
+
+            $responseText = "nama_produk: {$parsed['nama_produk']}\n" .
+                            "nomimal : {$parsed['raw_nominal']}\n" .
+                            "Sudah sesuai ✅";
+
+            $replied = false;
+            if (!empty($unmatchedLog->chat_id)) {
+                $replied = self::sendMessage($unmatchedLog->chat_id, $responseText, $unmatchedLog->message_id);
+            }
+
+            $formattedNominal = 'Rp ' . number_format($pendingItem->total_harga, 0, ',', '.');
+            $note = "BERHASIL COCOK (AUTO-SYNC)! SMS yang masuk sebelumnya cocok dengan transaksi baru ID #{$pendingItem->id} ({$pendingItem->nama_produk} - {$formattedNominal} | Petugas: {$pendingItem->nama}). Status diperbarui ke 'Sukses'.";
+
+            $unmatchedLog->update([
+                'status' => \App\Models\TelegramPendataanLog::STATUS_MATCHED,
+                'pendataan_id' => $pendingItem->id,
+                'action_note' => $note,
+                'bot_replied' => $replied,
+                'bot_reply_text' => $responseText,
+            ]);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Handle manual sync request from UI.
+     */
+    public function manualSync(Request $request)
+    {
+        $user = auth()->user();
+        if (!$user || !$user->canAccessPendataan()) {
+            abort(403, 'Anda tidak memiliki hak akses untuk menyinkronkan data.');
+        }
+
+        $matchedCount = self::syncUnmatchedLogs(48);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'matched' => $matchedCount,
+                'message' => $matchedCount > 0
+                    ? "Berhasil menyinkronkan {$matchedCount} transaksi dengan SMS Telegram!"
+                    : "Tidak ada transaksi pending yang cocok dengan riwayat SMS Telegram saat ini.",
+            ]);
+        }
+
+        if ($matchedCount > 0) {
+            return back()->with('success', "⚡ Sinkronisasi Berhasil! {$matchedCount} transaksi pending berhasil dicocokkan dengan SMS Telegram dan status telah diperbarui ke 'Sukses ✅'.");
+        }
+
+        return back()->with('info', "Sinkronisasi selesai. Saat ini tidak ditemukan transaksi pending yang nominalnya cocok dengan riwayat SMS Telegram.");
+    }
 }

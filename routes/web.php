@@ -40,6 +40,7 @@ use App\Http\Controllers\SosmedPublicFormController;
 use App\Http\Controllers\AdminSosmedController;
 use App\Http\Controllers\PendataanController;
 use App\Http\Controllers\AdminPendataanAccessController;
+use App\Http\Controllers\TelegramPendataanController;
 use App\Models\DataRequest;
 use App\Models\Deposit;
 use App\Models\LoanRequest;
@@ -263,10 +264,12 @@ Route::middleware(['checkLogin', 'admin.activity.log'])->group(function () {
     Route::get('pendataan/{id}', [PendataanController::class, 'show'])->name('pendataan.show');
     Route::put('pendataan/{id}', [PendataanController::class, 'update'])->name('pendataan.update');
     Route::delete('pendataan/{id}', [PendataanController::class, 'destroy'])->name('pendataan.destroy');
+    Route::post('pendataan/sync-telegram', [TelegramPendataanController::class, 'manualSync'])->name('pendataan.sync-telegram');
     
     // Log Riwayat Bot Telegram Pendataan
     Route::get('pendataan-bot-logs', [AdminPendataanAccessController::class, 'botLogs'])->name('admin.pendataan.bot-logs');
     Route::get('superadmin/pendataan-bot-logs', [AdminPendataanAccessController::class, 'botLogs']);
+    Route::post('superadmin/pendataan-bot-logs/sync', [TelegramPendataanController::class, 'manualSync'])->name('admin.pendataan.bot-logs.sync');
     Route::get('pendataan-bot-logs/{id}', [AdminPendataanAccessController::class, 'showBotLog'])->name('admin.pendataan.bot-logs.show');
     Route::get('superadmin/pendataan-bot-logs/{id}', [AdminPendataanAccessController::class, 'showBotLog']);
     Route::delete('pendataan-bot-logs/clear', [AdminPendataanAccessController::class, 'clearBotLogs'])->name('admin.pendataan.bot-logs.clear');

@@ -24,6 +24,12 @@
            onclick="return confirm('Logout dari fitur Pendataan? (Akun login utama Anda akan tetap aktif)')">
             <i class="ti ti-lock me-1"></i>Logout Fitur
         </a>
+        <form action="{{ route('pendataan.sync-telegram') }}" method="POST" class="d-inline">
+            @csrf
+            <button type="submit" class="btn btn-outline-primary shadow-sm" title="Sinkronkan data pending dengan SMS bot Telegram yang sudah masuk">
+                <i class="ti ti-refresh me-1"></i> Sinkronkan Bot
+            </button>
+        </form>
         <button type="button" class="btn btn-primary shadow-sm px-3" data-bs-toggle="modal" data-bs-target="#modalTambahPendataan">
             <i class="ti ti-plus me-1"></i> Tambah Pendataan
         </button>

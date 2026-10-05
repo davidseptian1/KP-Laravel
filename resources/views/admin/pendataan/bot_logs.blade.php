@@ -10,6 +10,12 @@
         <p class="text-muted mb-0">Pantau aktivitas bot Telegram secara langsung: pesan masuk, hasil ekstraksi SMS, status pencocokan dengan data pendataan, dan balasan grup.</p>
     </div>
     <div class="col-md-5 text-md-end mt-3 mt-md-0 d-flex justify-content-md-end align-items-center gap-2 flex-wrap">
+        <form action="{{ route('admin.pendataan.bot-logs.sync') }}" method="POST" class="d-inline">
+            @csrf
+            <button type="submit" class="btn btn-primary btn-sm shadow-sm" title="Sinkronkan ulang SMS yang belum cocok dengan data transaksi pending">
+                <i class="ti ti-refresh me-1"></i> Sinkronkan Sekarang
+            </button>
+        </form>
         <a href="{{ url('superadmin/pendataan-access?tab=bot#cardBotTelegram') }}" class="btn btn-outline-secondary btn-sm">
             <i class="ti ti-settings me-1"></i> Pengaturan Bot
         </a>
