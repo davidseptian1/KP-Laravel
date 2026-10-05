@@ -120,16 +120,14 @@ class TelegramPendataanController extends Controller
      */
     private function matchWithPendingData(array $parsed, int|string $chatId, ?int $messageId, array $meta = []): ?Pendataan
     {
-        $limit = self::getCheckLimit();
+        $limit = max(self::getCheckLimit(), 50);
+        $smsNominal = (float) ($parsed['nominal_total'] ?? 0);
 
-        // Retrieve latest pending submissions based on dynamic limit
-        $pendingRecords = Pendataan::where('status', Pendataan::STATUS_PENDING)
-            ->latest('created_at')
-            ->limit($limit)
-            ->get();
+        // Check if there are ANY pending records in the system
+        $totalPendingCount = Pendataan::where('status', Pendataan::STATUS_PENDING)->count();
 
-        if ($pendingRecords->isEmpty()) {
-            Log::info("No pending pendataan records found to match (checked last {$limit} items).");
+        if ($totalPendingCount === 0) {
+            Log::info("No pending pendataan records found in system to match.");
 
             // Save log: Unmatched because no pending records in DB
             try {
@@ -144,7 +142,7 @@ class TelegramPendataanController extends Controller
                     'parsed_nominal' => $parsed['nominal_total'] ?? null,
                     'raw_nominal' => $parsed['raw_nominal'] ?? null,
                     'status' => \App\Models\TelegramPendataanLog::STATUS_UNMATCHED,
-                    'action_note' => "SMS berhasil dipilah (Produk: '{$parsed['nama_produk']}' | Nominal: {$parsed['raw_nominal']}). Bot memeriksa {$limit} data pending terbaru, tetapi saat ini TIDAK ADA data berstatus 'Pending' di sistem.",
+                    'action_note' => "SMS berhasil dipilah (Produk: '{$parsed['nama_produk']}' | Nominal: {$parsed['raw_nominal']}). Namun saat ini TIDAK ADA data berstatus 'Pending' di sistem web.",
                     'bot_replied' => false,
                 ]);
             } catch (\Throwable $e) {
@@ -156,10 +154,37 @@ class TelegramPendataanController extends Controller
 
         $matchedItem = null;
 
-        foreach ($pendingRecords as $item) {
-            if ($this->isRecordMatching($item, $parsed)) {
-                $matchedItem = $item;
-                break;
+        // 1. Direct search by exact matching nominal in pending status (FIFO order: oldest pending first)
+        if ($smsNominal > 0) {
+            $exactNominalRecords = Pendataan::where('status', Pendataan::STATUS_PENDING)
+                ->where(function ($q) use ($smsNominal) {
+                    $q->where('total_harga', $smsNominal)
+                      ->orWhereBetween('total_harga', [$smsNominal - 1.0, $smsNominal + 1.0]);
+                })
+                ->orderBy('created_at', 'asc')
+                ->limit(20)
+                ->get();
+
+            foreach ($exactNominalRecords as $item) {
+                if ($this->isRecordMatching($item, $parsed)) {
+                    $matchedItem = $item;
+                    break;
+                }
+            }
+        }
+
+        // 2. Fallback: Search among the most recent pending submissions (up to $limit items)
+        if (!$matchedItem) {
+            $pendingRecords = Pendataan::where('status', Pendataan::STATUS_PENDING)
+                ->latest('created_at')
+                ->limit($limit)
+                ->get();
+
+            foreach ($pendingRecords as $item) {
+                if ($this->isRecordMatching($item, $parsed)) {
+                    $matchedItem = $item;
+                    break;
+                }
             }
         }
 
