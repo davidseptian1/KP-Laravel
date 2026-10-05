@@ -88,7 +88,7 @@
         <form action="{{ route('admin.pendataan.bot-settings') }}" method="POST">
             @csrf
             <div class="row g-3">
-                <div class="col-md-6">
+                <div class="col-md-5">
                     <label class="form-label fw-semibold text-dark">
                         <i class="ti ti-key text-warning me-1"></i>Telegram Bot Token
                     </label>
@@ -101,41 +101,88 @@
                     <div class="form-text text-muted small">Token resmi bot <code>@intel_awgbot</code> untuk integrasi webhook.</div>
                 </div>
 
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <label class="form-label fw-semibold text-dark">
-                        <i class="ti ti-list-check text-success me-1"></i>Jumlah Pesan Riwayat yang Dicek (Scraping Limit)
+                        <i class="ti ti-users-group text-primary me-1"></i>Chat ID Grup Telegram
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light text-muted"><i class="ti ti-hash"></i></span>
+                        <input type="text" name="chat_id" class="form-control font-monospace" value="{{ $targetChatId ?? '-1003899758798' }}" placeholder="-1003899758798" required>
+                        <button type="button" class="btn btn-outline-secondary" onclick="navigator.clipboard.writeText('{{ $targetChatId ?? '-1003899758798' }}'); Swal.fire({icon:'success', title:'Tersalin!', timer:1500, showConfirmButton:false});" title="Salin Chat ID">
+                            <i class="ti ti-copy"></i>
+                        </button>
+                    </div>
+                    <div class="form-text text-muted small">ID Supergroup <strong>AWG KBTG</strong> (Contoh: <code>-1003899758798</code>).</div>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold text-dark">
+                        <i class="ti ti-list-check text-success me-1"></i>Scraping Limit
                     </label>
                     <div class="input-group">
                         <span class="input-group-text bg-light text-muted"><i class="ti ti-history"></i></span>
                         <input type="number" name="check_limit" class="form-control fw-bold" value="{{ $checkLimit }}" min="1" max="50" required>
-                        <span class="input-group-text bg-light">Pesan Terbaru</span>
+                        <span class="input-group-text bg-light">Data</span>
                     </div>
-                    <div class="form-text text-muted small">Berapa banyak data riwayat berstatus <code>pending</code> terbaru yang akan dicari kecocokannya saat SMS masuk (Default: 5).</div>
+                    <div class="form-text text-muted small">Maksimal pencarian data <code>pending</code> terbaru.</div>
                 </div>
 
                 <div class="col-12">
-                    <div class="p-3 bg-light rounded-3 border">
-                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
-                            <label class="form-label fw-semibold text-dark mb-0">
-                                <i class="ti ti-link text-info me-1"></i>Endpoint URL Webhook Telegram
-                            </label>
-                            <div class="d-flex gap-2">
-                                <button type="button" class="btn btn-xs btn-primary py-1 px-2" onclick="setWebhookTelegram()">
-                                    <i class="ti ti-plug-connected me-1"></i>Daftarkan Webhook
-                                </button>
-                                <button type="button" class="btn btn-xs btn-outline-info py-1 px-2" onclick="checkWebhookTelegram()">
-                                    <i class="ti ti-info-circle me-1"></i>Cek Status Webhook
-                                </button>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="p-3 bg-light rounded-3 border h-100">
+                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                                    <label class="form-label fw-semibold text-dark mb-0">
+                                        <i class="ti ti-brand-telegram text-primary me-1"></i>Webhook Bot Telegram
+                                    </label>
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-xs btn-primary py-1 px-2" onclick="setWebhookTelegram()">
+                                            <i class="ti ti-plug-connected me-1"></i>Daftarkan
+                                        </button>
+                                        <button type="button" class="btn btn-xs btn-outline-info py-1 px-2" onclick="checkWebhookTelegram()">
+                                            <i class="ti ti-info-circle me-1"></i>Cek Status
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="input-group input-group-sm">
+                                    <input type="text" id="webhookUrlInput" class="form-control font-monospace bg-white" value="{{ $webhookUrl }}" readonly>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="navigator.clipboard.writeText(document.getElementById('webhookUrlInput').value); Swal.fire({icon:'success', title:'URL Webhook Tersalin!', timer:1500, showConfirmButton:false});">
+                                        <i class="ti ti-copy me-1"></i>Salin
+                                    </button>
+                                </div>
+                                <div class="mt-2 small text-muted">
+                                    <i class="ti ti-check text-success me-1"></i>Menerima update obrolan dari Telegram secara instan.
+                                </div>
                             </div>
                         </div>
-                        <div class="input-group input-group-sm">
-                            <input type="text" id="webhookUrlInput" class="form-control font-monospace bg-white" value="{{ $webhookUrl }}" readonly>
-                            <button type="button" class="btn btn-outline-secondary" onclick="navigator.clipboard.writeText(document.getElementById('webhookUrlInput').value); Swal.fire({icon:'success', title:'URL Webhook Tersalin!', timer:1500, showConfirmButton:false});">
-                                <i class="ti ti-copy me-1"></i>Salin URL
-                            </button>
+
+                        <div class="col-md-6">
+                            <div class="p-3 bg-light rounded-3 border h-100">
+                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                                    <label class="form-label fw-semibold text-dark mb-0">
+                                        <i class="ti ti-device-mobile text-success me-1"></i>Webhook SMS Forwarder HP (Rekomendasi)
+                                    </label>
+                                    <span class="badge bg-success bg-opacity-10 text-success">HTTP POST</span>
+                                </div>
+                                <div class="input-group input-group-sm">
+                                    <input type="text" id="smsWebhookUrlInput" class="form-control font-monospace bg-white" value="{{ $directSmsWebhookUrl }}" readonly>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="navigator.clipboard.writeText(document.getElementById('smsWebhookUrlInput').value); Swal.fire({icon:'success', title:'URL SMS Webhook Tersalin!', timer:1500, showConfirmButton:false});">
+                                        <i class="ti ti-copy me-1"></i>Salin
+                                    </button>
+                                </div>
+                                <div class="mt-2 small text-muted">
+                                    <i class="ti ti-info-circle text-primary me-1"></i>Salin ke aplikasi forwarder HP. SMS cocok otomatis & bot membalas ke grup <strong>AWG KBTG</strong>!
+                                </div>
+                            </div>
                         </div>
-                        <div class="mt-2 small text-muted">
-                            <i class="ti ti-alert-triangle text-warning me-1"></i><strong>Penting untuk Bot Grup:</strong> Buka <strong>@BotFather</strong> &rarr; ketik <code>/mybots</code> &rarr; pilih <code>@intel_awgbot</code> &rarr; <strong>Bot Settings</strong> &rarr; <strong>Group Privacy</strong> &rarr; <strong>Turn OFF</strong> (agar bot bisa membaca SMS di dalam grup).
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <div class="alert alert-info border-0 shadow-sm d-flex align-items-center gap-2 mb-0 py-2 px-3">
+                        <i class="ti ti-info-circle fs-4 text-info flex-shrink-0"></i>
+                        <div class="small">
+                            <strong>Koneksi Grup Telegram:</strong> Bot <code>@intel_awgbot</code> sudah terhubung ke grup <strong>AWG KBTG</strong> (ID: <code>{{ $targetChatId ?? '-1003899758798' }}</code>). Pastikan bot menjadi <strong>Admin</strong> di grup tersebut.
                         </div>
                     </div>
                 </div>

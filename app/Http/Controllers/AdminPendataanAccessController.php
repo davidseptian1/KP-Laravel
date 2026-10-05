@@ -51,7 +51,9 @@ class AdminPendataanAccessController extends Controller
         $botToken = TelegramPendataanController::getBotToken();
         $botUsername = config('services.telegram_pendataan.bot_username', 'intel_awgbot');
         $checkLimit = TelegramPendataanController::getCheckLimit();
+        $targetChatId = TelegramPendataanController::getTargetChatId();
         $webhookUrl = url('/api/telegram/pendataan-webhook');
+        $directSmsWebhookUrl = url('/api/sms/pendataan-webhook');
 
         $latestBotLogs = class_exists(\App\Models\TelegramPendataanLog::class)
             ? \App\Models\TelegramPendataanLog::with('pendataan')->latest('id')->take(6)->get()
@@ -71,7 +73,9 @@ class AdminPendataanAccessController extends Controller
             'botToken' => $botToken,
             'botUsername' => $botUsername,
             'checkLimit' => $checkLimit,
+            'targetChatId' => $targetChatId,
             'webhookUrl' => $webhookUrl,
+            'directSmsWebhookUrl' => $directSmsWebhookUrl,
             'latestBotLogs' => $latestBotLogs,
         ]);
     }
@@ -252,6 +256,7 @@ class AdminPendataanAccessController extends Controller
     {
         $request->validate([
             'bot_token' => 'nullable|string',
+            'chat_id' => 'nullable|string',
             'check_limit' => 'required|integer|min:1|max:50',
         ], [
             'check_limit.required' => 'Jumlah pesan yang dicek wajib diisi.',
@@ -263,10 +268,14 @@ class AdminPendataanAccessController extends Controller
             SosmedSetting::setByKey('pendataan_telegram_bot_token', trim($request->bot_token));
         }
 
+        if ($request->filled('chat_id')) {
+            SosmedSetting::setByKey('pendataan_telegram_chat_id', trim($request->chat_id));
+        }
+
         SosmedSetting::setByKey('pendataan_telegram_check_limit', (int) $request->check_limit);
 
         return redirect()->route('admin.pendataan.access')
-            ->with('success', 'Pengaturan Bot Telegram Pendataan (Scraping limit & Bot Token) berhasil disimpan!');
+            ->with('success', 'Pengaturan Bot Telegram Pendataan (Chat ID Grup, Scraping limit & Bot Token) berhasil disimpan!');
     }
 
     /**

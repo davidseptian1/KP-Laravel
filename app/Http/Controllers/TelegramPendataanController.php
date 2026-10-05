@@ -40,6 +40,19 @@ class TelegramPendataanController extends Controller
     }
 
     /**
+     * Get configured target Chat / Group ID (default AWG KBTG: -1003899758798).
+     */
+    public static function getTargetChatId(): string
+    {
+        $chatId = SosmedSetting::getByKey('pendataan_telegram_chat_id');
+        if (!empty($chatId)) {
+            return trim($chatId);
+        }
+
+        return (string) (config('services.telegram_pendataan.chat_id') ?: env('TELEGRAM_PENDATAAN_CHAT_ID', '-1003899758798'));
+    }
+
+    /**
      * Handle incoming webhook updates from Telegram Bot.
      */
     public function handleWebhook(Request $request): JsonResponse
@@ -624,8 +637,13 @@ class TelegramPendataanController extends Controller
     /**
      * Send message to Telegram Chat / Group with optional reply.
      */
-    public static function sendMessage(int|string $chatId, string $text, ?int $replyToMessageId = null): bool
+    public static function sendMessage(int|string|null $chatId, string $text, ?int $replyToMessageId = null): bool
     {
+        if (empty($chatId) || $chatId === 'direct_http_forwarder' || !is_numeric($chatId)) {
+            $chatId = self::getTargetChatId();
+            $replyToMessageId = null;
+        }
+
         $botToken = self::getBotToken();
         $url = "https://api.telegram.org/bot{$botToken}/sendMessage";
 
