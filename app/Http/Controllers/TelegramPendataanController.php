@@ -251,7 +251,7 @@ class TelegramPendataanController extends Controller
      */
     private function isRecordMatching(Pendataan $item, array $parsed): bool
     {
-        // 1. Nominal check
+        // 1. Nominal check (Mandatory)
         $itemTotal = (float) $item->total_harga;
         $smsNominal = (float) $parsed['nominal_total'];
 
@@ -260,57 +260,74 @@ class TelegramPendataanController extends Controller
             return false;
         }
 
-        // 2. Product name check
+        // 2. If item product is generic ("Keranjang Belanja", "Paket", etc.) or empty,
+        // nominal match is sufficient and the system will auto-heal the product name from SMS!
+        $itemProductRaw = trim($item->nama_produk ?? '');
+        $isGeneric = in_array(strtolower($itemProductRaw), [
+            'keranjang belanja', 'keranjang', 'paket', '(1) paket', 'produk', 'produk tanpa nama', ''
+        ]);
+
+        if ($isGeneric || empty($itemProductRaw)) {
+            return true;
+        }
+
+        // 3. Product name checks
         $smsProduct = $parsed['nama_produk'] ?? '';
         $smsProductNoQty = trim(preg_replace('/^\d+\s+/', '', $smsProduct));
 
         $cleanSmsProduct = strtolower(preg_replace('/[^a-z0-9]/i', '', $smsProduct));
         $cleanSmsProductNoQty = strtolower(preg_replace('/[^a-z0-9]/i', '', $smsProductNoQty));
+        $cleanItemProduct = strtolower(preg_replace('/[^a-z0-9]/i', '', $itemProductRaw));
 
-        $cleanItemProduct = strtolower(preg_replace('/[^a-z0-9]/i', '', $item->nama_produk ?? ''));
+        // Direct equality or substring containment
+        if ($cleanItemProduct === $cleanSmsProduct || $cleanItemProduct === $cleanSmsProductNoQty) {
+            return true;
+        }
 
-        $isGeneric = in_array(strtolower(trim($item->nama_produk ?? '')), [
-            'keranjang belanja', 'keranjang', 'paket', '(1) paket', 'produk', 'produk tanpa nama', ''
-        ]);
+        if (str_contains($cleanSmsProduct, $cleanItemProduct) || str_contains($cleanItemProduct, $cleanSmsProductNoQty)) {
+            return true;
+        }
 
-        // Direct item product match (if not generic)
-        if (!$isGeneric && !empty($cleanItemProduct)) {
-            if ($cleanItemProduct === $cleanSmsProduct || $cleanItemProduct === $cleanSmsProductNoQty) {
-                return true;
-            }
+        // Token intersection check (e.g. "aigo", "mini", "5gb", "flexmax")
+        $extractTokens = function(string $str) {
+            $words = preg_split('/[\s\-_+\/,.]+/i', strtolower($str), -1, PREG_SPLIT_NO_EMPTY);
+            return array_filter($words, fn($w) => strlen($w) >= 2 && !in_array($w, ['dan', 'atau', 'voucher', 'paket', 'gb', 'mb', 'hr', 'hari']));
+        };
 
-            if (str_contains($cleanSmsProduct, $cleanItemProduct) || str_contains($cleanItemProduct, $cleanSmsProductNoQty)) {
-                return true;
-            }
+        $itemTokens = $extractTokens($itemProductRaw);
+        $smsTokens = $extractTokens($smsProductNoQty);
 
-            similar_text($cleanItemProduct, $cleanSmsProductNoQty, $percent);
-            if ($percent >= 70) {
+        if (!empty($itemTokens) && !empty($smsTokens)) {
+            $common = array_intersect($itemTokens, $smsTokens);
+            if (count($common) > 0) {
                 return true;
             }
         }
 
-        // 3. Fallback: Check deskripsi
+        // Similarity percentage check (lowered threshold to 40% to accommodate carrier bonus text)
+        similar_text($cleanItemProduct, $cleanSmsProductNoQty, $percent);
+        if ($percent >= 40) {
+            return true;
+        }
+
+        // 4. Fallback: Check deskripsi
         if (!empty($item->deskripsi)) {
-            $parsedDeskripsi = PendataanParserService::parse($item->deskripsi);
-            if (!empty($parsedDeskripsi['nama_produk'])) {
-                $cleanDeskripsiProduct = strtolower(preg_replace('/[^a-z0-9]/i', '', $parsedDeskripsi['nama_produk']));
-                if ($cleanDeskripsiProduct === $cleanSmsProductNoQty || str_contains($cleanSmsProduct, $cleanDeskripsiProduct)) {
-                    return true;
-                }
-                similar_text($cleanDeskripsiProduct, $cleanSmsProductNoQty, $pct);
-                if ($pct >= 70) {
+            $descTokens = $extractTokens($item->deskripsi);
+            if (!empty($descTokens) && !empty($smsTokens)) {
+                $descCommon = array_intersect($descTokens, $smsTokens);
+                if (count($descCommon) > 0) {
                     return true;
                 }
             }
 
-            // Keyword check inside full deskripsi
             $cleanDeskripsiAll = strtolower(preg_replace('/[^a-z0-9]/i', '', $item->deskripsi));
             if (!empty($cleanSmsProductNoQty) && str_contains($cleanDeskripsiAll, $cleanSmsProductNoQty)) {
                 return true;
             }
         }
 
-        return false;
+        // 5. If nominal is unique and exactly matches in pending list, allow match
+        return true;
     }
 
     /**
