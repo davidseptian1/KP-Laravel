@@ -244,28 +244,68 @@ class PendataanController extends Controller
     }
 
     /**
+     * Resolve active date range based on request params or presets.
+     * Returns: [?string $startDate, ?string $endDate, bool $isAllDates]
+     */
+    private function resolveDateRange(Request $request): array
+    {
+        $preset = strtolower(trim((string) $request->input('date_preset', '')));
+
+        if ($preset === 'yesterday' || $preset === 'kemarin') {
+            $yesterday = now()->subDay()->toDateString();
+            return [$yesterday, $yesterday, false];
+        }
+
+        if ($preset === 'today' || $preset === 'hari_ini') {
+            $today = now()->toDateString();
+            return [$today, $today, false];
+        }
+
+        if ($preset === '7days' || $preset === '7_hari') {
+            return [now()->subDays(6)->toDateString(), now()->toDateString(), false];
+        }
+
+        if ($preset === 'all' || $preset === 'semua' || $request->boolean('all_dates')) {
+            return [null, null, true];
+        }
+
+        $hasStartDate = $request->filled('start_date');
+        $hasEndDate = $request->filled('end_date');
+
+        // If user explicitly submitted date inputs
+        if ($hasStartDate || $hasEndDate) {
+            $startDate = $hasStartDate ? $request->start_date : null;
+            $endDate = $hasEndDate ? $request->end_date : null;
+            return [$startDate, $endDate, false];
+        }
+
+        // If request has date query parameters present but empty (user cleared input and submitted)
+        if ($request->has('start_date') && $request->has('end_date')) {
+            return [null, null, true];
+        }
+
+        // Default initial visit: today
+        $today = now()->toDateString();
+        return [$today, $today, false];
+    }
+
+    /**
      * Build shared Eloquent query with active filters.
      */
     private function buildQuery(Request $request)
     {
         $query = Pendataan::with('user');
 
-        $hasDateParam = $request->has('start_date') || $request->has('end_date');
+        [$startDate, $endDate, $isAllDates] = $this->resolveDateRange($request);
 
         // Filter: Tanggal (Start Date & End Date)
-        // Default to today if no date filter parameter is present in request
-        if ($request->filled('start_date')) {
-            $startDate = Carbon::parse($request->start_date)->startOfDay();
-            $query->where('created_at', '>=', $startDate);
-        } elseif (!$hasDateParam) {
-            $query->where('created_at', '>=', now()->startOfDay());
-        }
-
-        if ($request->filled('end_date')) {
-            $endDate = Carbon::parse($request->end_date)->endOfDay();
-            $query->where('created_at', '<=', $endDate);
-        } elseif (!$hasDateParam) {
-            $query->where('created_at', '<=', now()->endOfDay());
+        if (!$isAllDates) {
+            if (!empty($startDate)) {
+                $query->whereDate('created_at', '>=', $startDate);
+            }
+            if (!empty($endDate)) {
+                $query->whereDate('created_at', '<=', $endDate);
+            }
         }
 
         // Filter: Shift (All Shift, Shift 1, Shift 2, Shift 3)
@@ -353,9 +393,7 @@ class PendataanController extends Controller
             return Pendataan::select('nama_produk')->distinct()->whereNotNull('nama_produk')->pluck('nama_produk');
         });
 
-        $hasDateParam = $request->has('start_date') || $request->has('end_date');
-        $defaultStartDate = $hasDateParam ? $request->start_date : now()->toDateString();
-        $defaultEndDate = $hasDateParam ? $request->end_date : now()->toDateString();
+        [$startDate, $endDate, $isAllDates] = $this->resolveDateRange($request);
 
         $activeChip = $request->filled('jenis_chip') ? strtoupper(trim((string) $request->jenis_chip)) : 'All Chip';
         if (!in_array($activeChip, ['KTTS', 'KBTG'])) {
@@ -375,8 +413,10 @@ class PendataanController extends Controller
             'shiftLoginAt' => session('pendataan_staff_login_at'),
             'shiftExpiresAt' => session('pendataan_staff_expires_at'),
             'filters' => [
-                'start_date' => $defaultStartDate,
-                'end_date' => $defaultEndDate,
+                'start_date' => $startDate ?? '',
+                'end_date' => $endDate ?? '',
+                'is_all_dates' => $isAllDates,
+                'date_preset' => $request->input('date_preset', ''),
                 'shift' => $request->shift ?: 'All Shift',
                 'jenis_chip' => $activeChip,
                 'nama' => $request->nama,
@@ -394,10 +434,7 @@ class PendataanController extends Controller
         $this->enforceStaffSession();
 
         $items = $this->buildQuery($request)->latest('created_at')->get();
-
-        $hasDateParam = $request->has('start_date') || $request->has('end_date');
-        $startDate = $hasDateParam ? $request->start_date : now()->toDateString();
-        $endDate = $hasDateParam ? $request->end_date : now()->toDateString();
+        [$startDate, $endDate, $isAllDates] = $this->resolveDateRange($request);
 
         $activeShift = $request->input('shift', 'All Shift');
         $shiftSuffix = (!empty($activeShift) && !in_array($activeShift, ['all', 'All', 'All Shift']))
@@ -409,7 +446,14 @@ class PendataanController extends Controller
             ? '-' . strtoupper($activeChip)
             : '';
 
-        $filename = 'Laporan-Pendataan' . $shiftSuffix . $chipSuffix . '-' . now()->format('Ymd_His') . '.xlsx';
+        $dateSuffix = '';
+        if (!$isAllDates && $startDate && $endDate) {
+            $dateSuffix = ($startDate === $endDate)
+                ? '-' . str_replace('-', '', $startDate)
+                : '-' . str_replace('-', '', $startDate) . '_' . str_replace('-', '', $endDate);
+        }
+
+        $filename = 'Laporan-Pendataan' . $shiftSuffix . $chipSuffix . $dateSuffix . '-' . now()->format('Ymd_His') . '.xlsx';
 
         return Excel::download(
             new PendataanExport($items, [
@@ -437,9 +481,7 @@ class PendataanController extends Controller
         $totalQty = (int) $items->sum('qty');
         $totalNominal = (float) $items->sum('total_harga');
 
-        $hasDateParam = $request->has('start_date') || $request->has('end_date');
-        $startDate = $hasDateParam ? $request->start_date : now()->toDateString();
-        $endDate = $hasDateParam ? $request->end_date : now()->toDateString();
+        [$startDate, $endDate, $isAllDates] = $this->resolveDateRange($request);
 
         $activeShift = $request->input('shift', 'All Shift');
         $activeChip = $request->input('jenis_chip', 'All Chip');
@@ -462,10 +504,19 @@ class PendataanController extends Controller
             ? '-' . strtoupper($activeChip)
             : '';
 
+        $dateSuffix = '';
+        if (!$isAllDates && $startDate && $endDate) {
+            $dateSuffix = ($startDate === $endDate)
+                ? '-' . str_replace('-', '', $startDate)
+                : '-' . str_replace('-', '', $startDate) . '_' . str_replace('-', '', $endDate);
+        }
+
         $pdf = Pdf::loadView('pendataan.pdf', compact('items', 'filters', 'totalTransaksi', 'totalQty', 'totalNominal'))
             ->setPaper('a4', 'landscape');
 
-        $filename = 'Laporan-Pendataan' . $shiftSuffix . $chipSuffix . '-' . now()->format('Ymd_His') . '.pdf';
+        $filename = 'Laporan-Pendataan' . $shiftSuffix . $chipSuffix . $dateSuffix . '-' . now()->format('Ymd_His') . '.pdf';
+
+        return $pdf->download($filename);
     }
 
     /**

@@ -86,14 +86,14 @@
         </h6>
     </div>
     <div class="card-body">
-        <form method="GET" action="{{ route('pendataan.index') }}" class="row g-3">
+        <form method="GET" action="{{ route('pendataan.index') }}" class="row g-3" id="formFilterPendataan">
             <div class="col-md-2 col-sm-6">
                 <label class="form-label small fw-semibold text-muted">Tanggal Mulai</label>
-                <input type="date" name="start_date" class="form-control form-control-sm" value="{{ $filters['start_date'] ?? '' }}">
+                <input type="date" name="start_date" id="filter_start_date" class="form-control form-control-sm" value="{{ $filters['start_date'] ?? '' }}">
             </div>
             <div class="col-md-2 col-sm-6">
                 <label class="form-label small fw-semibold text-muted">Tanggal Selesai</label>
-                <input type="date" name="end_date" class="form-control form-control-sm" value="{{ $filters['end_date'] ?? '' }}">
+                <input type="date" name="end_date" id="filter_end_date" class="form-control form-control-sm" value="{{ $filters['end_date'] ?? '' }}">
             </div>
             <div class="col-md-2 col-sm-6">
                 <label class="form-label small fw-semibold text-muted">Pilihan Shift</label>
@@ -139,22 +139,65 @@
                     <option value="gagal" {{ ($filters['status'] ?? '') === 'gagal' ? 'selected' : '' }}>Gagal ❌ (> 24 Jam)</option>
                 </select>
             </div>
+            <div class="col-md-10 col-sm-12 d-flex align-items-center flex-wrap gap-1 pt-1">
+                @php
+                    $todayStr = now()->toDateString();
+                    $yesterdayStr = now()->subDay()->toDateString();
+                    $sevenDaysStr = now()->subDays(6)->toDateString();
+                    $activeStartDate = $filters['start_date'] ?? '';
+                    $activeEndDate = $filters['end_date'] ?? '';
+                    $isAllDates = !empty($filters['is_all_dates']);
+
+                    $isTodayActive = !$isAllDates && ($activeStartDate === $todayStr && $activeEndDate === $todayStr);
+                    $isYesterdayActive = !$isAllDates && ($activeStartDate === $yesterdayStr && $activeEndDate === $yesterdayStr);
+                    $is7DaysActive = !$isAllDates && ($activeStartDate === $sevenDaysStr && $activeEndDate === $todayStr);
+                @endphp
+                <span class="small text-muted me-1 fw-semibold"><i class="ti ti-calendar-time me-1"></i>Pilih Cepat:</span>
+                <button type="button" class="btn btn-xs py-1 px-2 rounded-pill {{ $isTodayActive ? 'btn-primary text-white shadow-sm' : 'btn-outline-secondary' }}" onclick="applyDatePreset('today')" style="font-size: 0.75rem;">
+                    <i class="ti ti-calendar-event me-1"></i>Hari Ini
+                </button>
+                <button type="button" class="btn btn-xs py-1 px-2 rounded-pill {{ $isYesterdayActive ? 'btn-primary text-white shadow-sm' : 'btn-outline-secondary' }}" onclick="applyDatePreset('yesterday')" style="font-size: 0.75rem;">
+                    <i class="ti ti-history me-1"></i>Hari Kemarin
+                </button>
+                <button type="button" class="btn btn-xs py-1 px-2 rounded-pill {{ $is7DaysActive ? 'btn-primary text-white shadow-sm' : 'btn-outline-secondary' }}" onclick="applyDatePreset('7days')" style="font-size: 0.75rem;">
+                    7 Hari Terakhir
+                </button>
+                <button type="button" class="btn btn-xs py-1 px-2 rounded-pill {{ $isAllDates ? 'btn-primary text-white shadow-sm' : 'btn-outline-secondary' }}" onclick="applyDatePreset('all')" style="font-size: 0.75rem;">
+                    Semua Tanggal
+                </button>
+            </div>
             <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2 pt-3 border-top mt-2">
                 <!-- Export / Download Buttons with active filters & Shift/Chip Dropdown -->
                 <div class="d-flex align-items-center gap-2 flex-wrap">
                     <span class="small fw-semibold text-muted"><i class="ti ti-download me-1"></i>Download Data:</span>
 
                     @php
-                        $baseExportQuery = request()->except(['page']);
                         $currentShift = $filters['shift'] ?? 'All Shift';
                         $currentChip = $filters['jenis_chip'] ?? 'All Chip';
+
+                        $exportParams = request()->except(['page']);
+                        if (!$isAllDates) {
+                            if (!empty($activeStartDate)) $exportParams['start_date'] = $activeStartDate;
+                            if (!empty($activeEndDate)) $exportParams['end_date'] = $activeEndDate;
+                        } else {
+                            $exportParams['date_preset'] = 'all';
+                            unset($exportParams['start_date'], $exportParams['end_date']);
+                        }
+                        $exportQueryString = http_build_query($exportParams);
+
+                        $dateBadgeLabel = $isAllDates ? 'Semua Tgl' : ($isTodayActive ? 'Hari Ini' : ($isYesterdayActive ? 'Kemarin' : ($activeStartDate ? date('d/m', strtotime($activeStartDate)) . ($activeStartDate !== $activeEndDate ? '-' . date('d/m', strtotime($activeEndDate)) : '') : '')));
                     @endphp
 
                     <!-- Excel Download Button with Shift and Chip Selector Dropdown -->
                     <div class="btn-group">
-                        <a href="{{ url('pendataan/export-excel') }}?{{ http_build_query(request()->query()) }}" class="btn btn-sm btn-success px-3 shadow-sm" title="Download data dalam format Excel">
+                        <a href="{{ url('pendataan/export-excel') }}?{{ $exportQueryString }}" class="btn btn-sm btn-success px-3 shadow-sm" title="Download data dalam format Excel">
                             <i class="ti ti-file-spreadsheet me-1"></i> Excel (.xlsx)
-                            <span class="badge bg-white text-success ms-1 fw-bold">{{ $currentShift }}</span>
+                            @if($dateBadgeLabel)
+                                <span class="badge bg-white text-success ms-1 fw-bold">{{ $dateBadgeLabel }}</span>
+                            @endif
+                            @if($currentShift !== 'All Shift')
+                                <span class="badge bg-white text-success ms-1 fw-bold">{{ $currentShift }}</span>
+                            @endif
                             @if($currentChip !== 'All Chip')
                                 <span class="badge bg-white text-dark ms-1 fw-bold">{{ $currentChip }}</span>
                             @endif
@@ -163,24 +206,35 @@
                             <span class="visually-hidden">Pilihan Download</span>
                         </button>
                         <ul class="dropdown-menu shadow">
+                            <li><h6 class="dropdown-header text-uppercase small fw-bold">Download Berdasarkan Periode</h6></li>
+                            <li><a class="dropdown-item" href="{{ url('pendataan/export-excel') }}?{{ $exportQueryString }}"><i class="ti ti-file-check me-2 text-success"></i>Sesuai Tampilan Filter Saat Ini</a></li>
+                            <li><a class="dropdown-item" href="{{ url('pendataan/export-excel') }}?{{ http_build_query(array_merge($exportParams, ['start_date' => $yesterdayStr, 'end_date' => $yesterdayStr, 'date_preset' => 'yesterday'])) }}"><i class="ti ti-history me-2 text-warning"></i>Khusus Hari Kemarin ({{ date('d/m/Y', strtotime($yesterdayStr)) }})</a></li>
+                            <li><a class="dropdown-item" href="{{ url('pendataan/export-excel') }}?{{ http_build_query(array_merge($exportParams, ['start_date' => $todayStr, 'end_date' => $todayStr, 'date_preset' => 'today'])) }}"><i class="ti ti-calendar-event me-2 text-primary"></i>Khusus Hari Ini ({{ date('d/m/Y', strtotime($todayStr)) }})</a></li>
+                            <li><a class="dropdown-item" href="{{ url('pendataan/export-excel') }}?{{ http_build_query(array_merge($exportParams, ['start_date' => '', 'end_date' => '', 'date_preset' => 'all'])) }}"><i class="ti ti-world me-2 text-info"></i>Semua Tanggal</a></li>
+                            <li><hr class="dropdown-divider"></li>
                             <li><h6 class="dropdown-header text-uppercase small fw-bold">Download Berdasarkan Jenis Chip</h6></li>
-                            <li><a class="dropdown-item {{ $currentChip === 'All Chip' ? 'active' : '' }}" href="{{ url('pendataan/export-excel') }}?{{ http_build_query(array_merge($baseExportQuery, ['jenis_chip' => 'All Chip'])) }}"><i class="ti ti-cpu me-2"></i>Semua Chip (All Chip)</a></li>
-                            <li><a class="dropdown-item {{ $currentChip === 'KTTS' ? 'active' : '' }}" href="{{ url('pendataan/export-excel') }}?{{ http_build_query(array_merge($baseExportQuery, ['jenis_chip' => 'KTTS'])) }}"><i class="ti ti-cpu me-2 text-primary"></i>Khusus Chip KTTS</a></li>
-                            <li><a class="dropdown-item {{ $currentChip === 'KBTG' ? 'active' : '' }}" href="{{ url('pendataan/export-excel') }}?{{ http_build_query(array_merge($baseExportQuery, ['jenis_chip' => 'KBTG'])) }}"><i class="ti ti-cpu-2 me-2" style="color: #6f42c1;"></i>Khusus Chip KBTG</a></li>
+                            <li><a class="dropdown-item {{ $currentChip === 'All Chip' ? 'active' : '' }}" href="{{ url('pendataan/export-excel') }}?{{ http_build_query(array_merge($exportParams, ['jenis_chip' => 'All Chip'])) }}"><i class="ti ti-cpu me-2"></i>Semua Chip (All Chip)</a></li>
+                            <li><a class="dropdown-item {{ $currentChip === 'KTTS' ? 'active' : '' }}" href="{{ url('pendataan/export-excel') }}?{{ http_build_query(array_merge($exportParams, ['jenis_chip' => 'KTTS'])) }}"><i class="ti ti-cpu me-2 text-primary"></i>Khusus Chip KTTS</a></li>
+                            <li><a class="dropdown-item {{ $currentChip === 'KBTG' ? 'active' : '' }}" href="{{ url('pendataan/export-excel') }}?{{ http_build_query(array_merge($exportParams, ['jenis_chip' => 'KBTG'])) }}"><i class="ti ti-cpu-2 me-2" style="color: #6f42c1;"></i>Khusus Chip KBTG</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><h6 class="dropdown-header text-uppercase small fw-bold">Download Berdasarkan Shift</h6></li>
-                            <li><a class="dropdown-item {{ $currentShift === 'All Shift' ? 'active' : '' }}" href="{{ url('pendataan/export-excel') }}?{{ http_build_query(array_merge($baseExportQuery, ['shift' => 'All Shift'])) }}"><i class="ti ti-layers-subtract me-2"></i>All Shift (Semua)</a></li>
-                            <li><a class="dropdown-item {{ $currentShift === 'Shift 1' ? 'active' : '' }}" href="{{ url('pendataan/export-excel') }}?{{ http_build_query(array_merge($baseExportQuery, ['shift' => 'Shift 1'])) }}"><i class="ti ti-sun me-2 text-warning"></i>Khusus Shift 1</a></li>
-                            <li><a class="dropdown-item {{ $currentShift === 'Shift 2' ? 'active' : '' }}" href="{{ url('pendataan/export-excel') }}?{{ http_build_query(array_merge($baseExportQuery, ['shift' => 'Shift 2'])) }}"><i class="ti ti-sunset me-2 text-primary"></i>Khusus Shift 2</a></li>
-                            <li><a class="dropdown-item {{ $currentShift === 'Shift 3' ? 'active' : '' }}" href="{{ url('pendataan/export-excel') }}?{{ http_build_query(array_merge($baseExportQuery, ['shift' => 'Shift 3'])) }}"><i class="ti ti-moon-stars me-2 text-info"></i>Khusus Shift 3</a></li>
+                            <li><a class="dropdown-item {{ $currentShift === 'All Shift' ? 'active' : '' }}" href="{{ url('pendataan/export-excel') }}?{{ http_build_query(array_merge($exportParams, ['shift' => 'All Shift'])) }}"><i class="ti ti-layers-subtract me-2"></i>All Shift (Semua)</a></li>
+                            <li><a class="dropdown-item {{ $currentShift === 'Shift 1' ? 'active' : '' }}" href="{{ url('pendataan/export-excel') }}?{{ http_build_query(array_merge($exportParams, ['shift' => 'Shift 1'])) }}"><i class="ti ti-sun me-2 text-warning"></i>Khusus Shift 1</a></li>
+                            <li><a class="dropdown-item {{ $currentShift === 'Shift 2' ? 'active' : '' }}" href="{{ url('pendataan/export-excel') }}?{{ http_build_query(array_merge($exportParams, ['shift' => 'Shift 2'])) }}"><i class="ti ti-sunset me-2 text-primary"></i>Khusus Shift 2</a></li>
+                            <li><a class="dropdown-item {{ $currentShift === 'Shift 3' ? 'active' : '' }}" href="{{ url('pendataan/export-excel') }}?{{ http_build_query(array_merge($exportParams, ['shift' => 'Shift 3'])) }}"><i class="ti ti-moon-stars me-2 text-info"></i>Khusus Shift 3</a></li>
                         </ul>
                     </div>
 
                     <!-- PDF Download Button with Shift and Chip Selector Dropdown -->
                     <div class="btn-group">
-                        <a href="{{ url('pendataan/export-pdf') }}?{{ http_build_query(request()->query()) }}" class="btn btn-sm btn-danger px-3 shadow-sm" title="Download data dalam format PDF" target="_blank">
+                        <a href="{{ url('pendataan/export-pdf') }}?{{ $exportQueryString }}" class="btn btn-sm btn-danger px-3 shadow-sm" title="Download data dalam format PDF" target="_blank">
                             <i class="ti ti-file-type-pdf me-1"></i> PDF
-                            <span class="badge bg-white text-danger ms-1 fw-bold">{{ $currentShift }}</span>
+                            @if($dateBadgeLabel)
+                                <span class="badge bg-white text-danger ms-1 fw-bold">{{ $dateBadgeLabel }}</span>
+                            @endif
+                            @if($currentShift !== 'All Shift')
+                                <span class="badge bg-white text-danger ms-1 fw-bold">{{ $currentShift }}</span>
+                            @endif
                             @if($currentChip !== 'All Chip')
                                 <span class="badge bg-white text-dark ms-1 fw-bold">{{ $currentChip }}</span>
                             @endif
@@ -189,16 +243,22 @@
                             <span class="visually-hidden">Pilihan Download</span>
                         </button>
                         <ul class="dropdown-menu shadow">
+                            <li><h6 class="dropdown-header text-uppercase small fw-bold">Download Berdasarkan Periode</h6></li>
+                            <li><a class="dropdown-item" href="{{ url('pendataan/export-pdf') }}?{{ $exportQueryString }}" target="_blank"><i class="ti ti-file-check me-2 text-danger"></i>Sesuai Tampilan Filter Saat Ini</a></li>
+                            <li><a class="dropdown-item" href="{{ url('pendataan/export-pdf') }}?{{ http_build_query(array_merge($exportParams, ['start_date' => $yesterdayStr, 'end_date' => $yesterdayStr, 'date_preset' => 'yesterday'])) }}" target="_blank"><i class="ti ti-history me-2 text-warning"></i>Khusus Hari Kemarin ({{ date('d/m/Y', strtotime($yesterdayStr)) }})</a></li>
+                            <li><a class="dropdown-item" href="{{ url('pendataan/export-pdf') }}?{{ http_build_query(array_merge($exportParams, ['start_date' => $todayStr, 'end_date' => $todayStr, 'date_preset' => 'today'])) }}" target="_blank"><i class="ti ti-calendar-event me-2 text-primary"></i>Khusus Hari Ini ({{ date('d/m/Y', strtotime($todayStr)) }})</a></li>
+                            <li><a class="dropdown-item" href="{{ url('pendataan/export-pdf') }}?{{ http_build_query(array_merge($exportParams, ['start_date' => '', 'end_date' => '', 'date_preset' => 'all'])) }}" target="_blank"><i class="ti ti-world me-2 text-info"></i>Semua Tanggal</a></li>
+                            <li><hr class="dropdown-divider"></li>
                             <li><h6 class="dropdown-header text-uppercase small fw-bold">Download Berdasarkan Jenis Chip</h6></li>
-                            <li><a class="dropdown-item {{ $currentChip === 'All Chip' ? 'active' : '' }}" href="{{ url('pendataan/export-pdf') }}?{{ http_build_query(array_merge($baseExportQuery, ['jenis_chip' => 'All Chip'])) }}" target="_blank"><i class="ti ti-cpu me-2"></i>Semua Chip (All Chip)</a></li>
-                            <li><a class="dropdown-item {{ $currentChip === 'KTTS' ? 'active' : '' }}" href="{{ url('pendataan/export-pdf') }}?{{ http_build_query(array_merge($baseExportQuery, ['jenis_chip' => 'KTTS'])) }}" target="_blank"><i class="ti ti-cpu me-2 text-primary"></i>Khusus Chip KTTS</a></li>
-                            <li><a class="dropdown-item {{ $currentChip === 'KBTG' ? 'active' : '' }}" href="{{ url('pendataan/export-pdf') }}?{{ http_build_query(array_merge($baseExportQuery, ['jenis_chip' => 'KBTG'])) }}" target="_blank"><i class="ti ti-cpu-2 me-2" style="color: #6f42c1;"></i>Khusus Chip KBTG</a></li>
+                            <li><a class="dropdown-item {{ $currentChip === 'All Chip' ? 'active' : '' }}" href="{{ url('pendataan/export-pdf') }}?{{ http_build_query(array_merge($exportParams, ['jenis_chip' => 'All Chip'])) }}" target="_blank"><i class="ti ti-cpu me-2"></i>Semua Chip (All Chip)</a></li>
+                            <li><a class="dropdown-item {{ $currentChip === 'KTTS' ? 'active' : '' }}" href="{{ url('pendataan/export-pdf') }}?{{ http_build_query(array_merge($exportParams, ['jenis_chip' => 'KTTS'])) }}" target="_blank"><i class="ti ti-cpu me-2 text-primary"></i>Khusus Chip KTTS</a></li>
+                            <li><a class="dropdown-item {{ $currentChip === 'KBTG' ? 'active' : '' }}" href="{{ url('pendataan/export-pdf') }}?{{ http_build_query(array_merge($exportParams, ['jenis_chip' => 'KBTG'])) }}" target="_blank"><i class="ti ti-cpu-2 me-2" style="color: #6f42c1;"></i>Khusus Chip KBTG</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><h6 class="dropdown-header text-uppercase small fw-bold">Download Berdasarkan Shift</h6></li>
-                            <li><a class="dropdown-item {{ $currentShift === 'All Shift' ? 'active' : '' }}" href="{{ url('pendataan/export-pdf') }}?{{ http_build_query(array_merge($baseExportQuery, ['shift' => 'All Shift'])) }}" target="_blank"><i class="ti ti-layers-subtract me-2"></i>All Shift (Semua)</a></li>
-                            <li><a class="dropdown-item {{ $currentShift === 'Shift 1' ? 'active' : '' }}" href="{{ url('pendataan/export-pdf') }}?{{ http_build_query(array_merge($baseExportQuery, ['shift' => 'Shift 1'])) }}" target="_blank"><i class="ti ti-sun me-2 text-warning"></i>Khusus Shift 1</a></li>
-                            <li><a class="dropdown-item {{ $currentShift === 'Shift 2' ? 'active' : '' }}" href="{{ url('pendataan/export-pdf') }}?{{ http_build_query(array_merge($baseExportQuery, ['shift' => 'Shift 2'])) }}" target="_blank"><i class="ti ti-sunset me-2 text-primary"></i>Khusus Shift 2</a></li>
-                            <li><a class="dropdown-item {{ $currentShift === 'Shift 3' ? 'active' : '' }}" href="{{ url('pendataan/export-pdf') }}?{{ http_build_query(array_merge($baseExportQuery, ['shift' => 'Shift 3'])) }}" target="_blank"><i class="ti ti-moon-stars me-2 text-info"></i>Khusus Shift 3</a></li>
+                            <li><a class="dropdown-item {{ $currentShift === 'All Shift' ? 'active' : '' }}" href="{{ url('pendataan/export-pdf') }}?{{ http_build_query(array_merge($exportParams, ['shift' => 'All Shift'])) }}" target="_blank"><i class="ti ti-layers-subtract me-2"></i>All Shift (Semua)</a></li>
+                            <li><a class="dropdown-item {{ $currentShift === 'Shift 1' ? 'active' : '' }}" href="{{ url('pendataan/export-pdf') }}?{{ http_build_query(array_merge($exportParams, ['shift' => 'Shift 1'])) }}" target="_blank"><i class="ti ti-sun me-2 text-warning"></i>Khusus Shift 1</a></li>
+                            <li><a class="dropdown-item {{ $currentShift === 'Shift 2' ? 'active' : '' }}" href="{{ url('pendataan/export-pdf') }}?{{ http_build_query(array_merge($exportParams, ['shift' => 'Shift 2'])) }}" target="_blank"><i class="ti ti-sunset me-2 text-primary"></i>Khusus Shift 2</a></li>
+                            <li><a class="dropdown-item {{ $currentShift === 'Shift 3' ? 'active' : '' }}" href="{{ url('pendataan/export-pdf') }}?{{ http_build_query(array_merge($exportParams, ['shift' => 'Shift 3'])) }}" target="_blank"><i class="ti ti-moon-stars me-2 text-info"></i>Khusus Shift 3</a></li>
                         </ul>
                     </div>
                 </div>
@@ -227,14 +287,39 @@
                 <i class="ti ti-table me-2 text-primary"></i>Data Pendataan
             </h5>
 
-            <!-- Quick Shift & Chip Pill Navigations -->
+            <!-- Quick Date, Shift & Chip Pill Navigations -->
             @php
                 $activeShift = $filters['shift'] ?? 'All Shift';
                 $activeChip = $filters['jenis_chip'] ?? 'All Chip';
                 $pillQuery = request()->except(['page', 'shift']);
                 $chipPillQuery = request()->except(['page', 'jenis_chip']);
+                $datePillQuery = request()->except(['page', 'start_date', 'end_date', 'date_preset', 'all_dates']);
             @endphp
             <div class="d-flex align-items-center gap-2 flex-wrap">
+                <!-- Date Pills -->
+                <div class="btn-group btn-group-sm p-1 bg-light rounded-pill border" role="group" aria-label="Filter Tanggal Cepat">
+                    <a href="{{ route('pendataan.index', array_merge($datePillQuery, ['start_date' => $todayStr, 'end_date' => $todayStr])) }}" 
+                       class="btn btn-sm rounded-pill px-3 {{ $isTodayActive ? 'btn-success text-white fw-bold shadow-sm' : 'btn-light text-muted' }}"
+                       title="Tampilkan data hari ini">
+                        <i class="ti ti-calendar-event me-1"></i>Hari Ini
+                    </a>
+                    <a href="{{ route('pendataan.index', array_merge($datePillQuery, ['start_date' => $yesterdayStr, 'end_date' => $yesterdayStr])) }}" 
+                       class="btn btn-sm rounded-pill px-3 {{ $isYesterdayActive ? 'btn-success text-white fw-bold shadow-sm' : 'btn-light text-muted' }}"
+                       title="Tampilkan data hari kemarin">
+                        <i class="ti ti-history me-1"></i>Kemarin
+                    </a>
+                    <a href="{{ route('pendataan.index', array_merge($datePillQuery, ['start_date' => $sevenDaysStr, 'end_date' => $todayStr])) }}" 
+                       class="btn btn-sm rounded-pill px-3 {{ $is7DaysActive ? 'btn-success text-white fw-bold shadow-sm' : 'btn-light text-muted' }}"
+                       title="Tampilkan data 7 hari terakhir">
+                        7 Hari
+                    </a>
+                    <a href="{{ route('pendataan.index', array_merge($datePillQuery, ['date_preset' => 'all'])) }}" 
+                       class="btn btn-sm rounded-pill px-3 {{ $isAllDates ? 'btn-success text-white fw-bold shadow-sm' : 'btn-light text-muted' }}"
+                       title="Tampilkan semua data tanpa batasan tanggal">
+                        Semua
+                    </a>
+                </div>
+
                 <!-- Shift Pills -->
                 <div class="btn-group btn-group-sm p-1 bg-light rounded-pill border" role="group" aria-label="Filter Shift Cepat">
                     <a href="{{ route('pendataan.index', array_merge($pillQuery, ['shift' => 'All Shift'])) }}" 
@@ -1600,6 +1685,35 @@ document.addEventListener('DOMContentLoaded', function() {
         // Check every 250ms for sub-second real-time precision
         setInterval(checkShiftExpiry, 250);
     })();
+
+    // =========================================================================
+    // QUICK DATE PRESET SELECTOR (Hari Ini, Kemarin, 7 Hari, Semua)
+    // =========================================================================
+    window.applyDatePreset = function(preset) {
+        const today = '{{ now()->toDateString() }}';
+        const yesterday = '{{ now()->subDay()->toDateString() }}';
+        const sevenDaysAgo = '{{ now()->subDays(6)->toDateString() }}';
+        const form = document.getElementById('formFilterPendataan');
+        const startInput = document.getElementById('filter_start_date');
+        const endInput = document.getElementById('filter_end_date');
+
+        if (!form || !startInput || !endInput) return;
+
+        if (preset === 'today') {
+            startInput.value = today;
+            endInput.value = today;
+        } else if (preset === 'yesterday') {
+            startInput.value = yesterday;
+            endInput.value = yesterday;
+        } else if (preset === '7days') {
+            startInput.value = sevenDaysAgo;
+            endInput.value = today;
+        } else if (preset === 'all') {
+            startInput.value = '';
+            endInput.value = '';
+        }
+        form.submit();
+    };
 });
 </script>
 @endpush
