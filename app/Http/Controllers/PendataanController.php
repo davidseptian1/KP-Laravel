@@ -629,10 +629,6 @@ class PendataanController extends Controller
         // Strictly lock nama to authenticated staff session
         $nama = session('pendataan_staff_nama') ?: (auth()->user()->nama ?: 'Staff');
 
-        $smsCheck = PendataanParserService::parseTelegramSms($deskripsi);
-        $isDirectSmsVoucher = $smsCheck['is_valid'] && !empty($smsCheck['nama_produk']) && $smsCheck['nominal_total'] > 0;
-        $initialStatus = $isDirectSmsVoucher ? Pendataan::STATUS_SUKSES : Pendataan::STATUS_PENDING;
-
         $pendataan = Pendataan::create([
             'user_id' => auth()->id(),
             'nama' => $nama,
@@ -643,29 +639,13 @@ class PendataanController extends Controller
             'total_harga' => $totalHarga,
             'qty' => $qty,
             'gambar' => $gambarPath,
-            'status' => $initialStatus,
+            'status' => Pendataan::STATUS_PENDING,
         ]);
 
         cache()->forget('pendataan_filter_staff_names');
         cache()->forget('pendataan_filter_products');
 
-        $autoMatched = false;
-        if ($isDirectSmsVoucher) {
-            $responseText = "nama_produk: {$namaProduk}\n" .
-                            "nomimal : {$smsCheck['raw_nominal']}\n" .
-                            "Sudah sesuai ✅";
-            TelegramPendataanController::sendMessage(null, $responseText);
-        } else {
-            // Check if an unmatched Telegram SMS already arrived earlier for this transaction
-            $autoMatched = TelegramPendataanController::checkNewlyCreatedPendataan($pendataan);
-        }
-
-        $msg = 'Data Pendataan (' . $jenisChip . ') berhasil disimpan atas nama ' . $nama . '!';
-        if ($isDirectSmsVoucher) {
-            $msg .= ' 🎉 Teks SMS voucher terverifikasi! Status langsung diatur ke Sukses ✅ dan bot telah mengirim balasan ke grup Telegram AWG KBTG!';
-        } elseif ($autoMatched) {
-            $msg .= ' 🎉 Transaksi langsung otomatis cocok dengan SMS Telegram dan status telah berubah ke Sukses ✅!';
-        }
+        $msg = 'Data Pendataan (' . $jenisChip . ') berhasil disimpan atas nama ' . $nama . ' dengan status Pending (menunggu SMS voucher masuk).';
 
         return redirect()->route('pendataan.index')->with('success', $msg);
     }
@@ -792,7 +772,7 @@ class PendataanController extends Controller
         }
 
         // Preserve original nama - cannot be altered
-        $pendataan->update([
+        $updatePayload = [
             'nama' => $pendataan->nama,
             'deskripsi' => $deskripsi,
             'nama_produk' => $namaProduk,
@@ -802,7 +782,14 @@ class PendataanController extends Controller
             'qty' => $qty,
             'gambar' => $gambarPath,
             'alasan_edit' => $alasanFinal,
-        ]);
+        ];
+
+        $inputStatus = strtolower(trim((string) $request->input('status', '')));
+        if (in_array($inputStatus, ['pending', 'sukses', 'kadaluarsa'])) {
+            $updatePayload['status'] = $inputStatus;
+        }
+
+        $pendataan->update($updatePayload);
 
         return redirect()->route('pendataan.index')->with('success', 'Data Pendataan berhasil diperbarui!');
     }

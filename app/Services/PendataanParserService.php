@@ -25,16 +25,6 @@ class PendataanParserService
 
         $cleanText = str_replace(["\r\n", "\r"], "\n", trim($text));
 
-        // 0. Check if text is an SMS voucher format
-        $smsParsed = self::parseTelegramSms($cleanText);
-        if ($smsParsed['is_valid'] && !empty($smsParsed['nama_produk']) && $smsParsed['nominal_total'] > 0) {
-            $result['nama_produk'] = $smsParsed['nama_produk'];
-            $result['total_harga'] = $smsParsed['nominal_total'];
-            $result['harga_qty'] = $smsParsed['nominal_total'];
-            $result['qty'] = 1;
-            return $result;
-        }
-
         // 1. Check for labeled format first
         if (preg_match('/(?:Nama\s*Produk|Produk)\s*[:=]\s*(.+)/i', $cleanText, $m)) {
             $result['nama_produk'] = trim($m[1]);
@@ -387,13 +377,7 @@ class PendataanParserService
         $rawDigits = '';
         $nominalNumeric = 0.0;
 
-        if (preg_match('/^(.*?)\s+(?:senilai|sebesar|seharga|nominal|total)\s*[:=]?\s*(?:Rp\.?\s*)?([\d.,]+)/is', $body, $m)) {
-            $namaProduk = trim($m[1]);
-            $rawDigits = preg_replace('/[^\d]/', '', $m[2]);
-            $nominalNumeric = self::cleanPrice($m[2]);
-            $matched = true;
-        } elseif (preg_match('/^(.*?)\s+(?:Rp\.?\s*)([\d.,]{4,})/is', $body, $m)) {
-            // Fallback pattern: [nama_produk] Rp [nominal]
+        if (preg_match('/^(.*?)\s+(?:senilai|sebesar|seharga)\s*[:=]?\s*(?:Rp\.?\s*)?([\d.,]+)/is', $body, $m)) {
             $namaProduk = trim($m[1]);
             $rawDigits = preg_replace('/[^\d]/', '', $m[2]);
             $nominalNumeric = self::cleanPrice($m[2]);

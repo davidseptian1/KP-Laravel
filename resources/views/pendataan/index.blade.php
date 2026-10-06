@@ -735,6 +735,15 @@
                                     <input type="text" name="total_harga" id="edit_total_harga" class="form-control js-currency-input" oninput="calculateUnitEdit()">
                                 </div>
                             </div>
+                            <div class="col-md-12">
+                                <label class="form-label small fw-semibold text-muted">Status Transaksi</label>
+                                <select name="status" id="edit_status" class="form-select fw-semibold">
+                                    <option value="pending">⏳ Pending (Menunggu SMS Masuk)</option>
+                                    <option value="sukses">✅ Sukses</option>
+                                    <option value="kadaluarsa">❌ Kadaluarsa</option>
+                                </select>
+                                <div class="form-text text-muted small">Status transaksi. Jika SMS voucher belum muncul di grup Telegram, statusnya adalah <code>Pending</code>.</div>
+                            </div>
                         </div>
                     </div>
 
@@ -1402,6 +1411,7 @@ function openEditModal(item) {
     document.getElementById('edit_hapus_gambar').value = '0';
     document.getElementById('edit_gambar_base64').value = '';
     document.getElementById('edit_gambar_input').value = '';
+    document.getElementById('edit_status').value = (item.status || 'pending').toLowerCase();
 
     // Set Jenis Chip (KTTS / KBTG)
     if ((item.jenis_chip || 'KTTS').toUpperCase() === 'KBTG') {
