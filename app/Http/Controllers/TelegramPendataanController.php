@@ -444,11 +444,27 @@ class TelegramPendataanController extends Controller
                 ->limit(20)
                 ->get();
 
+            $genericMatch = null;
             foreach ($exactNominalRecords as $item) {
                 if ($this->isRecordMatching($item, $parsed)) {
-                    $matchedItem = $item;
-                    break;
+                    $itemProductRaw = trim($item->nama_produk ?? '');
+                    $isGeneric = in_array(strtolower($itemProductRaw), [
+                        'keranjang belanja', 'keranjang', 'paket', '(1) paket', 'produk', 'produk tanpa nama', ''
+                    ]);
+
+                    if (!$isGeneric) {
+                        // Found a specific product match (exact brand/package match)
+                        $matchedItem = $item;
+                        break;
+                    } elseif (!$genericMatch) {
+                        // Keep generic placeholder as fallback if no specific product matches
+                        $genericMatch = $item;
+                    }
                 }
+            }
+
+            if (!$matchedItem && $genericMatch) {
+                $matchedItem = $genericMatch;
             }
         }
 
@@ -459,11 +475,25 @@ class TelegramPendataanController extends Controller
                 ->limit($limit)
                 ->get();
 
+            $genericMatch = null;
             foreach ($pendingRecords as $item) {
                 if ($this->isRecordMatching($item, $parsed)) {
-                    $matchedItem = $item;
-                    break;
+                    $itemProductRaw = trim($item->nama_produk ?? '');
+                    $isGeneric = in_array(strtolower($itemProductRaw), [
+                        'keranjang belanja', 'keranjang', 'paket', '(1) paket', 'produk', 'produk tanpa nama', ''
+                    ]);
+
+                    if (!$isGeneric) {
+                        $matchedItem = $item;
+                        break;
+                    } elseif (!$genericMatch) {
+                        $genericMatch = $item;
+                    }
                 }
+            }
+
+            if (!$matchedItem && $genericMatch) {
+                $matchedItem = $genericMatch;
             }
         }
 
@@ -525,7 +555,8 @@ class TelegramPendataanController extends Controller
             return $matchedItem;
         }
 
-        Log::info("No matching pendataan record among the {$pendingRecords->count()} pending items checked.");
+        $pendingCount = isset($pendingRecords) ? $pendingRecords->count() : (isset($exactNominalRecords) ? $exactNominalRecords->count() : 0);
+        Log::info("No matching pendataan record among the {$pendingCount} pending items checked.");
 
         // Save log: Unmatched after checking pending records
         try {
@@ -540,7 +571,7 @@ class TelegramPendataanController extends Controller
                 'parsed_nominal' => $parsed['nominal_total'] ?? null,
                 'raw_nominal' => $parsed['raw_nominal'] ?? null,
                 'status' => \App\Models\TelegramPendataanLog::STATUS_UNMATCHED,
-                'action_note' => "SMS berhasil dipilah (Produk: '{$parsed['nama_produk']}' | Nominal: {$parsed['raw_nominal']}). Bot telah memeriksa {$pendingRecords->count()} data pending terbaru, namun BELUM ADA data yang cocok dengan nominal atau produk tersebut.",
+                'action_note' => "SMS berhasil dipilah (Produk: '{$parsed['nama_produk']}' | Nominal: {$parsed['raw_nominal']}). Bot telah memeriksa data pending terbaru, namun BELUM ADA data yang cocok dengan nominal atau produk tersebut.",
                 'bot_replied' => false,
             ]);
         } catch (\Throwable $e) {
@@ -592,14 +623,52 @@ class TelegramPendataanController extends Controller
             return true;
         }
 
-        // Token intersection check (e.g. "aigo", "mini", "5gb", "flexmax")
-        $extractTokens = function(string $str) {
-            $words = preg_split('/[\s\-_+\/,.]+/i', strtolower($str), -1, PREG_SPLIT_NO_EMPTY);
-            return array_filter($words, fn($w) => strlen($w) >= 2 && !in_array($w, ['dan', 'atau', 'voucher', 'paket', 'gb', 'mb', 'hr', 'hari']));
+        // Brand / Carrier Family conflict check
+        // If both specify a recognized carrier brand family and they don't match, strictly REJECT
+        $brandFamilies = [
+            'axis' => ['aigo', 'bronet', 'owsem', 'warnet'],
+            'xl' => ['flexmax', 'flex', 'xtra', 'combo', 'akrab', 'vip'],
+            'smartfren' => ['nonstop', 'gokil', '1on', 'ion', 'unlimited'],
+            'telkomsel' => ['omg', 'maxstream', 'ketengan', 'simpati', 'as', 'loop', 'orbit'],
+            'indosat' => ['freedom', 'yellow', 'imclass', 'prime', 'im3', 'mentari'],
+            'tri' => ['alwayson', 'aon', 'happy', 'pamax'],
+        ];
+
+        $itemFamily = null;
+        $smsFamily = null;
+        foreach ($brandFamilies as $family => $keywords) {
+            foreach ($keywords as $kw) {
+                if (stripos($cleanItemProduct, $kw) !== false) {
+                    $itemFamily = $family;
+                }
+                if (stripos($cleanSmsProductNoQty, $kw) !== false) {
+                    $smsFamily = $family;
+                }
+            }
+        }
+
+        // If both belong to different identified brand families (e.g. XL vs Axis), STRICT REJECT!
+        if ($itemFamily !== null && $smsFamily !== null && $itemFamily !== $smsFamily) {
+            return false;
+        }
+
+        // Extract core identity tokens (excluding numeric specs like 7gb, 28hr, 30hari, and filler words)
+        $extractIdentityTokens = function(string $str) {
+            // Strip numeric specifications with units (e.g. 7gb, 28hr, 30hari, 500mb) and pure numbers
+            $str = preg_replace('/\b\d+\s*(?:gb|mb|tb|hr|hari|bln|bulan|d|k|rb|ribu)?\b/i', ' ', $str);
+            // Replace non-alphanumeric with spaces
+            $str = preg_replace('/[^a-z0-9\s]/i', ' ', $str);
+            $words = preg_split('/\s+/i', strtolower($str), -1, PREG_SPLIT_NO_EMPTY);
+            $fillers = [
+                'dan', 'atau', 'voucher', 'vocer', 'vcr', 'paket', 'produk',
+                'isi', 'ulang', 'kuota', 'data', 'sp', 'kartu', 'perdana',
+                'kuotanya', 'lokal', 'utama', 'nasional', 'reguler'
+            ];
+            return array_values(array_filter($words, fn($w) => strlen($w) >= 3 && !in_array($w, $fillers)));
         };
 
-        $itemTokens = $extractTokens($itemProductRaw);
-        $smsTokens = $extractTokens($smsProductNoQty);
+        $itemTokens = $extractIdentityTokens($itemProductRaw);
+        $smsTokens = $extractIdentityTokens($smsProductNoQty);
 
         if (!empty($itemTokens) && !empty($smsTokens)) {
             $common = array_intersect($itemTokens, $smsTokens);
@@ -608,30 +677,30 @@ class TelegramPendataanController extends Controller
             }
         }
 
-        // Similarity percentage check (lowered threshold to 40% to accommodate carrier bonus text)
+        // High similarity check on clean strings (minimum 70% threshold)
         similar_text($cleanItemProduct, $cleanSmsProductNoQty, $percent);
-        if ($percent >= 40) {
+        if ($percent >= 70) {
             return true;
         }
 
         // 4. Fallback: Check deskripsi
         if (!empty($item->deskripsi)) {
-            $descTokens = $extractTokens($item->deskripsi);
+            $cleanDesc = strtolower(preg_replace('/[^a-z0-9]/i', '', $item->deskripsi));
+            if (!empty($cleanSmsProductNoQty) && str_contains($cleanDesc, $cleanSmsProductNoQty)) {
+                return true;
+            }
+
+            $descTokens = $extractIdentityTokens($item->deskripsi);
             if (!empty($descTokens) && !empty($smsTokens)) {
                 $descCommon = array_intersect($descTokens, $smsTokens);
                 if (count($descCommon) > 0) {
                     return true;
                 }
             }
-
-            $cleanDeskripsiAll = strtolower(preg_replace('/[^a-z0-9]/i', '', $item->deskripsi));
-            if (!empty($cleanSmsProductNoQty) && str_contains($cleanDeskripsiAll, $cleanSmsProductNoQty)) {
-                return true;
-            }
         }
 
-        // 5. If nominal is unique and exactly matches in pending list, allow match
-        return true;
+        // 5. Strict rejection: If product is specific and has no brand/token overlap, DO NOT match!
+        return false;
     }
 
     /**
