@@ -359,8 +359,9 @@
                     <div class="col-md-3"><strong>IP Address:</strong> <span id="modalRawIp" class="font-monospace">-</span></div>
                     <div class="col-md-3"><strong>Update Type:</strong> <span id="modalRawType" class="badge bg-secondary">-</span></div>
                     <div class="col-md-3"><strong>Status:</strong> <span id="modalRawStatusBadge">-</span></div>
-                    <div class="col-md-6 mt-2"><strong>Chat/Grup:</strong> <span id="modalRawChat">-</span></div>
-                    <div class="col-md-6 mt-2"><strong>Waktu:</strong> <span id="modalRawTime">-</span></div>
+                    <div class="col-md-4 mt-2"><strong>Chat/Grup:</strong> <span id="modalRawChat">-</span></div>
+                    <div class="col-md-4 mt-2"><strong>Pengirim:</strong> <span id="modalRawSender">-</span></div>
+                    <div class="col-md-4 mt-2"><strong>Waktu:</strong> <span id="modalRawTime">-</span></div>
                 </div>
 
                 <div class="mb-3">
@@ -443,46 +444,61 @@ function showLogDetail(logId) {
         }
 
         const d = res.data;
-        document.getElementById('modalLogId').textContent = d.id;
-        document.getElementById('modalStatusBadge').innerHTML = d.status_badge_html;
-        document.getElementById('modalCreatedAt').textContent = d.created_at;
-        document.getElementById('modalChatTitle').textContent = d.chat_title;
-        document.getElementById('modalChatId').textContent = 'Chat ID: ' + (d.chat_id || '-');
-        document.getElementById('modalSenderName').textContent = d.sender_name;
-        document.getElementById('modalSenderUsername').textContent = d.sender_username;
-        document.getElementById('modalRawMessage').textContent = d.raw_message || '-';
-        document.getElementById('modalActionNote').textContent = d.action_note || '-';
+        const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val ?? '-'; };
+        const setHtml = (id, val) => { const el = document.getElementById(id); if (el) el.innerHTML = val ?? '-'; };
+
+        setTxt('modalLogId', d.id);
+        setHtml('modalStatusBadge', d.status_badge_html);
+        setTxt('modalCreatedAt', d.created_at);
+        setTxt('modalChatTitle', d.chat_title);
+        setTxt('modalChatId', 'Chat ID: ' + (d.chat_id || '-'));
+        setTxt('modalSenderName', d.sender_name);
+        setTxt('modalSenderUsername', d.sender_username);
+        setTxt('modalRawMessage', d.raw_message || '-');
+        setTxt('modalActionNote', d.action_note || '-');
 
         // Extracted data
-        if (d.parsed_product !== '-' || d.parsed_nominal !== '-') {
-            document.getElementById('modalParsedProduct').textContent = d.parsed_product;
-            document.getElementById('modalParsedNominal').textContent = d.parsed_nominal;
-            document.getElementById('sectionExtractedData').classList.remove('d-none');
-        } else {
-            document.getElementById('sectionExtractedData').classList.add('d-none');
+        const secExtracted = document.getElementById('sectionExtractedData');
+        if (secExtracted) {
+            if (d.parsed_product !== '-' || d.parsed_nominal !== '-') {
+                setTxt('modalParsedProduct', d.parsed_product);
+                setTxt('modalParsedNominal', d.parsed_nominal);
+                secExtracted.classList.remove('d-none');
+            } else {
+                secExtracted.classList.add('d-none');
+            }
         }
 
         // Matched record
-        if (d.pendataan_id) {
-            document.getElementById('modalPendataanId').textContent = d.pendataan_id;
-            document.getElementById('modalPendataanProduct').textContent = d.pendataan_product || '-';
-            document.getElementById('modalPendataanNominal').textContent = d.pendataan_nominal || '-';
-            document.getElementById('modalPendataanNama').textContent = d.pendataan_nama || '-';
-            document.getElementById('sectionMatchedRecord').classList.remove('d-none');
-        } else {
-            document.getElementById('sectionMatchedRecord').classList.add('d-none');
+        const secMatched = document.getElementById('sectionMatchedRecord');
+        if (secMatched) {
+            if (d.pendataan_id) {
+                setTxt('modalPendataanId', d.pendataan_id);
+                setTxt('modalPendataanProduct', d.pendataan_product || '-');
+                setTxt('modalPendataanNominal', d.pendataan_nominal || '-');
+                setTxt('modalPendataanNama', d.pendataan_nama || '-');
+                secMatched.classList.remove('d-none');
+            } else {
+                secMatched.classList.add('d-none');
+            }
         }
 
         // Bot reply
-        if (d.bot_replied && d.bot_reply_text) {
-            document.getElementById('modalBotReply').textContent = d.bot_reply_text;
-            document.getElementById('sectionBotReply').classList.remove('d-none');
-        } else {
-            document.getElementById('sectionBotReply').classList.add('d-none');
+        const secReply = document.getElementById('sectionBotReply');
+        if (secReply) {
+            if (d.bot_replied && d.bot_reply_text) {
+                setTxt('modalBotReply', d.bot_reply_text);
+                secReply.classList.remove('d-none');
+            } else {
+                secReply.classList.add('d-none');
+            }
         }
 
-        const modal = new bootstrap.Modal(document.getElementById('modalDetailBotLog'));
-        modal.show();
+        const modalEl = document.getElementById('modalDetailBotLog');
+        if (modalEl) {
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        }
     })
     .catch(err => {
         Swal.fire('Error', 'Gagal memuat rincian log: ' + err.message, 'error');
@@ -536,19 +552,25 @@ function showRawWebhookDetail(id) {
         }
 
         const d = res.data;
-        document.getElementById('modalRawId').textContent = d.id;
-        document.getElementById('modalRawSource').textContent = d.source;
-        document.getElementById('modalRawIp').textContent = d.ip_address;
-        document.getElementById('modalRawType').textContent = d.update_type;
-        document.getElementById('modalRawChat').textContent = d.chat_title + (d.chat_id !== '-' ? ' (' + d.chat_id + ')' : '');
-        document.getElementById('modalRawSender').textContent = d.sender_name;
-        document.getElementById('modalRawTime').textContent = d.created_at;
-        document.getElementById('modalRawStatusBadge').innerHTML = d.status_badge_html;
-        document.getElementById('modalRawNotes').textContent = d.notes;
-        document.getElementById('modalRawPayloadContent').textContent = d.raw_payload;
+        const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val ?? '-'; };
+        const setHtml = (id, val) => { const el = document.getElementById(id); if (el) el.innerHTML = val ?? '-'; };
 
-        const modal = new bootstrap.Modal(document.getElementById('modalDetailRawWebhook'));
-        modal.show();
+        setTxt('modalRawId', d.id);
+        setTxt('modalRawSource', d.source);
+        setTxt('modalRawIp', d.ip_address);
+        setTxt('modalRawType', d.update_type);
+        setTxt('modalRawChat', (d.chat_title || '-') + (d.chat_id && d.chat_id !== '-' ? ' (' + d.chat_id + ')' : ''));
+        setTxt('modalRawSender', d.sender_name);
+        setTxt('modalRawTime', d.created_at);
+        setHtml('modalRawStatusBadge', d.status_badge_html);
+        setTxt('modalRawNotes', d.notes);
+        setTxt('modalRawPayloadContent', d.raw_payload);
+
+        const modalEl = document.getElementById('modalDetailRawWebhook');
+        if (modalEl) {
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        }
     })
     .catch(err => {
         Swal.fire('Error', 'Gagal memuat rincian raw webhook: ' + err.message, 'error');
