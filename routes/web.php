@@ -265,6 +265,7 @@ Route::middleware(['checkLogin', 'admin.activity.log'])->group(function () {
     Route::put('pendataan/{id}', [PendataanController::class, 'update'])->name('pendataan.update');
     Route::delete('pendataan/{id}', [PendataanController::class, 'destroy'])->name('pendataan.destroy');
     Route::post('pendataan/sync-telegram', [TelegramPendataanController::class, 'manualSync'])->name('pendataan.sync-telegram');
+    Route::post('pendataan/process-manual-sms', [TelegramPendataanController::class, 'processManualSms'])->name('pendataan.process-manual-sms');
     
     // Log Riwayat Bot Telegram Pendataan
     Route::get('pendataan-bot-logs', [AdminPendataanAccessController::class, 'botLogs'])->name('admin.pendataan.bot-logs');

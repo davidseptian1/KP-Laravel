@@ -10,6 +10,9 @@
         <p class="text-muted mb-0">Pantau aktivitas bot Telegram secara langsung: pesan masuk, hasil ekstraksi SMS, status pencocokan dengan data pendataan, dan balasan grup.</p>
     </div>
     <div class="col-md-5 text-md-end mt-3 mt-md-0 d-flex justify-content-md-end align-items-center gap-2 flex-wrap">
+        <button type="button" class="btn btn-success btn-sm shadow-sm" data-bs-toggle="modal" data-bs-target="#modalManualSms" title="Tempel dan proses SMS voucher secara langsung">
+            <i class="ti ti-message-dots me-1"></i> Tempel SMS
+        </button>
         <form action="{{ route('admin.pendataan.bot-logs.sync') }}" method="POST" class="d-inline">
             @csrf
             <button type="submit" class="btn btn-primary btn-sm shadow-sm" title="Sinkronkan ulang SMS yang belum cocok dengan data transaksi pending">
@@ -386,6 +389,42 @@
     </div>
 </div>
 
+<!-- Modal: Tempel / Proses SMS Manual -->
+<div class="modal fade" id="modalManualSms" tabindex="-1" aria-labelledby="modalManualSmsLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-success text-white py-3">
+                <h5 class="modal-title fw-bold text-white d-flex align-items-center" id="modalManualSmsLabel">
+                    <i class="ti ti-message-dots me-2 fs-4"></i>Tempel & Proses SMS Voucher
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formManualSms" onsubmit="submitManualSms(event)">
+                @csrf
+                <div class="modal-body p-4">
+                    <div class="alert alert-info py-2 px-3 small border-0 mb-3 d-flex align-items-center gap-2">
+                        <i class="ti ti-info-circle fs-4 text-info flex-shrink-0"></i>
+                        <div>
+                            Tempelkan teks SMS transaksi dari Telegram atau HP di sini. Sistem akan memilah produk, mencocokkan ke transaksi <strong>Pending</strong>, mengubahnya ke <strong>Sukses</strong>, dan bot <code>@intel_awgbot</code> akan otomatis membalas ke grup <strong>AWG KBTG</strong>!
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-dark">Isi Pesan SMS:</label>
+                        <textarea class="form-control font-monospace" id="inputManualSmsText" rows="4" placeholder="Contoh: 150 AIGO Mini 5GB + Kuota di Kotamu 14hr senilai Rp3525000 expired sd 04-04-2027..." required></textarea>
+                        <div class="form-text small text-muted">Bisa langsung ditempel meskipun ada awalan <code>App: ... Title: ... Message: ...</code></div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-success btn-sm px-4 fw-bold" id="btnSubmitManualSms">
+                        <i class="ti ti-send me-1"></i> Proses & Cocokkan SMS
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script>
 let autoRefreshTimer = null;
@@ -604,6 +643,53 @@ function confirmClearRawLogs() {
         if (result.isConfirmed) {
             document.getElementById('formClearRawLogs').submit();
         }
+    });
+}
+
+function submitManualSms(e) {
+    e.preventDefault();
+    const text = document.getElementById('inputManualSmsText').value.trim();
+    if (!text) return;
+
+    const btn = document.getElementById('btnSubmitManualSms');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Memproses...';
+
+    fetch("{{ route('pendataan.process-manual-sms') }}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({ sms_text: text })
+    })
+    .then(r => r.json())
+    .then(res => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="ti ti-send me-1"></i> Proses & Cocokkan SMS';
+        if (res.success) {
+            const modalEl = document.getElementById('modalManualSms');
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+            document.getElementById('inputManualSmsText').value = '';
+
+            Swal.fire({
+                icon: res.matched ? 'success' : 'info',
+                title: res.matched ? 'Berhasil Cocok!' : 'SMS Tercatat',
+                text: res.message,
+                confirmButtonText: 'OK'
+            }).then(() => {
+                location.reload();
+            });
+        } else {
+            Swal.fire('Perhatian', res.message || 'Gagal memproses SMS.', 'warning');
+        }
+    })
+    .catch(err => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="ti ti-send me-1"></i> Proses & Cocokkan SMS';
+        Swal.fire('Error', 'Terjadi kesalahan: ' + err.message, 'error');
     });
 }
 </script>

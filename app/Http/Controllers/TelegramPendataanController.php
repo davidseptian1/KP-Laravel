@@ -881,4 +881,90 @@ class TelegramPendataanController extends Controller
 
         return back()->with('info', "Sinkronisasi selesai. Saat ini tidak ditemukan transaksi pending yang nominalnya cocok dengan riwayat SMS Telegram.");
     }
+
+    /**
+     * Process manually pasted SMS text from web UI by user or staff.
+     */
+    public function processManualSms(Request $request): JsonResponse
+    {
+        $user = auth()->user();
+        if (!$user || !$user->canAccessPendataan()) {
+            return response()->json(['success' => false, 'message' => 'Anda tidak memiliki akses ke fitur ini.'], 403);
+        }
+
+        $text = trim((string) $request->input('sms_text', ''));
+        if (empty($text)) {
+            return response()->json(['success' => false, 'message' => 'Teks SMS tidak boleh kosong.'], 422);
+        }
+
+        $senderName = $user->nama . ' (Input Web)';
+        $chatId = self::getTargetChatId();
+
+        $meta = [
+            'chat_id' => $chatId,
+            'chat_title' => 'AWG KBTG (Input Web)',
+            'message_id' => null,
+            'sender_name' => $senderName,
+            'sender_username' => $user->username ?? 'web_user',
+            'raw_message' => $text,
+        ];
+
+        // Record in raw webhook logs
+        try {
+            \App\Models\TelegramWebhookRawLog::create([
+                'source' => 'manual_input',
+                'ip_address' => (string) $request->ip(),
+                'http_method' => 'POST',
+                'update_id' => null,
+                'update_type' => 'manual_paste',
+                'chat_id' => $chatId,
+                'chat_title' => 'AWG KBTG (Input Web)',
+                'sender_name' => $senderName,
+                'summary' => substr($text, 0, 500),
+                'raw_payload' => json_encode(['text' => $text, 'input_by' => $user->nama], JSON_PRETTY_PRINT),
+                'status' => 'received',
+                'notes' => 'SMS dimasukkan manual dari web oleh ' . $user->nama,
+            ]);
+        } catch (\Throwable $e) {}
+
+        $parsed = PendataanParserService::parseTelegramSms($text);
+
+        if (!$parsed['is_valid']) {
+            try {
+                \App\Models\TelegramPendataanLog::create([
+                    'chat_id' => $meta['chat_id'],
+                    'chat_title' => $meta['chat_title'],
+                    'message_id' => null,
+                    'sender_username' => $meta['sender_username'],
+                    'sender_name' => $meta['sender_name'],
+                    'raw_message' => $meta['raw_message'],
+                    'status' => \App\Models\TelegramPendataanLog::STATUS_INVALID_FORMAT,
+                    'action_note' => 'Teks SMS dimasukkan secara manual dari web, namun format bukan SMS voucher ("senilai Rp...").',
+                    'bot_replied' => false,
+                ]);
+            } catch (\Throwable $e) {}
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Format teks tidak dikenali sebagai SMS voucher. Pastikan teks mengandung kata "senilai Rp..." atau nominal transaksi yang valid.',
+            ], 422);
+        }
+
+        $matchedRecord = $this->matchWithPendingData($parsed, $chatId, null, $meta);
+
+        if ($matchedRecord) {
+            return response()->json([
+                'success' => true,
+                'matched' => true,
+                'pendataan' => $matchedRecord,
+                'message' => "⚡ SMS Berhasil Dicocokkan! Transaksi #{$matchedRecord->id} ({$matchedRecord->nama_produk} - Rp " . number_format($matchedRecord->total_harga, 0, ',', '.') . ") telah diubah statusnya menjadi Sukses ✅ dan bot telah mengirim balasan ke grup Telegram AWG KBTG!",
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'matched' => false,
+            'message' => "SMS berhasil dipilah (Produk: '{$parsed['nama_produk']}' | Nominal: {$parsed['raw_nominal']}). Namun saat ini belum ada transaksi 'Pending' dengan nominal tersebut di sistem web. SMS telah disimpan di riwayat log bot dan siap dicocokkan otomatis saat data baru diinput nanti.",
+        ]);
+    }
 }
