@@ -869,6 +869,8 @@
             </div>
         </div>
     </div>
+</div>
+
 <!-- ================= MODAL TEMPEL / PROSES SMS MANUAL ================= -->
 <div class="modal fade" id="modalManualSms" tabindex="-1" aria-labelledby="modalManualSmsLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -950,6 +952,21 @@ function parseTransactionText(text) {
     if (!text || !text.trim()) return res;
 
     const clean = text.replace(/\r\n|\r/g, '\n').trim();
+
+    // 0. Check SMS voucher pattern (e.g. from AXIS / Telegram / Forwarder)
+    const mSms = clean.match(/(?:Message:\s*)?(.+?)\s+senilai\s+(?:Rp\.?\s*)?([\d.,]+)/is);
+    if (mSms) {
+        let prodName = mSms[1].trim();
+        prodName = prodName.replace(/^(?:App:.*?\n)?(?:Title:.*?\n)?(?:Message:\s*)?/is, '').trim();
+        const nom = cleanPriceText(mSms[2]);
+        if (nom > 0 && prodName) {
+            res.nama_produk = prodName;
+            res.total_harga = nom;
+            res.harga_qty = nom;
+            res.qty = 1;
+            return res;
+        }
+    }
 
     // 1. Check labeled format
     const mProduk = clean.match(/(?:Nama\s*Produk|Produk)\s*[:=]\s*(.+)/i);

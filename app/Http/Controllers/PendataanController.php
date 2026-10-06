@@ -629,6 +629,10 @@ class PendataanController extends Controller
         // Strictly lock nama to authenticated staff session
         $nama = session('pendataan_staff_nama') ?: (auth()->user()->nama ?: 'Staff');
 
+        $smsCheck = PendataanParserService::parseTelegramSms($deskripsi);
+        $isDirectSmsVoucher = $smsCheck['is_valid'] && !empty($smsCheck['nama_produk']) && $smsCheck['nominal_total'] > 0;
+        $initialStatus = $isDirectSmsVoucher ? Pendataan::STATUS_SUKSES : Pendataan::STATUS_PENDING;
+
         $pendataan = Pendataan::create([
             'user_id' => auth()->id(),
             'nama' => $nama,
@@ -639,18 +643,28 @@ class PendataanController extends Controller
             'total_harga' => $totalHarga,
             'qty' => $qty,
             'gambar' => $gambarPath,
-            'status' => Pendataan::STATUS_PENDING,
+            'status' => $initialStatus,
         ]);
 
         cache()->forget('pendataan_filter_staff_names');
         cache()->forget('pendataan_filter_products');
 
-        // Check if an unmatched Telegram SMS already arrived earlier for this transaction
-        $autoMatched = TelegramPendataanController::checkNewlyCreatedPendataan($pendataan);
+        $autoMatched = false;
+        if ($isDirectSmsVoucher) {
+            $responseText = "nama_produk: {$namaProduk}\n" .
+                            "nomimal : {$smsCheck['raw_nominal']}\n" .
+                            "Sudah sesuai ✅";
+            TelegramPendataanController::sendMessage(null, $responseText);
+        } else {
+            // Check if an unmatched Telegram SMS already arrived earlier for this transaction
+            $autoMatched = TelegramPendataanController::checkNewlyCreatedPendataan($pendataan);
+        }
 
         $msg = 'Data Pendataan (' . $jenisChip . ') berhasil disimpan atas nama ' . $nama . '!';
-        if ($autoMatched) {
-            $msg .= ' 🎉 Transaksi langsung otomatis cocok dengan SMS Telegram dan status telah berubah ke Sukses!';
+        if ($isDirectSmsVoucher) {
+            $msg .= ' 🎉 Teks SMS voucher terverifikasi! Status langsung diatur ke Sukses ✅ dan bot telah mengirim balasan ke grup Telegram AWG KBTG!';
+        } elseif ($autoMatched) {
+            $msg .= ' 🎉 Transaksi langsung otomatis cocok dengan SMS Telegram dan status telah berubah ke Sukses ✅!';
         }
 
         return redirect()->route('pendataan.index')->with('success', $msg);
