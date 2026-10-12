@@ -521,6 +521,45 @@
                         </div>
                     </div>
 
+                    <!-- Field: Tanggal & Jam Transaksi (Bisa pilih jika data susulan kemarin/sebelumnya) -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label fw-semibold text-dark mb-0">
+                                <i class="ti ti-calendar me-1 text-primary"></i>Tanggal & Jam Transaksi <span class="text-danger">*</span>
+                            </label>
+                            <div class="d-flex gap-1">
+                                <button type="button" class="btn btn-xs btn-outline-primary py-1 px-2" id="btnSetHariIniTambah" onclick="setTanggalTambah('today')">
+                                    <i class="ti ti-calendar-event me-1"></i>Hari Ini
+                                </button>
+                                <button type="button" class="btn btn-xs btn-outline-warning py-1 px-2" id="btnSetKemarinTambah" onclick="setTanggalTambah('yesterday')">
+                                    <i class="ti ti-history me-1"></i>Kemarin
+                                </button>
+                            </div>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-sm-7">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white text-primary"><i class="ti ti-calendar"></i></span>
+                                    <input type="date" name="tanggal" id="tambah_tanggal" class="form-control" value="{{ date('Y-m-d') }}" max="{{ date('Y-m-d') }}" required onchange="checkTanggalSusulanTambah()">
+                                </div>
+                            </div>
+                            <div class="col-sm-5">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white text-primary"><i class="ti ti-clock"></i></span>
+                                    <input type="time" name="jam" id="tambah_jam" class="form-control" value="{{ date('H:i') }}">
+                                </div>
+                            </div>
+                        </div>
+                        <div id="badgeSusulanTambah" class="mt-2 d-none">
+                            <span class="badge bg-warning bg-opacity-10 text-warning border border-warning-subtle px-2 py-1">
+                                <i class="ti ti-alert-circle me-1"></i><span id="badgeSusulanText">Data Susulan: Transaksi tanggal lampau</span>
+                            </span>
+                        </div>
+                        <div class="form-text text-muted small">
+                            <i class="ti ti-info-circle me-1"></i>Default adalah tanggal & jam sekarang. Klik <strong>Kemarin</strong> atau pilih tanggal di atas jika mencatat data yang terlewat hari kemarin/sebelumnya.
+                        </div>
+                    </div>
+
                     <!-- Field: Pilihan Jenis Chip (KTTS / KBTG) -->
                     <div class="mb-3">
                         <label class="form-label fw-semibold text-dark mb-1">
@@ -599,6 +638,18 @@
                         </div>
                     </div>
 
+                    <!-- Field: Status Transaksi (Pending / Sukses) -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-muted">Status Transaksi</label>
+                        <select name="status" id="tambah_status" class="form-select fw-semibold">
+                            <option value="pending" selected>⏳ Pending (Menunggu SMS Masuk)</option>
+                            <option value="sukses">✅ Sukses (Sudah Berhasil / Terverifikasi)</option>
+                        </select>
+                        <div class="form-text text-muted small">
+                            Jika data susulan kemarin sudah dipastikan sukses/berhasil, Anda dapat langsung memilih status <code>Sukses</code>.
+                        </div>
+                    </div>
+
                     <!-- Field: Upload Gambar with Ctrl+V Paste Area -->
                     <div class="mb-2">
                         <label class="form-label fw-semibold text-dark">Upload Gambar (Opsional)</label>
@@ -660,6 +711,40 @@
                         </div>
                         <div class="form-text text-muted small">
                             <i class="ti ti-lock me-1"></i>Nama penanggung jawab transaksi terkunci dan tidak dapat diubah.
+                        </div>
+                    </div>
+
+                    <!-- Field: Tanggal & Jam Transaksi -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label fw-semibold text-dark mb-0">
+                                <i class="ti ti-calendar me-1 text-primary"></i>Tanggal & Jam Transaksi <span class="text-danger">*</span>
+                            </label>
+                            <div class="d-flex gap-1">
+                                <button type="button" class="btn btn-xs btn-outline-primary py-1 px-2" onclick="setTanggalEdit('today')">
+                                    <i class="ti ti-calendar-event me-1"></i>Hari Ini
+                                </button>
+                                <button type="button" class="btn btn-xs btn-outline-warning py-1 px-2" onclick="setTanggalEdit('yesterday')">
+                                    <i class="ti ti-history me-1"></i>Kemarin
+                                </button>
+                            </div>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-sm-7">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white text-primary"><i class="ti ti-calendar"></i></span>
+                                    <input type="date" name="tanggal" id="edit_tanggal" class="form-control" max="{{ date('Y-m-d') }}" required>
+                                </div>
+                            </div>
+                            <div class="col-sm-5">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white text-primary"><i class="ti ti-clock"></i></span>
+                                    <input type="time" name="jam" id="edit_jam" class="form-control">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-text text-muted small">
+                            <i class="ti ti-info-circle me-1"></i>Sesuaikan tanggal jika data transaksi ini tercatat di tanggal yang keliru.
                         </div>
                     </div>
 
@@ -1396,6 +1481,95 @@ function setupDropzone(zoneId, inputId, isEdit) {
 }
 
 // =========================================================================
+// HELPER TANGGAL TRANSAKSI (HARI INI / KEMARIN / SUSULAN)
+// =========================================================================
+function formatTanggalIndo(dateStr) {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+    return dateStr;
+}
+
+function setTanggalTambah(type) {
+    const tanggalInput = document.getElementById('tambah_tanggal');
+    const jamInput = document.getElementById('tambah_jam');
+    const now = new Date();
+
+    if (type === 'today') {
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const d = String(now.getDate()).padStart(2, '0');
+        if (tanggalInput) tanggalInput.value = `${y}-${m}-${d}`;
+        if (jamInput) {
+            const hh = String(now.getHours()).padStart(2, '0');
+            const mm = String(now.getMinutes()).padStart(2, '0');
+            jamInput.value = `${hh}:${mm}`;
+        }
+    } else if (type === 'yesterday') {
+        const yesterday = new Date(now);
+        yesterday.setDate(now.getDate() - 1);
+        const y = yesterday.getFullYear();
+        const m = String(yesterday.getMonth() + 1).padStart(2, '0');
+        const d = String(yesterday.getDate()).padStart(2, '0');
+        if (tanggalInput) tanggalInput.value = `${y}-${m}-${d}`;
+    }
+    checkTanggalSusulanTambah();
+}
+
+function checkTanggalSusulanTambah() {
+    const tanggalInput = document.getElementById('tambah_tanggal');
+    const badgeSusulan = document.getElementById('badgeSusulanTambah');
+    const badgeText = document.getElementById('badgeSusulanText');
+    if (!tanggalInput || !badgeSusulan) return;
+
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+
+    const val = tanggalInput.value;
+    if (val && val < todayStr) {
+        badgeSusulan.classList.remove('d-none');
+        if (val === yesterdayStr) {
+            badgeText.textContent = 'Mencatat data susulan untuk kemarin (' + formatTanggalIndo(val) + ')';
+        } else {
+            badgeText.textContent = 'Mencatat data susulan untuk tanggal lampau (' + formatTanggalIndo(val) + ')';
+        }
+    } else {
+        badgeSusulan.classList.add('d-none');
+    }
+}
+
+function setTanggalEdit(type) {
+    const tanggalInput = document.getElementById('edit_tanggal');
+    const jamInput = document.getElementById('edit_jam');
+    const now = new Date();
+
+    if (type === 'today') {
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const d = String(now.getDate()).padStart(2, '0');
+        if (tanggalInput) tanggalInput.value = `${y}-${m}-${d}`;
+        if (jamInput) {
+            const hh = String(now.getHours()).padStart(2, '0');
+            const mm = String(now.getMinutes()).padStart(2, '0');
+            jamInput.value = `${hh}:${mm}`;
+        }
+    } else if (type === 'yesterday') {
+        const yesterday = new Date(now);
+        yesterday.setDate(now.getDate() - 1);
+        const y = yesterday.getFullYear();
+        const m = String(yesterday.getMonth() + 1).padStart(2, '0');
+        const d = String(yesterday.getDate()).padStart(2, '0');
+        if (tanggalInput) tanggalInput.value = `${y}-${m}-${d}`;
+    }
+}
+
+// =========================================================================
 // MODAL & ACTION HANDLERS
 // =========================================================================
 function openEditModal(item) {
@@ -1412,6 +1586,29 @@ function openEditModal(item) {
     document.getElementById('edit_gambar_base64').value = '';
     document.getElementById('edit_gambar_input').value = '';
     document.getElementById('edit_status').value = (item.status || 'pending').toLowerCase();
+
+    // Set Tanggal & Jam Transaksi
+    if (item.tanggal_raw) {
+        document.getElementById('edit_tanggal').value = item.tanggal_raw;
+    } else if (item.created_at) {
+        const d = new Date(item.created_at);
+        if (!isNaN(d.getTime())) {
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            document.getElementById('edit_tanggal').value = `${y}-${m}-${day}`;
+        }
+    }
+    if (item.jam_raw) {
+        document.getElementById('edit_jam').value = item.jam_raw;
+    } else if (item.created_at) {
+        const d = new Date(item.created_at);
+        if (!isNaN(d.getTime())) {
+            const hh = String(d.getHours()).padStart(2, '0');
+            const mm = String(d.getMinutes()).padStart(2, '0');
+            document.getElementById('edit_jam').value = `${hh}:${mm}`;
+        }
+    }
 
     // Set Jenis Chip (KTTS / KBTG)
     if ((item.jenis_chip || 'KTTS').toUpperCase() === 'KBTG') {
@@ -1561,6 +1758,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="ti ti-device-floppy me-1"></i> Simpan Pendataan';
             }
+            // Update indicator badge based on currently selected date
+            checkTanggalSusulanTambah();
         });
     }
 

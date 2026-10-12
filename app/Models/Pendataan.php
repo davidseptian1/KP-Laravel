@@ -47,6 +47,12 @@ class Pendataan extends Model
         'gambar',
         'alasan_edit',
         'status',
+        'created_at',
+    ];
+
+    protected $appends = [
+        'tanggal_raw',
+        'jam_raw',
     ];
 
     protected $casts = [
@@ -60,6 +66,22 @@ class Pendataan extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * Get raw date (Y-m-d) in Jakarta timezone.
+     */
+    public function getTanggalRawAttribute(): string
+    {
+        return $this->created_at ? $this->created_at->format('Y-m-d') : '';
+    }
+
+    /**
+     * Get raw time (H:i) in Jakarta timezone.
+     */
+    public function getJamRawAttribute(): string
+    {
+        return $this->created_at ? $this->created_at->format('H:i') : '';
     }
 
     /**

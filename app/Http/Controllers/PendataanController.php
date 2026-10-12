@@ -558,6 +558,9 @@ class PendataanController extends Controller
         }
 
         $request->validate([
+            'tanggal' => 'nullable|date',
+            'jam' => 'nullable',
+            'status' => 'nullable|in:pending,sukses,gagal',
             'deskripsi' => 'nullable|string',
             'nama_produk' => 'nullable|string|max:255',
             'jenis_chip' => 'required|in:KTTS,KBTG,ktts,kbtg',
@@ -567,6 +570,7 @@ class PendataanController extends Controller
             'gambar' => 'nullable|file|mimes:jpeg,png,jpg,webp,gif|max:10240',
             'gambar_base64' => 'nullable|string',
         ], [
+            'tanggal.date' => 'Format tanggal tidak valid.',
             'jenis_chip.required' => 'Pilihan jenis chip (KTTS / KBTG) wajib dipilih.',
             'jenis_chip.in' => 'Pilihan jenis chip harus KTTS atau KBTG.',
             'gambar.mimes' => 'Format gambar harus jpeg, png, jpg, webp, atau gif.',
@@ -629,6 +633,31 @@ class PendataanController extends Controller
         // Strictly lock nama to authenticated staff session
         $nama = session('pendataan_staff_nama') ?: (auth()->user()->nama ?: 'Staff');
 
+        // Resolve transaction date & time (allows recording missed data from yesterday or previous dates)
+        $createdAt = now();
+        $isCustomDate = false;
+        if ($request->filled('tanggal')) {
+            $inputDate = trim($request->input('tanggal'));
+            $inputJam = trim((string) $request->input('jam'));
+            try {
+                if (!empty($inputJam)) {
+                    $createdAt = Carbon::parse("{$inputDate} {$inputJam}");
+                } else {
+                    $nowTime = now();
+                    $createdAt = Carbon::parse($inputDate)->setTime($nowTime->hour, $nowTime->minute, $nowTime->second);
+                }
+                $isCustomDate = true;
+            } catch (\Exception $e) {
+                $createdAt = now();
+            }
+        }
+
+        // Resolve transaction status (default: pending, or sukses if staff marks as already finished)
+        $statusInput = strtolower(trim((string) $request->input('status', Pendataan::STATUS_PENDING)));
+        $status = in_array($statusInput, [Pendataan::STATUS_PENDING, Pendataan::STATUS_SUKSES, Pendataan::STATUS_GAGAL])
+            ? $statusInput
+            : Pendataan::STATUS_PENDING;
+
         $pendataan = Pendataan::create([
             'user_id' => auth()->id(),
             'nama' => $nama,
@@ -639,13 +668,34 @@ class PendataanController extends Controller
             'total_harga' => $totalHarga,
             'qty' => $qty,
             'gambar' => $gambarPath,
-            'status' => Pendataan::STATUS_PENDING,
+            'status' => $status,
+            'created_at' => $createdAt,
         ]);
+
+        // Guard against any framework timestamp overwrite
+        if ($pendataan->created_at->format('Y-m-d H:i:s') !== $createdAt->format('Y-m-d H:i:s')) {
+            $pendataan->created_at = $createdAt;
+            $pendataan->save();
+        }
 
         cache()->forget('pendataan_filter_staff_names');
         cache()->forget('pendataan_filter_products');
 
-        $msg = 'Data Pendataan (' . $jenisChip . ') berhasil disimpan atas nama ' . $nama . ' dengan status Pending (menunggu SMS voucher masuk).';
+        $statusText = $status === Pendataan::STATUS_SUKSES ? 'Sukses' : 'Pending (menunggu SMS voucher masuk)';
+
+        // If data was entered for yesterday or earlier, redirect to that date's filter so user immediately sees their record
+        if ($isCustomDate && $createdAt->toDateString() !== now()->toDateString()) {
+            $targetDate = $createdAt->toDateString();
+            $dateFormatted = $createdAt->format('d/m/Y');
+            $msg = "Data Pendataan ({$jenisChip}) untuk tanggal {$dateFormatted} berhasil disimpan atas nama {$nama} (Status: {$statusText}). Filter tanggal otomatis diarahkan ke tanggal tersebut.";
+
+            return redirect()->route('pendataan.index', [
+                'start_date' => $targetDate,
+                'end_date' => $targetDate,
+            ])->with('success', $msg);
+        }
+
+        $msg = 'Data Pendataan (' . $jenisChip . ') berhasil disimpan atas nama ' . $nama . ' dengan status ' . $statusText . '.';
 
         return redirect()->route('pendataan.index')->with('success', $msg);
     }
@@ -679,6 +729,8 @@ class PendataanController extends Controller
                     'status_label' => $pendataan->status_label,
                     'status_badge_html' => $pendataan->status_badge_html,
                     'created_at' => $pendataan->created_at->format('d/m/Y H:i'),
+                    'tanggal_raw' => $pendataan->created_at ? $pendataan->created_at->format('Y-m-d') : '',
+                    'jam_raw' => $pendataan->created_at ? $pendataan->created_at->format('H:i') : '',
                     'user_nama' => $pendataan->user?->nama ?? '-',
                 ],
             ]);
@@ -697,6 +749,8 @@ class PendataanController extends Controller
         $pendataan = Pendataan::findOrFail($id);
 
         $request->validate([
+            'tanggal' => 'nullable|date',
+            'jam' => 'nullable',
             'deskripsi' => 'nullable|string',
             'nama_produk' => 'required|string|max:255',
             'jenis_chip' => 'required|in:KTTS,KBTG,ktts,kbtg',
@@ -708,6 +762,7 @@ class PendataanController extends Controller
             'gambar_base64' => 'nullable|string',
             'hapus_gambar' => 'nullable|boolean',
         ], [
+            'tanggal.date' => 'Format tanggal tidak valid.',
             'jenis_chip.required' => 'Pilihan jenis chip (KTTS / KBTG) wajib dipilih.',
             'jenis_chip.in' => 'Pilihan jenis chip harus KTTS atau KBTG.',
             'alasan_edit.required' => 'Alasan edit wajib diisi!',
@@ -785,11 +840,39 @@ class PendataanController extends Controller
         ];
 
         $inputStatus = strtolower(trim((string) $request->input('status', '')));
-        if (in_array($inputStatus, ['pending', 'sukses', 'kadaluarsa'])) {
+        if (in_array($inputStatus, ['pending', 'sukses', 'kadaluarsa', 'gagal'])) {
             $updatePayload['status'] = $inputStatus;
         }
 
+        // Update transaction date & time if specified
+        $newCreatedAt = null;
+        if ($request->filled('tanggal')) {
+            $inputDate = trim($request->input('tanggal'));
+            $inputJam = trim((string) $request->input('jam'));
+            try {
+                if (!empty($inputJam)) {
+                    $newCreatedAt = Carbon::parse("{$inputDate} {$inputJam}");
+                } else {
+                    $origTime = $pendataan->created_at ?: now();
+                    $newCreatedAt = Carbon::parse($inputDate)->setTime($origTime->hour, $origTime->minute, $origTime->second);
+                }
+                $updatePayload['created_at'] = $newCreatedAt;
+            } catch (\Exception $e) {}
+        }
+
         $pendataan->update($updatePayload);
+
+        if ($newCreatedAt && $pendataan->created_at->format('Y-m-d H:i:s') !== $newCreatedAt->format('Y-m-d H:i:s')) {
+            $pendataan->created_at = $newCreatedAt;
+            $pendataan->save();
+        }
+
+        if ($newCreatedAt && $newCreatedAt->toDateString() !== now()->toDateString()) {
+            return redirect()->route('pendataan.index', [
+                'start_date' => $newCreatedAt->toDateString(),
+                'end_date' => $newCreatedAt->toDateString(),
+            ])->with('success', 'Data Pendataan berhasil diperbarui (Tanggal transaksi: ' . $newCreatedAt->format('d/m/Y H:i') . ')!');
+        }
 
         return redirect()->route('pendataan.index')->with('success', 'Data Pendataan berhasil diperbarui!');
     }
