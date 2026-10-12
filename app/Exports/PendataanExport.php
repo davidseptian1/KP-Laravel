@@ -34,13 +34,14 @@ class PendataanExport implements FromArray, WithColumnWidths, WithEvents
             'C' => 24,  // NAMA (e.g. Nuni ( Shift 1 ))
             'D' => 38,  // NAMA PRODUK
             'E' => 14,  // JENIS CHIP (KTTS / KBTG)
-            'F' => 16,  // STATUS (Pending / Sukses / Gagal)
+            'F' => 16,  // STATUS (Pending / Sukses / Gagal / Dihapus)
             'G' => 18,  // POSTCAL
             'H' => 12,  // QTY
             'I' => 22,  // TOTAL HARGA
             'J' => 15,  // ADA GAMBAR
             'K' => 18,  // DICATAT OLEH
             'L' => 35,  // ALASAN EDIT
+            'M' => 35,  // ALASAN HAPUS
         ];
     }
 
@@ -65,43 +66,66 @@ class PendataanExport implements FromArray, WithColumnWidths, WithEvents
             'ADA GAMBAR',
             'DICATAT OLEH',
             'ALASAN EDIT',
+            'ALASAN HAPUS',
         ];
 
         $totalQty = 0;
         $totalNominal = 0;
+        $totalDihapus = 0;
+        $totalSusulan = 0;
         $index = 1;
 
         if ($this->items->count() > 0) {
             foreach ($this->items as $item) {
+                $isDeleted = $item->trashed();
+                $isSusulan = !$isDeleted && (bool) ($item->is_susulan ?? false);
                 $qty = (int) ($item->qty ?? 1);
                 $hargaQty = (float) ($item->harga_qty ?? 0);
                 $totalHarga = (float) ($item->total_harga ?? 0);
 
-                $totalQty += $qty;
-                $totalNominal += $totalHarga;
+                if (!$isDeleted) {
+                    $totalQty += $qty;
+                    $totalNominal += $totalHarga;
+                    if ($isSusulan) {
+                        $totalSusulan++;
+                    }
+                } else {
+                    $totalDihapus++;
+                }
+
+                $statusText = $isDeleted ? 'DIHAPUS' : ($item->status_label ?? 'Pending');
+                if ($isSusulan) {
+                    $statusText .= ' [SUSULAN]';
+                }
+
+                $tanggalJam = optional($item->created_at)->format('d/m/Y H:i');
+                if ($isSusulan) {
+                    $tanggalJam .= ' (Susulan)';
+                }
 
                 $rows[] = [
                     $index++,
-                    optional($item->created_at)->format('d/m/Y H:i'),
+                    $tanggalJam,
                     $this->sanitizeForExcel($item->nama ?? '-'),
                     $this->sanitizeForExcel($item->nama_produk ?? '-'),
                     $this->sanitizeForExcel($item->jenis_chip ?? 'KTTS'),
-                    $this->sanitizeForExcel($item->status_label ?? 'Pending'),
+                    $this->sanitizeForExcel($statusText),
                     'Rp. ' . number_format($hargaQty, 0, ',', '.'),
                     $qty,
                     'Rp. ' . number_format($totalHarga, 0, ',', '.'),
                     $item->gambar ? 'Ya' : 'Tidak',
                     $this->sanitizeForExcel($item->user?->nama ?? '-'),
                     $this->sanitizeForExcel($item->alasan_edit ? str_replace(["\r\n", "\r", "\n"], ' | ', $item->alasan_edit) : '-'),
+                    $this->sanitizeForExcel($isDeleted && $item->alasan_hapus ? str_replace(["\r\n", "\r", "\n"], ' | ', $item->alasan_hapus) : '-'),
                 ];
             }
         } else {
-            $rows[] = ['Tidak ada data transaksi yang ditemukan.', '', '', '', '', '', '', '', '', '', '', ''];
+            $rows[] = ['Tidak ada data transaksi yang ditemukan.', '', '', '', '', '', '', '', '', '', '', '', ''];
         }
 
-        // Total Row (Directly below data)
+        // Total Row (Directly below data - reflects active transactions)
         $rows[] = [
-            'TOTAL KESELURUHAN',
+            'TOTAL KESELURUHAN (AKTIF)',
             '',
             '',
             '',
@@ -113,25 +137,34 @@ class PendataanExport implements FromArray, WithColumnWidths, WithEvents
             '-',
             '-',
             '-',
+            '-',
         ];
 
         // Metadata footer section
-        $rows[] = array_fill(0, 12, '');
-        $rows[] = ['Total Transaksi', ': ' . $this->items->count() . ' Data', '', '', '', '', '', '', '', '', ''];
-        $rows[] = ['Waktu Download', ': ' . now()->format('d/m/Y H:i:s'), '', '', '', '', '', '', '', '', ''];
+        $totalAktifText = ($this->items->count() - $totalDihapus) . ' Data Aktif';
+        if ($totalSusulan > 0) {
+            $totalAktifText .= " ({$totalSusulan} Susulan Kemarin)";
+        }
+        if ($totalDihapus > 0) {
+            $totalAktifText .= " ({$totalDihapus} Dihapus)";
+        }
 
-        $rows[] = ['Filter Shift', ': ' . (!empty($this->filters['shift']) ? $this->filters['shift'] : 'All Shift (Semua Shift)'), '', '', '', '', '', '', '', '', ''];
-        $rows[] = ['Filter Jenis Chip', ': ' . (!empty($this->filters['jenis_chip']) ? $this->filters['jenis_chip'] : 'All Chip (Semua Chip)'), '', '', '', '', '', '', '', '', ''];
+        $rows[] = array_fill(0, 13, '');
+        $rows[] = ['Total Transaksi', ': ' . $totalAktifText, '', '', '', '', '', '', '', '', '', '', ''];
+        $rows[] = ['Waktu Download', ': ' . now()->format('d/m/Y H:i:s'), '', '', '', '', '', '', '', '', '', '', ''];
+
+        $rows[] = ['Filter Shift', ': ' . (!empty($this->filters['shift']) ? $this->filters['shift'] : 'All Shift (Semua Shift)'), '', '', '', '', '', '', '', '', '', '', ''];
+        $rows[] = ['Filter Jenis Chip', ': ' . (!empty($this->filters['jenis_chip']) ? $this->filters['jenis_chip'] : 'All Chip (Semua Chip)'), '', '', '', '', '', '', '', '', '', '', ''];
         if (!empty($this->filters['start_date']) || !empty($this->filters['end_date'])) {
             $sd = !empty($this->filters['start_date']) ? Carbon::parse($this->filters['start_date'])->format('d/m/Y') : 'Awal';
             $ed = !empty($this->filters['end_date']) ? Carbon::parse($this->filters['end_date'])->format('d/m/Y') : 'Sekarang';
-            $rows[] = ['Filter Periode', ": {$sd} s/d {$ed}", '', '', '', '', '', '', '', '', ''];
+            $rows[] = ['Filter Periode', ": {$sd} s/d {$ed}", '', '', '', '', '', '', '', '', '', '', ''];
         }
         if (!empty($this->filters['nama'])) {
-            $rows[] = ['Filter Nama', ': ' . $this->filters['nama'], '', '', '', '', '', '', '', '', ''];
+            $rows[] = ['Filter Nama', ': ' . $this->filters['nama'], '', '', '', '', '', '', '', '', '', '', ''];
         }
         if (!empty($this->filters['nama_produk'])) {
-            $rows[] = ['Filter Produk', ': ' . $this->filters['nama_produk'], '', '', '', '', '', '', '', '', ''];
+            $rows[] = ['Filter Produk', ': ' . $this->filters['nama_produk'], '', '', '', '', '', '', '', '', '', '', ''];
         }
 
         return $rows;
@@ -155,7 +188,7 @@ class PendataanExport implements FromArray, WithColumnWidths, WithEvents
 
                 // 1. Header Row Styling (Row 1)
                 $sheet->getRowDimension($headerRow)->setRowHeight(32);
-                $sheet->getStyle("A{$headerRow}:L{$headerRow}")->applyFromArray([
+                $sheet->getStyle("A{$headerRow}:M{$headerRow}")->applyFromArray([
                     'font' => [
                         'name' => 'Calibri',
                         'bold' => true,
@@ -181,12 +214,39 @@ class PendataanExport implements FromArray, WithColumnWidths, WithEvents
 
                 // 2. Data Rows Styling
                 if ($itemCount > 0) {
-                    for ($r = $dataStartRow; $r <= $dataEndRow; $r++) {
+                    $rowIdx = $dataStartRow;
+                    foreach ($this->items as $item) {
+                        $r = $rowIdx++;
                         $sheet->getRowDimension($r)->setRowHeight(22);
 
-                        // Subtle Zebra striping
-                        if ($r % 2 === 1) {
-                            $sheet->getStyle("A{$r}:L{$r}")->applyFromArray([
+                        if ($item->trashed()) {
+                            // RED COLOR HIGHLIGHT FOR DELETED DATA
+                            $sheet->getStyle("A{$r}:M{$r}")->applyFromArray([
+                                'fill' => [
+                                    'fillType' => Fill::FILL_SOLID,
+                                    'startColor' => ['rgb' => 'FEE2E2'], // Soft pastel red background
+                                ],
+                                'font' => [
+                                    'color' => ['rgb' => 'DC2626'],     // Bold dark red font
+                                    'bold' => true,
+                                ],
+                            ]);
+                            $sheet->getStyle("D{$r}")->getFont()->setStrikethrough(true);
+                        } elseif ($item->is_susulan ?? false) {
+                            // YELLOW COLOR HIGHLIGHT FOR DATA SUSULAN KEMARIN
+                            $sheet->getStyle("A{$r}:M{$r}")->applyFromArray([
+                                'fill' => [
+                                    'fillType' => Fill::FILL_SOLID,
+                                    'startColor' => ['rgb' => 'FEF9C3'], // Warm pastel yellow background
+                                ],
+                                'font' => [
+                                    'color' => ['rgb' => '854D0E'],     // Dark amber / brown font
+                                ],
+                            ]);
+                            $sheet->getStyle("D{$r}")->getFont()->setBold(true);
+                        } elseif ($r % 2 === 1) {
+                            // Subtle Zebra striping
+                            $sheet->getStyle("A{$r}:M{$r}")->applyFromArray([
                                 'fill' => [
                                     'fillType' => Fill::FILL_SOLID,
                                     'startColor' => ['rgb' => 'F8FAFC'],
@@ -196,7 +256,7 @@ class PendataanExport implements FromArray, WithColumnWidths, WithEvents
                     }
 
                     // Table Data Borders & Default Font
-                    $sheet->getStyle("A{$dataStartRow}:L{$dataEndRow}")->applyFromArray([
+                    $sheet->getStyle("A{$dataStartRow}:M{$dataEndRow}")->applyFromArray([
                         'font' => ['name' => 'Calibri', 'size' => 10],
                         'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
                         'borders' => [
@@ -220,11 +280,12 @@ class PendataanExport implements FromArray, WithColumnWidths, WithEvents
                     $sheet->getStyle("J{$dataStartRow}:J{$dataEndRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER); // GAMBAR
                     $sheet->getStyle("K{$dataStartRow}:K{$dataEndRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER); // DICATAT OLEH
                     $sheet->getStyle("L{$dataStartRow}:L{$dataEndRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);   // ALASAN EDIT
+                    $sheet->getStyle("M{$dataStartRow}:M{$dataEndRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);   // ALASAN HAPUS
 
                     // Bold for Total Harga column
                     $sheet->getStyle("I{$dataStartRow}:I{$dataEndRow}")->getFont()->setBold(true);
                 } else {
-                    $sheet->mergeCells("A{$dataStartRow}:L{$dataStartRow}");
+                    $sheet->mergeCells("A{$dataStartRow}:M{$dataStartRow}");
                     $sheet->getRowDimension($dataStartRow)->setRowHeight(24);
                     $sheet->getStyle("A{$dataStartRow}")->applyFromArray([
                         'font' => ['italic' => true, 'color' => ['rgb' => '64748B']],
@@ -241,7 +302,7 @@ class PendataanExport implements FromArray, WithColumnWidths, WithEvents
                 // 3. Total Row Styling
                 $sheet->mergeCells("A{$totalRow}:G{$totalRow}");
                 $sheet->getRowDimension($totalRow)->setRowHeight(26);
-                $sheet->getStyle("A{$totalRow}:L{$totalRow}")->applyFromArray([
+                $sheet->getStyle("A{$totalRow}:M{$totalRow}")->applyFromArray([
                     'font' => [
                         'name' => 'Calibri',
                         'bold' => true,
@@ -280,6 +341,7 @@ class PendataanExport implements FromArray, WithColumnWidths, WithEvents
                 $sheet->getStyle("J{$totalRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 $sheet->getStyle("K{$totalRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 $sheet->getStyle("L{$totalRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle("M{$totalRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
                 // 4. Metadata footer styling
                 for ($m = $metaStartRow; $m <= $highestRow; $m++) {

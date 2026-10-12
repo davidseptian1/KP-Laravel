@@ -193,6 +193,70 @@
             font-size: 10px;
         }
 
+        /* Deleted Row Styling */
+        .row-deleted {
+            background-color: #fee2e2 !important;
+            color: #991b1b !important;
+        }
+
+        .row-deleted td {
+            background-color: #fee2e2 !important;
+            color: #991b1b !important;
+            border-color: #fca5a5 !important;
+        }
+
+        .strike-text {
+            text-decoration: line-through;
+            color: #b91c1c !important;
+        }
+
+        .badge-status-deleted {
+            background-color: #dc2626;
+            color: #ffffff;
+            font-weight: bold;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-size: 8px;
+            text-transform: uppercase;
+            display: inline-block;
+        }
+
+        .alasan-hapus-box {
+            margin-top: 3px;
+            font-size: 8px;
+            color: #991b1b;
+            background-color: #fecaca;
+            border-left: 2px solid #ef4444;
+            padding: 2px 4px;
+            border-radius: 2px;
+            line-height: 1.2;
+            white-space: pre-line;
+        }
+
+        /* Susulan Row Styling (Kuning) */
+        .row-susulan {
+            background-color: #fef9c3 !important;
+            color: #854d0e !important;
+        }
+
+        .row-susulan td {
+            background-color: #fef9c3 !important;
+            color: #854d0e !important;
+            border-color: #fde047 !important;
+        }
+
+        .badge-status-susulan {
+            background-color: #fef08a;
+            color: #854d0e;
+            font-weight: bold;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-size: 7.5px;
+            border: 1px solid #fde047;
+            display: inline-block;
+            margin-top: 2px;
+        }
+
         /* Footer */
         .footer {
             margin-top: 15px;
@@ -263,20 +327,36 @@
     @endif
 
     <!-- Summary KPI Cards -->
+    @php
+        $kpiCols = 3 + (isset($totalDihapus) && $totalDihapus > 0 ? 1 : 0) + (isset($totalSusulan) && $totalSusulan > 0 ? 1 : 0);
+        $kpiWidth = round(100 / $kpiCols, 2) . '%';
+    @endphp
     <table class="kpi-table">
         <tr>
-            <td class="kpi-cell">
-                <div class="kpi-title">Total Pendataan</div>
+            <td class="kpi-cell" style="width: {{ $kpiWidth }};">
+                <div class="kpi-title">Total Pendataan Aktif</div>
                 <div class="kpi-value kpi-value-blue">{{ number_format($totalTransaksi, 0, ',', '.') }} Transaksi</div>
             </td>
-            <td class="kpi-cell">
+            <td class="kpi-cell" style="width: {{ $kpiWidth }};">
                 <div class="kpi-title">Total Qty Terdata</div>
                 <div class="kpi-value">{{ number_format($totalQty, 0, ',', '.') }} Pcs / Item</div>
             </td>
-            <td class="kpi-cell">
+            <td class="kpi-cell" style="width: {{ $kpiWidth }};">
                 <div class="kpi-title">Total Nominal / Omset</div>
                 <div class="kpi-value kpi-value-green">Rp {{ number_format($totalNominal, 0, ',', '.') }}</div>
             </td>
+            @if(isset($totalSusulan) && $totalSusulan > 0)
+            <td class="kpi-cell" style="width: {{ $kpiWidth }}; background-color: #fef9c3; border: 1px solid #fde047;">
+                <div class="kpi-title" style="color: #854d0e;">Data Susulan Kemarin</div>
+                <div class="kpi-value" style="color: #a16207;">{{ number_format($totalSusulan, 0, ',', '.') }} Transaksi</div>
+            </td>
+            @endif
+            @if(isset($totalDihapus) && $totalDihapus > 0)
+            <td class="kpi-cell" style="width: {{ $kpiWidth }}; background-color: #fee2e2; border: 1px solid #fca5a5;">
+                <div class="kpi-title" style="color: #991b1b;">Data Dihapus</div>
+                <div class="kpi-value" style="color: #dc2626;">{{ number_format($totalDihapus, 0, ',', '.') }} Transaksi</div>
+            </td>
+            @endif
         </tr>
     </table>
 
@@ -285,7 +365,7 @@
         <thead>
             <tr>
                 <th class="text-center" style="width: 25px;">No</th>
-                <th style="width: 90px;">Tanggal & Jam</th>
+                <th style="width: 95px;">Tanggal & Jam</th>
                 <th style="width: 75px;">Nama</th>
                 <th style="width: 140px;">Nama Produk</th>
                 <th class="text-center" style="width: 45px;">Chip</th>
@@ -298,20 +378,41 @@
         </thead>
         <tbody>
             @forelse($items as $index => $item)
-                <tr>
+                @php
+                    $isDeleted = method_exists($item, 'trashed') ? $item->trashed() : !is_null($item->deleted_at);
+                    $isSusulan = !$isDeleted && (bool)($item->is_susulan ?? false);
+                @endphp
+                <tr class="{{ $isDeleted ? 'row-deleted' : ($isSusulan ? 'row-susulan' : '') }}">
                     <td class="text-center">{{ $index + 1 }}</td>
-                    <td>{{ optional($item->created_at)->format('d/m/Y H:i') }}</td>
+                    <td>
+                        {{ optional($item->created_at)->format('d/m/Y H:i') }}
+                        @if($isDeleted && $item->deleted_at)
+                            <div style="font-size: 8px; color: #b91c1c;">Hapus: {{ $item->deleted_at->format('d/m/y H:i') }}</div>
+                        @elseif($isSusulan)
+                            <div><span class="badge-status-susulan">⚠️ Susulan Kemarin</span></div>
+                            <div style="font-size: 7.5px; color: #854d0e;">Diinput: {{ optional($item->updated_at ?? $item->created_at)->format('d/m H:i') }}</div>
+                        @endif
+                    </td>
                     <td>
                         <span class="badge-nama">{{ $item->nama }}</span>
                     </td>
-                    <td class="fw-bold">{{ $item->nama_produk }}</td>
+                    <td class="fw-bold {{ $isDeleted ? 'strike-text' : '' }}">
+                        {{ $item->nama_produk }}
+                        @if($isDeleted)
+                            <span style="font-size: 8px; color: #dc2626; font-style: italic; display: block; font-weight: normal;">(Data Dihapus)</span>
+                        @elseif($isSusulan)
+                            <span style="font-size: 8px; color: #854d0e; font-style: italic; display: block; font-weight: normal;">(Input Susulan)</span>
+                        @endif
+                    </td>
                     <td class="text-center">
                         <span class="badge-chip {{ ($item->jenis_chip ?? 'KTTS') === 'KBTG' ? 'badge-chip-kbtg' : 'badge-chip-ktts' }}">
                             {{ $item->jenis_chip ?? 'KTTS' }}
                         </span>
                     </td>
                     <td class="text-center">
-                        @if(($item->status ?? 'pending') === 'sukses')
+                        @if($isDeleted)
+                            <span class="badge-status-deleted">Dihapus</span>
+                        @elseif(($item->status ?? 'pending') === 'sukses')
                             <span style="color: #15803d; font-weight: bold;">Sukses</span>
                         @elseif(($item->status ?? '') === 'gagal')
                             <span style="color: #dc2626; font-weight: bold;">Gagal</span>
@@ -319,10 +420,23 @@
                             <span style="color: #d97706; font-weight: bold;">Pending</span>
                         @endif
                     </td>
-                    <td class="text-right">{{ $item->formatted_harga_qty }}</td>
-                    <td class="text-center fw-bold">{{ $item->qty }}</td>
-                    <td class="text-right fw-bold" style="color: #15803d;">{{ $item->formatted_total_harga }}</td>
-                    <td class="deskripsi-cell">{{ \Illuminate\Support\Str::limit($item->deskripsi ?: '-', 120) }}</td>
+                    <td class="text-right {{ $isDeleted ? 'strike-text' : '' }}">{{ $item->formatted_harga_qty }}</td>
+                    <td class="text-center fw-bold {{ $isDeleted ? 'strike-text' : '' }}">{{ $item->qty }}</td>
+                    <td class="text-right fw-bold {{ $isDeleted ? 'strike-text' : '' }}" style="{{ $isDeleted ? 'color: #dc2626;' : 'color: #15803d;' }}">
+                        {{ $item->formatted_total_harga }}
+                    </td>
+                    <td class="deskripsi-cell">
+                        <div>{{ \Illuminate\Support\Str::limit($item->deskripsi ?: '-', 120) }}</div>
+                        @if($isDeleted && !empty($item->alasan_hapus))
+                            <div class="alasan-hapus-box">
+                                <strong>⚠️ Alasan Dihapus:</strong><br>
+                                {{ $item->alasan_hapus }}
+                                @if(!empty($item->deleted_by))
+                                    <div style="font-size: 7.5px; color: #7f1d1d; margin-top: 2px;">Petugas: {{ $item->deleted_by }}</div>
+                                @endif
+                            </div>
+                        @endif
+                    </td>
                 </tr>
             @empty
                 <tr>
@@ -335,11 +449,11 @@
         @if($items->count() > 0)
         <tfoot>
             <tr class="total-row">
-                <td colspan="6" class="text-right" style="letter-spacing: 0.5px;">TOTAL KESELURUHAN:</td>
+                <td colspan="6" class="text-right" style="letter-spacing: 0.5px;">TOTAL TRANSAKSI AKTIF:</td>
                 <td class="text-right">-</td>
                 <td class="text-center">{{ number_format($totalQty, 0, ',', '.') }}</td>
                 <td class="text-right" style="color: #15803d;">Rp {{ number_format($totalNominal, 0, ',', '.') }}</td>
-                <td>-</td>
+                <td style="font-size: 8px; color: #64748b; vertical-align: middle;">* Data dihapus dikecualikan dari total perhitungan</td>
             </tr>
         </tfoot>
         @endif

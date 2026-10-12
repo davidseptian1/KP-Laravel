@@ -265,6 +265,10 @@ class PendataanController extends Controller
             return [now()->subDays(6)->toDateString(), now()->toDateString(), false];
         }
 
+        if ($preset === 'susulan' || $preset === 'data_susulan') {
+            return [null, null, false];
+        }
+
         if ($preset === 'all' || $preset === 'semua' || $request->boolean('all_dates')) {
             return [null, null, true];
         }
@@ -294,17 +298,41 @@ class PendataanController extends Controller
      */
     private function buildQuery(Request $request)
     {
-        $query = Pendataan::with('user');
+        $query = Pendataan::withTrashed()->with('user');
 
         [$startDate, $endDate, $isAllDates] = $this->resolveDateRange($request);
+        $preset = strtolower(trim((string) $request->input('date_preset', '')));
+        $today = now()->toDateString();
 
-        // Filter: Tanggal (Start Date & End Date)
+        // Filter: Tanggal (Start Date & End Date / Preset Susulan)
         if (!$isAllDates) {
-            if (!empty($startDate)) {
-                $query->whereDate('created_at', '>=', $startDate);
-            }
-            if (!empty($endDate)) {
-                $query->whereDate('created_at', '<=', $endDate);
+            if ($preset === 'susulan' || $preset === 'data_susulan') {
+                // Khusus preset susulan: ambil semua data yang ditandai susulan
+                $hasSusulanCol = \Illuminate\Support\Facades\Schema::hasColumn('pendataans', 'is_susulan');
+                $query->where(function ($q) use ($hasSusulanCol) {
+                    if ($hasSusulanCol) {
+                        $q->where('is_susulan', true)
+                          ->orWhereRaw('DATE(created_at) < DATE(updated_at)');
+                    } else {
+                        $q->whereRaw('DATE(created_at) < DATE(updated_at)');
+                    }
+                });
+            } elseif ($startDate === $today && $endDate === $today) {
+                // Tampilan Hari Ini: Tampilkan transaksi hari ini PLUS data susulan yang diinput hari ini (agar tidak hilang)
+                $query->where(function ($q) use ($today) {
+                    $q->whereDate('created_at', $today)
+                      ->orWhere(function ($sub) use ($today) {
+                          $sub->whereDate('updated_at', $today)
+                              ->whereDate('created_at', '<', $today);
+                      });
+                });
+            } else {
+                if (!empty($startDate)) {
+                    $query->whereDate('created_at', '>=', $startDate);
+                }
+                if (!empty($endDate)) {
+                    $query->whereDate('created_at', '<=', $endDate);
+                }
             }
         }
 
@@ -342,11 +370,13 @@ class PendataanController extends Controller
             $query->where('nama_produk', 'like', "%{$produkFilter}%");
         }
 
-        // Filter: Status (All Status, Pending, Sukses, Gagal)
+        // Filter: Status (All Status, Pending, Sukses, Gagal, Dihapus)
         if ($request->filled('status')) {
             $statusFilter = strtolower(trim((string) $request->status));
-            if (in_array($statusFilter, ['pending', 'sukses', 'gagal'])) {
-                $query->where('status', $statusFilter);
+            if ($statusFilter === 'dihapus') {
+                $query->onlyTrashed();
+            } elseif (in_array($statusFilter, ['pending', 'sukses', 'gagal'])) {
+                $query->whereNull('deleted_at')->where('status', $statusFilter);
             }
         }
 
@@ -364,16 +394,48 @@ class PendataanController extends Controller
 
         $query = $this->buildQuery($request);
 
-        // Summary calculations in ONE single aggregate query (strictly without ORDER BY to prevent MySQL 1140 error)
+        // Summary calculations strictly for ACTIVE (non-deleted) transactions
         $summary = (clone $query)
             ->reorder()
             ->toBase()
-            ->selectRaw('COUNT(*) as total_transaksi, COALESCE(SUM(qty), 0) as total_qty, COALESCE(SUM(total_harga), 0) as total_nominal')
+            ->selectRaw('
+                COUNT(CASE WHEN deleted_at IS NULL THEN 1 END) as total_transaksi,
+                COUNT(CASE WHEN deleted_at IS NOT NULL THEN 1 END) as total_dihapus,
+                COALESCE(SUM(CASE WHEN deleted_at IS NULL THEN qty ELSE 0 END), 0) as total_qty,
+                COALESCE(SUM(CASE WHEN deleted_at IS NULL THEN total_harga ELSE 0 END), 0) as total_nominal
+            ')
             ->first();
 
         $totalTransaksi = (int) ($summary->total_transaksi ?? 0);
+        $totalDihapus = (int) ($summary->total_dihapus ?? 0);
         $totalQty = (int) ($summary->total_qty ?? 0);
         $totalNominal = (float) ($summary->total_nominal ?? 0);
+
+        // Susulan calculations in the current query scope
+        $hasSusulanCol = \Illuminate\Support\Facades\Schema::hasColumn('pendataans', 'is_susulan');
+        $susulanScope = (clone $query)->whereNull('deleted_at')->where(function ($q) use ($hasSusulanCol) {
+            if ($hasSusulanCol) {
+                $q->where('is_susulan', true)
+                  ->orWhereRaw('DATE(created_at) < DATE(updated_at)');
+            } else {
+                $q->whereRaw('DATE(created_at) < DATE(updated_at)');
+            }
+        });
+        $totalSusulan = $susulanScope->count();
+        $nominalSusulan = (float) $susulanScope->sum('total_harga');
+
+        $todayDateStr = now()->toDateString();
+        $hasSusulanToday = Pendataan::whereNull('deleted_at')
+            ->where(function ($q) use ($hasSusulanCol) {
+                if ($hasSusulanCol) {
+                    $q->where('is_susulan', true)
+                      ->orWhereRaw('DATE(created_at) < DATE(updated_at)');
+                } else {
+                    $q->whereRaw('DATE(created_at) < DATE(updated_at)');
+                }
+            })
+            ->whereDate('updated_at', $todayDateStr)
+            ->exists();
 
         // Paginated list ordered by latest
         $pendataans = $query->latest('created_at')->paginate(25)->withQueryString();
@@ -405,6 +467,10 @@ class PendataanController extends Controller
             'menuPendataan' => 'active',
             'pendataans' => $pendataans,
             'totalTransaksi' => $totalTransaksi,
+            'totalDihapus' => $totalDihapus,
+            'totalSusulan' => $totalSusulan,
+            'nominalSusulan' => $nominalSusulan,
+            'hasSusulanToday' => $hasSusulanToday,
             'totalQty' => $totalQty,
             'totalNominal' => $totalNominal,
             'daftarNama' => $daftarNama,
@@ -477,9 +543,12 @@ class PendataanController extends Controller
         $this->enforceStaffSession();
 
         $items = $this->buildQuery($request)->latest('created_at')->get();
-        $totalTransaksi = $items->count();
-        $totalQty = (int) $items->sum('qty');
-        $totalNominal = (float) $items->sum('total_harga');
+        $activeItems = $items->whereNull('deleted_at');
+        $totalTransaksi = $activeItems->count();
+        $totalQty = (int) $activeItems->sum('qty');
+        $totalNominal = (float) $activeItems->sum('total_harga');
+        $totalDihapus = $items->whereNotNull('deleted_at')->count();
+        $totalSusulan = $activeItems->filter(fn($i) => $i->is_susulan)->count();
 
         [$startDate, $endDate, $isAllDates] = $this->resolveDateRange($request);
 
@@ -511,7 +580,7 @@ class PendataanController extends Controller
                 : '-' . str_replace('-', '', $startDate) . '_' . str_replace('-', '', $endDate);
         }
 
-        $pdf = Pdf::loadView('pendataan.pdf', compact('items', 'filters', 'totalTransaksi', 'totalQty', 'totalNominal'))
+        $pdf = Pdf::loadView('pendataan.pdf', compact('items', 'filters', 'totalTransaksi', 'totalQty', 'totalNominal', 'totalDihapus', 'totalSusulan'))
             ->setPaper('a4', 'landscape');
 
         $filename = 'Laporan-Pendataan' . $shiftSuffix . $chipSuffix . $dateSuffix . '-' . now()->format('Ymd_His') . '.pdf';
@@ -658,7 +727,9 @@ class PendataanController extends Controller
             ? $statusInput
             : Pendataan::STATUS_PENDING;
 
-        $pendataan = Pendataan::create([
+        $isSusulan = $isCustomDate && $createdAt->toDateString() < now()->toDateString();
+
+        $createData = [
             'user_id' => auth()->id(),
             'nama' => $nama,
             'deskripsi' => $deskripsi,
@@ -670,7 +741,13 @@ class PendataanController extends Controller
             'gambar' => $gambarPath,
             'status' => $status,
             'created_at' => $createdAt,
-        ]);
+        ];
+
+        if (\Illuminate\Support\Facades\Schema::hasColumn('pendataans', 'is_susulan')) {
+            $createData['is_susulan'] = $isSusulan;
+        }
+
+        $pendataan = Pendataan::create($createData);
 
         // Guard against any framework timestamp overwrite
         if ($pendataan->created_at->format('Y-m-d H:i:s') !== $createdAt->format('Y-m-d H:i:s')) {
@@ -683,11 +760,11 @@ class PendataanController extends Controller
 
         $statusText = $status === Pendataan::STATUS_SUKSES ? 'Sukses' : 'Pending (menunggu SMS voucher masuk)';
 
-        // If data was entered for yesterday or earlier, redirect to that date's filter so user immediately sees their record
+        // If data was entered for yesterday or earlier, redirect with notification and highlighted tag
         if ($isCustomDate && $createdAt->toDateString() !== now()->toDateString()) {
             $targetDate = $createdAt->toDateString();
             $dateFormatted = $createdAt->format('d/m/Y');
-            $msg = "Data Pendataan ({$jenisChip}) untuk tanggal {$dateFormatted} berhasil disimpan atas nama {$nama} (Status: {$statusText}). Filter tanggal otomatis diarahkan ke tanggal tersebut.";
+            $msg = "Data Susulan ({$jenisChip}) untuk tanggal {$dateFormatted} berhasil disimpan atas nama {$nama} (Status: {$statusText}). Ditandai dengan warna Kuning di sistem.";
 
             return redirect()->route('pendataan.index', [
                 'start_date' => $targetDate,
@@ -707,7 +784,7 @@ class PendataanController extends Controller
     {
         $this->enforceStaffSession();
 
-        $pendataan = Pendataan::with('user')->findOrFail($id);
+        $pendataan = Pendataan::withTrashed()->with('user')->findOrFail($id);
 
         if (request()->wantsJson() || request()->ajax()) {
             return response()->json([
@@ -724,6 +801,11 @@ class PendataanController extends Controller
                     'qty' => $pendataan->qty,
                     'deskripsi' => $pendataan->deskripsi,
                     'alasan_edit' => $pendataan->alasan_edit,
+                    'alasan_hapus' => $pendataan->alasan_hapus,
+                    'deleted_by' => $pendataan->deleted_by,
+                    'is_deleted' => $pendataan->trashed(),
+                    'is_susulan' => $pendataan->is_susulan,
+                    'deleted_at' => $pendataan->deleted_at ? $pendataan->deleted_at->format('d/m/Y H:i') : null,
                     'gambar_url' => $pendataan->gambar_url,
                     'status' => $pendataan->status ?? Pendataan::STATUS_PENDING,
                     'status_label' => $pendataan->status_label,
@@ -747,6 +829,10 @@ class PendataanController extends Controller
         $this->enforceStaffSession();
 
         $pendataan = Pendataan::findOrFail($id);
+
+        if ($pendataan->trashed()) {
+            return redirect()->route('pendataan.index')->with('error', 'Data yang sudah dihapus tidak dapat diedit kembali.');
+        }
 
         $request->validate([
             'tanggal' => 'nullable|date',
@@ -878,24 +964,43 @@ class PendataanController extends Controller
     }
 
     /**
-     * Delete a pendataan record.
+     * Soft-delete a pendataan record with audit reason (Superadmin only).
      */
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         $this->enforceStaffSession();
 
-        $pendataan = Pendataan::findOrFail($id);
-
-        if ($pendataan->gambar && Storage::disk('public')->exists($pendataan->gambar)) {
-            Storage::disk('public')->delete($pendataan->gambar);
+        if (auth()->user()->jabatan !== 'Superadmin') {
+            abort(403, 'Hanya Superadmin yang memiliki wewenang untuk menghapus data pendataan.');
         }
 
+        $request->validate([
+            'alasan_hapus' => 'required|string|min:3|max:1000',
+        ], [
+            'alasan_hapus.required' => 'Alasan penghapusan wajib diisi!',
+            'alasan_hapus.min' => 'Alasan penghapusan minimal 3 karakter.',
+            'alasan_hapus.max' => 'Alasan penghapusan maksimal 1000 karakter.',
+        ]);
+
+        $pendataan = Pendataan::findOrFail($id);
+
+        $adminNama = session('pendataan_staff_nama') ?: (auth()->user()->nama ?: 'Super Admin');
+        $alasanInput = trim($request->input('alasan_hapus'));
+        $entryAlasan = '[' . date('d/m/Y H:i') . ' - ' . $adminNama . ']: ' . $alasanInput;
+
+        $pendataan->alasan_hapus = $pendataan->alasan_hapus
+            ? $pendataan->alasan_hapus . "\n" . $entryAlasan
+            : $entryAlasan;
+        $pendataan->deleted_by = $adminNama;
+        $pendataan->save();
+
+        // Soft delete: Data tetap ada di database, ditandai deleted_at
         $pendataan->delete();
 
         cache()->forget('pendataan_filter_staff_names');
         cache()->forget('pendataan_filter_products');
 
-        return redirect()->route('pendataan.index')->with('success', 'Data Pendataan berhasil dihapus!');
+        return redirect()->route('pendataan.index')->with('success', 'Data Pendataan #' . $id . ' (' . $pendataan->nama_produk . ') berhasil dihapus. Data tetap tersimpan di database dan disorot warna merah pada laporan Excel & PDF.');
     }
 
     /**

@@ -45,21 +45,25 @@
 </div>
 
 <!-- Summary Statistic Cards -->
+@php
+    $cardCount = 3 + (isset($totalDihapus) && $totalDihapus > 0 ? 1 : 0) + (isset($totalSusulan) && $totalSusulan > 0 ? 1 : 0);
+    $colClass = $cardCount >= 5 ? 'col-xl col-md-4 col-sm-6' : ($cardCount == 4 ? 'col-md-3 col-sm-6' : 'col-md-4');
+@endphp
 <div class="row mb-4 g-3">
-    <div class="col-md-4">
+    <div class="{{ $colClass }}">
         <div class="card border-0 shadow-sm rounded-3 h-100">
             <div class="card-body d-flex align-items-center">
                 <div class="rounded-circle bg-primary bg-opacity-10 p-3 text-primary me-3">
                     <i class="ti ti-file-text fs-2"></i>
                 </div>
                 <div>
-                    <h6 class="text-muted mb-1 text-uppercase fw-semibold" style="font-size: 0.75rem; letter-spacing: 0.5px;">Total Pendataan</h6>
+                    <h6 class="text-muted mb-1 text-uppercase fw-semibold" style="font-size: 0.75rem; letter-spacing: 0.5px;">Total Pendataan Aktif</h6>
                     <h3 class="mb-0 fw-bold">{{ number_format($totalTransaksi, 0, ',', '.') }}</h3>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="{{ $colClass }}">
         <div class="card border-0 shadow-sm rounded-3 h-100">
             <div class="card-body d-flex align-items-center">
                 <div class="rounded-circle bg-info bg-opacity-10 p-3 text-info me-3">
@@ -72,7 +76,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="{{ $colClass }}">
         <div class="card border-0 shadow-sm rounded-3 h-100">
             <div class="card-body d-flex align-items-center">
                 <div class="rounded-circle bg-success bg-opacity-10 p-3 text-success me-3">
@@ -85,6 +89,37 @@
             </div>
         </div>
     </div>
+    @if(isset($totalSusulan) && $totalSusulan > 0)
+    <div class="{{ $colClass }}">
+        <div class="card border-0 shadow-sm rounded-3 h-100 bg-warning bg-opacity-10 border border-warning-subtle">
+            <div class="card-body d-flex align-items-center">
+                <div class="rounded-circle bg-warning bg-opacity-25 p-3 text-warning-emphasis me-3">
+                    <i class="ti ti-history fs-2"></i>
+                </div>
+                <div>
+                    <h6 class="text-warning-emphasis mb-1 text-uppercase fw-semibold" style="font-size: 0.75rem; letter-spacing: 0.5px;">Data Susulan Kemarin</h6>
+                    <h3 class="mb-0 fw-bold text-dark">{{ number_format($totalSusulan, 0, ',', '.') }}</h3>
+                    <small class="text-muted" style="font-size: 0.7rem;">Rp {{ number_format($nominalSusulan ?? 0, 0, ',', '.') }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+    @if(isset($totalDihapus) && $totalDihapus > 0)
+    <div class="{{ $colClass }}">
+        <div class="card border-0 shadow-sm rounded-3 h-100 bg-danger bg-opacity-10 border border-danger-subtle">
+            <div class="card-body d-flex align-items-center">
+                <div class="rounded-circle bg-danger bg-opacity-25 p-3 text-danger me-3">
+                    <i class="ti ti-trash fs-2"></i>
+                </div>
+                <div>
+                    <h6 class="text-danger mb-1 text-uppercase fw-semibold" style="font-size: 0.75rem; letter-spacing: 0.5px;">Data Dihapus</h6>
+                    <h3 class="mb-0 fw-bold text-danger">{{ number_format($totalDihapus, 0, ',', '.') }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
 </div>
 
 <!-- Filter Section -->
@@ -146,6 +181,7 @@
                     <option value="pending" {{ ($filters['status'] ?? '') === 'pending' ? 'selected' : '' }}>Pending ⏳ (Menunggu)</option>
                     <option value="sukses" {{ ($filters['status'] ?? '') === 'sukses' ? 'selected' : '' }}>Sukses ✅ (Sesuai)</option>
                     <option value="gagal" {{ ($filters['status'] ?? '') === 'gagal' ? 'selected' : '' }}>Gagal ❌ (> 24 Jam)</option>
+                    <option value="dihapus" {{ ($filters['status'] ?? '') === 'dihapus' ? 'selected' : '' }}>Dihapus 🗑️ (Soft Delete)</option>
                 </select>
             </div>
             <div class="col-md-10 col-sm-12 d-flex align-items-center flex-wrap gap-1 pt-1">
@@ -170,6 +206,9 @@
                 </button>
                 <button type="button" class="btn btn-xs py-1 px-2 rounded-pill {{ $is7DaysActive ? 'btn-primary text-white shadow-sm' : 'btn-outline-secondary' }}" onclick="applyDatePreset('7days')" style="font-size: 0.75rem;">
                     7 Hari Terakhir
+                </button>
+                <button type="button" class="btn btn-xs py-1 px-2 rounded-pill {{ ($filters['date_preset'] ?? '') === 'susulan' ? 'btn-warning text-dark fw-bold shadow-sm' : 'btn-outline-warning text-dark' }}" onclick="applyDatePreset('susulan')" style="font-size: 0.75rem;" title="Lihat transaksi susulan kemarin/lampau">
+                    <i class="ti ti-history me-1"></i>Susulan ⚠️
                 </button>
                 <button type="button" class="btn btn-xs py-1 px-2 rounded-pill {{ $isAllDates ? 'btn-primary text-white shadow-sm' : 'btn-outline-secondary' }}" onclick="applyDatePreset('all')" style="font-size: 0.75rem;">
                     Semua Tanggal
@@ -322,6 +361,11 @@
                        title="Tampilkan data 7 hari terakhir">
                         7 Hari
                     </a>
+                    <a href="{{ route('pendataan.index', array_merge($datePillQuery, ['date_preset' => 'susulan'])) }}" 
+                       class="btn btn-sm rounded-pill px-3 {{ ($filters['date_preset'] ?? '') === 'susulan' ? 'btn-warning text-dark fw-bold shadow-sm' : 'btn-light text-warning-emphasis' }}"
+                       title="Tampilkan semua data susulan yang diinput untuk hari kemarin/lampau">
+                        <i class="ti ti-history me-1"></i>Susulan ⚠️
+                    </a>
                     <a href="{{ route('pendataan.index', array_merge($datePillQuery, ['date_preset' => 'all'])) }}" 
                        class="btn btn-sm rounded-pill px-3 {{ $isAllDates ? 'btn-success text-white fw-bold shadow-sm' : 'btn-light text-muted' }}"
                        title="Tampilkan semua data tanpa batasan tanggal">
@@ -379,6 +423,19 @@
         </span>
     </div>
     <div class="card-body p-0">
+        @if(!empty($hasSusulanToday) && !empty($isTodayActive))
+        <div class="alert alert-warning border-warning d-flex align-items-center justify-content-between flex-wrap gap-2 py-2 px-3 m-3 mb-0 rounded-3 shadow-sm">
+            <div class="d-flex align-items-center">
+                <i class="ti ti-alert-triangle fs-3 text-warning me-2 flex-shrink-0"></i>
+                <div class="small">
+                    <strong class="text-dark">Penanda Data Susulan:</strong> Terdapat transaksi yang diinput pada hari ini untuk tanggal kemarin/lampau. Baris transaksi ditandai dengan latar <span class="badge bg-warning text-dark border border-warning-subtle fw-bold">Warna Kuning</span> di tabel.
+                </div>
+            </div>
+            <a href="{{ route('pendataan.index', array_merge($datePillQuery, ['date_preset' => 'susulan'])) }}" class="btn btn-xs btn-warning text-dark fw-bold px-3 py-1 shadow-sm">
+                <i class="ti ti-history me-1"></i>Lihat Khusus Susulan
+            </a>
+        </div>
+        @endif
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0" id="tablePendataan">
                 <thead class="table-light">
@@ -398,16 +455,34 @@
                 </thead>
                 <tbody>
                     @forelse($pendataans as $item)
-                    <tr>
+                    @php
+                        $isDeleted = method_exists($item, 'trashed') ? $item->trashed() : !is_null($item->deleted_at);
+                        $isSusulan = $item->is_susulan;
+                    @endphp
+                    <tr class="{{ $isDeleted ? 'table-danger bg-danger bg-opacity-10' : ($isSusulan ? 'table-warning bg-warning bg-opacity-10 border-start border-4 border-warning' : '') }}">
                         <td class="ps-4 text-muted fw-semibold">
                             {{ ($pendataans->currentPage() - 1) * $pendataans->perPage() + $loop->iteration }}
                         </td>
                         <td>
-                            <div class="fw-bold text-dark">{{ $item->nama_produk }}</div>
+                            <div class="fw-bold {{ $isDeleted ? 'text-decoration-line-through text-danger' : 'text-dark' }}">{{ $item->nama_produk }}</div>
+                            @if($isDeleted)
+                                <span class="badge bg-danger text-white mt-1 shadow-sm" style="font-size: 0.72rem;">
+                                    <i class="ti ti-trash me-1"></i>Dihapus
+                                </span>
+                            @elseif($isSusulan)
+                                <span class="badge bg-warning text-dark border border-warning-subtle shadow-sm mt-1 d-inline-flex align-items-center" style="font-size: 0.72rem;" title="Data susulan untuk tanggal kemarin/lampau">
+                                    <i class="ti ti-history me-1"></i>Data Susulan Kemarin
+                                </span>
+                            @endif
                             @if($item->deskripsi)
                                 <small class="text-muted d-block text-truncate" style="max-width: 250px;" title="{{ $item->deskripsi }}">
                                     {{ Str::limit(str_replace(["\r", "\n"], ' ', $item->deskripsi), 45) }}
                                 </small>
+                            @endif
+                            @if($isDeleted && $item->alasan_hapus)
+                                <div class="small text-danger bg-white p-1 rounded border border-danger-subtle mt-1" style="font-size: 0.72rem;" title="{{ $item->alasan_hapus }}">
+                                    <strong><i class="ti ti-alert-triangle me-1"></i>Alasan Hapus:</strong> {{ Str::limit($item->alasan_hapus, 80) }}
+                                </div>
                             @endif
                             @if($item->alasan_edit)
                                 <span class="badge bg-warning bg-opacity-10 text-warning border border-warning-subtle mt-1" title="Alasan Edit: {{ $item->alasan_edit }}">
@@ -429,20 +504,29 @@
                         <td class="text-center">
                             {!! $item->status_badge_html !!}
                         </td>
-                        <td class="text-end fw-semibold text-secondary">
+                        <td class="text-end fw-semibold {{ $isDeleted ? 'text-decoration-line-through text-danger' : 'text-secondary' }}">
                             {{ $item->formatted_harga_qty }}
                         </td>
-                        <td class="text-end fw-bold text-success">
+                        <td class="text-end fw-bold {{ $isDeleted ? 'text-decoration-line-through text-danger' : 'text-success' }}">
                             {{ $item->formatted_total_harga }}
                         </td>
                         <td class="text-center">
-                            <span class="badge rounded-pill bg-primary bg-opacity-10 text-primary px-3 py-1 fw-bold">
+                            <span class="badge rounded-pill {{ $isDeleted ? 'bg-danger bg-opacity-10 text-danger' : ($isSusulan ? 'bg-warning text-dark fw-bold' : 'bg-primary bg-opacity-10 text-primary') }} px-3 py-1 fw-bold">
                                 {{ $item->qty }}
                             </span>
                         </td>
                         <td>
                             <div class="text-dark small fw-medium">{{ $item->created_at->format('d/m/Y') }}</div>
                             <small class="text-muted"><i class="ti ti-clock me-1"></i>{{ $item->created_at->format('H:i') }}</small>
+                            @if($isDeleted && $item->deleted_at)
+                                <small class="text-danger d-block mt-1" style="font-size: 0.7rem;">
+                                    <i class="ti ti-trash me-1"></i>Hapus: {{ $item->deleted_at->format('d/m/Y H:i') }}
+                                </small>
+                            @elseif($isSusulan)
+                                <small class="text-warning-emphasis d-block fw-semibold mt-1" style="font-size: 0.7rem;" title="Waktu transaksi dicatat ke sistem: {{ $item->updated_at->format('d/m/Y H:i') }}">
+                                    <i class="ti ti-calendar-time me-1"></i>Diinput: {{ $item->updated_at->format('d/m H:i') }}
+                                </small>
+                            @endif
                         </td>
                         <td>
                             <span class="badge bg-light text-dark border px-2 py-1 fw-semibold">
@@ -464,15 +548,28 @@
                                 <i class="ti ti-eye"></i>
                             </button>
 
-                            <!-- Edit Button -->
-                            <button type="button" class="btn btn-sm btn-icon btn-outline-warning ms-1" title="Edit Data" onclick="openEditModal({{ json_encode($item) }})">
-                                <i class="ti ti-edit"></i>
-                            </button>
+                            @if(!$isDeleted)
+                                <!-- Edit Button -->
+                                <button type="button" class="btn btn-sm btn-icon btn-outline-warning ms-1" title="Edit Data" onclick="openEditModal({{ json_encode($item) }})">
+                                    <i class="ti ti-edit"></i>
+                                </button>
+
+                                @if(auth()->user()->jabatan === 'Superadmin')
+                                    <!-- Delete Button (Superadmin only) -->
+                                    <button type="button" class="btn btn-sm btn-icon btn-outline-danger ms-1" title="Hapus Data (Superadmin)" onclick="openDeleteModal({{ $item->id }}, '{{ addslashes($item->nama_produk) }}', '{{ addslashes($item->nama) }}', '{{ addslashes($item->formatted_total_harga) }}')">
+                                        <i class="ti ti-trash"></i>
+                                    </button>
+                                @endif
+                            @else
+                                <span class="badge bg-danger bg-opacity-10 text-danger border border-danger-subtle ms-1" title="Data ini telah dihapus oleh Superadmin">
+                                    <i class="ti ti-ban me-1"></i>Terhapus
+                                </span>
+                            @endif
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="10" class="text-center py-5 text-muted">
+                        <td colspan="11" class="text-center py-5 text-muted">
                             <i class="ti ti-inbox fs-1 d-block mb-2 text-secondary"></i>
                             Belum ada data pendataan yang tersimpan. Silakan klik tombol <strong>Tambah Pendataan</strong> untuk mulai mencatat.
                         </td>
@@ -931,11 +1028,33 @@
                     <pre class="bg-light p-3 rounded border text-secondary small mb-0" id="detail_deskripsi" style="white-space: pre-wrap; word-break: break-word; max-height: 200px; overflow-y: auto;"></pre>
                 </div>
 
+                <div class="mb-3 d-none" id="detail_susulan_section">
+                    <div class="alert alert-warning py-2 px-3 mb-0 border-warning d-flex align-items-center gap-2">
+                        <i class="ti ti-history fs-3 text-warning flex-shrink-0"></i>
+                        <div class="small">
+                            <strong class="text-dark">Data Susulan:</strong> Transaksi ini dicatat untuk tanggal kemarin/lampau (<span id="detail_susulan_tanggal" class="fw-bold"></span>).
+                        </div>
+                    </div>
+                </div>
+
                 <div class="mb-3 d-none" id="detail_alasan_section">
                     <small class="text-danger fw-semibold d-block mb-1">
                         <i class="ti ti-history me-1"></i>Riwayat Alasan Perubahan Data:
                     </small>
                     <pre class="bg-warning bg-opacity-10 border border-warning-subtle text-dark p-3 rounded small mb-0" id="detail_alasan" style="white-space: pre-wrap; word-break: break-word; max-height: 150px; overflow-y: auto; font-family: inherit; font-size: 12px;"></pre>
+                </div>
+
+                <div class="mb-3 d-none" id="detail_alasan_hapus_section">
+                    <div class="alert alert-danger py-2 px-3 mb-0 border-danger">
+                        <div class="fw-bold d-flex align-items-center mb-1">
+                            <i class="ti ti-trash me-1 fs-5"></i>Data Ini Telah Dihapus
+                            <span class="badge bg-danger ms-auto" id="detail_deleted_at">-</span>
+                        </div>
+                        <small class="d-block mb-1 text-danger fw-semibold">
+                            Dihapus oleh: <span id="detail_deleted_by">-</span>
+                        </small>
+                        <div class="bg-white p-2 rounded border border-danger-subtle text-dark small" id="detail_alasan_hapus" style="white-space: pre-wrap; word-break: break-word;"></div>
+                    </div>
                 </div>
 
                 <div id="detail_gambar_section" class="text-center mt-3 pt-3 border-top d-none">
@@ -1000,6 +1119,67 @@
         </div>
     </div>
 </div>
+
+@if(auth()->user()->jabatan === 'Superadmin')
+<!-- ================= MODAL HAPUS PENDATAAN (SUPERADMIN ONLY) ================= -->
+<div class="modal fade" id="modalHapusPendataan" tabindex="-1" aria-labelledby="modalHapusPendataanLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form action="" method="POST" id="formHapusPendataan">
+                @csrf
+                @method('DELETE')
+                <div class="modal-header bg-danger text-white py-3">
+                    <h5 class="modal-title fw-bold text-white d-flex align-items-center" id="modalHapusPendataanLabel">
+                        <i class="ti ti-trash me-2 fs-4"></i>Hapus Pendataan (Superadmin)
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="alert alert-warning py-2 px-3 small border-0 mb-3 d-flex align-items-center gap-2">
+                        <i class="ti ti-alert-triangle fs-3 text-warning flex-shrink-0"></i>
+                        <div>
+                            Data transaksi <strong>tidak akan hilang</strong> dari database (disimpan sebagai soft-delete riwayat). Data akan ditandai <strong class="text-danger">merah</strong> di tabel, laporan Excel, dan PDF, serta dikecualikan dari perhitungan omset aktif.
+                        </div>
+                    </div>
+
+                    <div class="card bg-light border p-3 rounded-3 mb-3">
+                        <div class="row g-2">
+                            <div class="col-12">
+                                <small class="text-muted d-block">Produk yang akan dihapus:</small>
+                                <strong class="text-dark fs-6" id="delete_modal_produk">-</strong>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block">Staf Penanggung Jawab:</small>
+                                <span class="fw-semibold text-primary" id="delete_modal_staf">-</span>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block">Total Nominal:</small>
+                                <span class="fw-bold text-success" id="delete_modal_total">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label fw-bold text-danger mb-1">
+                            <i class="ti ti-message-exclamation me-1"></i>Alasan Penghapusan <span class="text-danger">* (Wajib Diisi)</span>
+                        </label>
+                        <textarea name="alasan_hapus" id="delete_modal_alasan" class="form-control border-danger" rows="3" required placeholder="Tuliskan alasan mengapa data ini dihapus (contoh: Koreksi double input / transaksi dibatalkan / salah pilih produk)..." minlength="3" maxlength="1000"></textarea>
+                        <div class="form-text small text-muted">
+                            <i class="ti ti-info-circle me-1"></i>Alasan wajib diisi untuk catatan audit trail sistem dan pelaporan.
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-danger btn-sm px-4 fw-bold shadow-sm" id="btnConfirmDelete">
+                        <i class="ti ti-trash me-1"></i> Ya, Hapus Data
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
 @endsection
 
 @push('scripts')
@@ -1712,6 +1892,17 @@ function openDetailModal(id) {
                 gambarSec.classList.add('d-none');
             }
 
+            // Susulan indicator in Detail Modal
+            const susulanSec = document.getElementById('detail_susulan_section');
+            if (susulanSec) {
+                if (data.is_susulan && !data.is_deleted) {
+                    document.getElementById('detail_susulan_tanggal').textContent = data.created_at || '';
+                    susulanSec.classList.remove('d-none');
+                } else {
+                    susulanSec.classList.add('d-none');
+                }
+            }
+
             // Alasan Edit history in Detail modal
             const alasanSec = document.getElementById('detail_alasan_section');
             if (data.alasan_edit && data.alasan_edit.trim()) {
@@ -1719,6 +1910,19 @@ function openDetailModal(id) {
                 alasanSec.classList.remove('d-none');
             } else {
                 alasanSec.classList.add('d-none');
+            }
+
+            // Alasan Hapus history in Detail modal
+            const alasanHapusSec = document.getElementById('detail_alasan_hapus_section');
+            if (alasanHapusSec) {
+                if (data.is_deleted || (data.alasan_hapus && data.alasan_hapus.trim())) {
+                    document.getElementById('detail_alasan_hapus').textContent = data.alasan_hapus || 'Tidak ada catatan alasan.';
+                    document.getElementById('detail_deleted_by').textContent = data.deleted_by || '-';
+                    document.getElementById('detail_deleted_at').textContent = data.deleted_at || 'Data Dihapus';
+                    alasanHapusSec.classList.remove('d-none');
+                } else {
+                    alasanHapusSec.classList.add('d-none');
+                }
             }
 
             const modal = new bootstrap.Modal(document.getElementById('modalDetailPendataan'));
@@ -1732,6 +1936,20 @@ function previewLightboxImage(url, caption) {
     document.getElementById('lightboxImg').src = url;
     document.getElementById('lightboxCaption').textContent = caption || '';
     const modal = new bootstrap.Modal(document.getElementById('modalLightboxGambar'));
+    modal.show();
+}
+
+function openDeleteModal(id, namaProduk, namaStaff, totalHarga) {
+    const form = document.getElementById('formHapusPendataan');
+    if (!form) return;
+
+    form.action = "{{ url('pendataan') }}/" + id;
+    document.getElementById('delete_modal_produk').textContent = namaProduk || '-';
+    document.getElementById('delete_modal_staf').textContent = namaStaff || '-';
+    document.getElementById('delete_modal_total').textContent = totalHarga || '-';
+    document.getElementById('delete_modal_alasan').value = '';
+
+    const modal = new bootstrap.Modal(document.getElementById('modalHapusPendataan'));
     modal.show();
 }
 
@@ -1968,16 +2186,39 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (!form || !startInput || !endInput) return;
 
+        function setPresetInput(val) {
+            let el = form.querySelector('input[name="date_preset"]');
+            if (!el) {
+                el = document.createElement('input');
+                el.type = 'hidden';
+                el.name = 'date_preset';
+                form.appendChild(el);
+            }
+            el.value = val;
+        }
+        function clearPresetInput() {
+            const el = form.querySelector('input[name="date_preset"]');
+            if (el) el.value = '';
+        }
+
         if (preset === 'today') {
+            clearPresetInput();
             startInput.value = today;
             endInput.value = today;
         } else if (preset === 'yesterday') {
+            clearPresetInput();
             startInput.value = yesterday;
             endInput.value = yesterday;
         } else if (preset === '7days') {
+            clearPresetInput();
             startInput.value = sevenDaysAgo;
             endInput.value = today;
+        } else if (preset === 'susulan') {
+            setPresetInput('susulan');
+            startInput.value = '';
+            endInput.value = '';
         } else if (preset === 'all') {
+            clearPresetInput();
             startInput.value = '';
             endInput.value = '';
         }
